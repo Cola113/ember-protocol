@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { PlanetDef, LandingSite } from "@/lib/canon";
 import { CANON_DIALOGUES, NPCDialogueTree } from "@/lib/dialogues";
 import {
@@ -28,6 +29,7 @@ import {
   Unlock,
   Volume2,
   FileCode,
+  CheckCircle2,
 } from "lucide-react";
 
 interface SurfaceStageViewProps {
@@ -42,6 +44,44 @@ interface SurfaceStageViewProps {
 
 type Hotspot = LandingSite["hotspots"][number];
 
+function TypewriterText({ text, onDone }: { text: string; onDone?: () => void }) {
+  const [displayed, setDisplayed] = useState("");
+  const [isDone, setIsDone] = useState(false);
+
+  useEffect(() => {
+    setDisplayed("");
+    setIsDone(false);
+    let idx = 0;
+    const timer = setInterval(() => {
+      idx++;
+      setDisplayed(text.slice(0, idx));
+      if (idx >= text.length) {
+        clearInterval(timer);
+        setIsDone(true);
+        onDone?.();
+      }
+    }, 15);
+    return () => clearInterval(timer);
+  }, [text]);
+
+  return (
+    <div
+      onClick={() => {
+        setDisplayed(text);
+        setIsDone(true);
+        onDone?.();
+      }}
+      className="cursor-pointer hover:opacity-95 select-none"
+      title="点击直接展开全文"
+    >
+      <span>{displayed}</span>
+      {!isDone && (
+        <span className="inline-block w-1.5 h-3.5 bg-holo-cyan ml-0.5 animate-pulse align-middle" />
+      )}
+    </div>
+  );
+}
+
 export default function SurfaceStageView({
   planet,
   site,
@@ -54,6 +94,15 @@ export default function SurfaceStageView({
   const [activeModal, setActiveModal] = useState<Hotspot | null>(null);
   const [dialogueStep, setDialogueStep] = useState(0);
   const [localCompletedHotspots, setLocalCompletedHotspots] = useState<string[]>([]);
+  const [toastProp, setToastProp] = useState<{ code: string; text: string } | null>(null);
+
+  const handleCollectReward = (code: string, text: string) => {
+    onCollectProposition(code, text);
+    setToastProp({ code, text });
+    setTimeout(() => {
+      setToastProp((curr) => (curr?.code === code ? null : curr));
+    }, 4500);
+  };
 
   const markHotspotComplete = (hotspotId: string) => {
     setLocalCompletedHotspots((prev) =>
@@ -106,7 +155,42 @@ export default function SurfaceStageView({
   };
 
   return (
-    <div className="relative w-full h-full flex flex-col justify-between p-4 md:p-8 z-30 pointer-events-auto animate-fadeIn overflow-hidden">
+    <div className="relative w-full h-full flex flex-col justify-between p-4 md:p-8 z-30 pointer-events-auto overflow-hidden">
+      {/* Toast Notification on Proposition Collection */}
+      <AnimatePresence>
+        {toastProp && (
+          <motion.div
+            initial={{ opacity: 0, y: -30, scale: 0.92 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -30, scale: 0.92 }}
+            transition={{ duration: 0.3 }}
+            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 p-4 bg-void/95 border-2 border-holo-amber rounded-sm shadow-holo-amber flex items-center gap-3.5 font-mono text-xs max-w-md w-full backdrop-blur-xl"
+          >
+            <div className="w-9 h-9 rounded-sm bg-holo-amber/20 border border-holo-amber flex items-center justify-center text-holo-amber shrink-0 animate-pulse">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <div className="text-[10px] text-holo-amber font-bold tracking-widest uppercase flex items-center gap-1.5">
+                <CheckCircle2 className="w-3 h-3" />
+                <span>PROPOSITION ARCHIVED // 命题已写入全息书卷</span>
+              </div>
+              <div className="text-holo-bright font-bold mt-0.5 text-xs truncate">
+                {toastProp.code}
+              </div>
+              <div className="text-[11px] text-slate-300 mt-0.5 line-clamp-1">
+                {toastProp.text}
+              </div>
+            </div>
+            <button
+              onClick={() => setToastProp(null)}
+              className="text-holo-muted hover:text-holo-bright text-xs px-1.5 py-1"
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Top Banner Navigation */}
       <div className="flex justify-between items-center gap-4">
         <button
@@ -144,15 +228,23 @@ export default function SurfaceStageView({
             localCompletedHotspots.includes(hs.id) ||
             Boolean(hs.proposition && collectedPropositions.includes(hs.proposition));
           return (
-            <div
+            <motion.div
               key={hs.id}
+              whileHover={{ scale: 1.02, y: -2 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => handleHotspotClick(hs)}
-              className={`holo-panel p-5 md:p-6 rounded-sm cursor-pointer transition-all duration-300 group flex flex-col justify-between border ${
+              className={`holo-panel relative p-5 md:p-6 rounded-sm cursor-pointer transition-all duration-200 group flex flex-col justify-between border ${
                 isCollected
                   ? "border-holo-green/40 hover:border-holo-green shadow-sm"
                   : "border-holo-cyan/25 hover:border-holo-cyan hover:shadow-holo-cyan"
               }`}
             >
+              {/* Corner targeting brackets */}
+              <div className="absolute top-1 left-1 w-2 h-2 border-t border-l border-holo-cyan/40 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute top-1 right-1 w-2 h-2 border-t border-r border-holo-cyan/40 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute bottom-1 left-1 w-2 h-2 border-b border-l border-holo-cyan/40 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="absolute bottom-1 right-1 w-2 h-2 border-b border-r border-holo-cyan/40 opacity-0 group-hover:opacity-100 transition-opacity" />
+
               <div>
                 <div className="flex justify-between items-start mb-3.5">
                   <div
@@ -201,140 +293,158 @@ export default function SurfaceStageView({
                   {hs.proposition ? hs.proposition : "ECHO DIALOGUE"}
                 </span>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
 
       {/* Interactive Modal (Inspect / Operate / Dialogue) */}
-      {activeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-void/85 backdrop-blur-md animate-fadeIn">
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto holo-panel p-5 md:p-7 rounded-sm relative border-holo-cyan/40 shadow-2xl">
-            {/* Modal Header */}
-            <div className="flex justify-between items-start border-b border-holo-cyan/20 pb-3 mb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-holo-amber font-mono text-xs font-bold">
-                    [{activeModal.type.toUpperCase()}]
-                  </span>
-                  <h3 className="font-display font-bold text-lg text-holo-bright">
-                    {activeModal.name}
-                  </h3>
+      <AnimatePresence>
+        {activeModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-void/85 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.93, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.93, y: 15 }}
+              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-2xl max-h-[90vh] overflow-y-auto holo-panel p-5 md:p-7 rounded-sm relative border-holo-cyan/40 shadow-2xl"
+            >
+              {/* Modal Header */}
+              <div className="flex justify-between items-start border-b border-holo-cyan/20 pb-3 mb-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-holo-amber font-mono text-xs font-bold">
+                      [{activeModal.type.toUpperCase()}]
+                    </span>
+                    <h3 className="font-display font-bold text-lg text-holo-bright">
+                      {activeModal.name}
+                    </h3>
+                  </div>
+                  <div className="text-xs font-mono text-holo-cyan mt-0.5">
+                    {planet.name} · {site.name}
+                  </div>
                 </div>
-                <div className="text-xs font-mono text-holo-cyan mt-0.5">
-                  {planet.name} · {site.name}
-                </div>
+                <button
+                  onClick={() => setActiveModal(null)}
+                  className="text-holo-muted hover:text-holo-bright p-1 text-sm rounded hover:bg-surface-dark"
+                >
+                  ✕
+                </button>
               </div>
-              <button
-                onClick={() => setActiveModal(null)}
-                className="text-holo-muted hover:text-holo-bright p-1 text-sm rounded hover:bg-surface-dark"
-              >
-                ✕
-              </button>
-            </div>
 
-            {/* =========================================================================
-                HOTSPOT CASE ROUTING
-               ========================================================================= */}
+              {/* =========================================================================
+                  HOTSPOT CASE ROUTING
+                 ========================================================================= */}
 
-            {/* ---------------- 1. NPC DIALOGUE MODE ---------------- */}
-            {activeModal.type === "dialogue" && (() => {
-              const tree = getDialogueTree(activeModal);
-              if (!tree) {
+              {/* ---------------- 1. NPC DIALOGUE MODE ---------------- */}
+              {activeModal.type === "dialogue" && (() => {
+                const tree = getDialogueTree(activeModal);
+                if (!tree) {
+                  return (
+                    <div className="space-y-4 text-xs font-mono text-slate-300">
+                      <p>检测到残响信号，但此处的声纹频段已坍缩入深空。</p>
+                    </div>
+                  );
+                }
+
+                const currentStep = tree.steps[dialogueStep] || tree.steps[0];
+                const isFinalStep = !currentStep.choices || currentStep.choices.length === 0;
+
                 return (
-                  <div className="space-y-4 text-xs font-mono text-slate-300">
-                    <p>检测到残响信号，但此处的声纹频段已坍缩入深空。</p>
+                  <div className="space-y-4 text-xs font-mono">
+                    {/* NPC Header Info with Audio Visualizer */}
+                    <div className="flex items-center justify-between p-3 bg-purple-950/30 border border-purple-500/30 rounded-sm">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="p-2.5 rounded text-white"
+                          style={{ backgroundColor: `${tree.steps[0]?.avatarColor || "#a855f7"}33` }}
+                        >
+                          <User className="w-5 h-5 text-purple-300" />
+                        </div>
+                        <div>
+                          <div className="font-bold text-sm text-holo-bright flex items-center gap-2">
+                            <span>{tree.name}</span>
+                            <span className="text-[10px] text-purple-300 bg-purple-900/40 px-1.5 py-0.5 rounded border border-purple-500/30 uppercase">
+                              {tree.speechRegister}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-purple-400 mt-0.5">{currentStep.speakerRole}</div>
+                        </div>
+                      </div>
+
+                      {/* Echo Audio Waveform Visualizer */}
+                      <div className="flex items-end gap-1 h-4 px-2 py-1 bg-purple-900/30 rounded border border-purple-500/25">
+                        <span className="w-0.5 bg-purple-400 animate-pulse h-2" style={{ animationDuration: "0.6s" }} />
+                        <span className="w-0.5 bg-purple-400 animate-pulse h-4" style={{ animationDuration: "0.4s" }} />
+                        <span className="w-0.5 bg-purple-400 animate-pulse h-2.5" style={{ animationDuration: "0.8s" }} />
+                        <span className="w-0.5 bg-purple-400 animate-pulse h-3.5" style={{ animationDuration: "0.5s" }} />
+                        <span className="w-0.5 bg-purple-400 animate-pulse h-1.5" style={{ animationDuration: "0.7s" }} />
+                      </div>
+                    </div>
+
+                    {/* Dialogue Content with Typewriter Effect */}
+                    <div className="p-4 bg-surface-dark/85 border border-holo-cyan/20 rounded-sm leading-relaxed text-holo-bright text-sm min-h-[95px] space-y-3">
+                      <TypewriterText text={currentStep.text} />
+
+                      {/* Hysteresis Lie Tag */}
+                      {currentStep.hysteresisNote && (
+                        <div className="p-2.5 bg-slate-900/90 border border-amber-500/40 text-[11px] text-holo-amber italic flex items-center gap-2 rounded-sm shadow-sm animate-pulse">
+                          <ShieldAlert className="w-4 h-4 text-holo-amber shrink-0" />
+                          <span>[ECHO_HYSTERESIS // 磁滞推演中: {currentStep.hysteresisNote}]</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Reward Proposition Card */}
+                    {currentStep.propositionReward && (
+                      <div className="p-3.5 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm animate-fadeIn">
+                        <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                        </div>
+                        <div className="text-holo-bright font-mono text-sm font-semibold">
+                          {currentStep.propositionReward.code}
+                        </div>
+                        <div className="text-[11px] text-slate-300 mt-0.5">
+                          （{currentStep.propositionReward.text}）
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Dialogue Choice Options or Resolution */}
+                    <div className="space-y-2 pt-2">
+                      {currentStep.choices && currentStep.choices.map((choice, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setDialogueStep(choice.nextStep)}
+                          className="w-full text-left p-3 bg-surface-dark border border-holo-cyan/25 hover:border-holo-cyan hover:bg-surface rounded-sm text-slate-200 hover:text-holo-cyan transition-all text-xs flex items-center justify-between group"
+                        >
+                          <span>{idx + 1}. {choice.text}</span>
+                          <ArrowRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-holo-cyan shrink-0 ml-2" />
+                        </button>
+                      ))}
+
+                      {isFinalStep && (
+                        <button
+                          onClick={() => {
+                            if (currentStep.propositionReward) {
+                              handleCollectReward(
+                                currentStep.propositionReward.code,
+                                currentStep.propositionReward.text
+                              );
+                            }
+                            markHotspotComplete(activeModal.id);
+                            setActiveModal(null);
+                          }}
+                          className="w-full py-3 bg-gradient-to-r from-purple-900/50 to-surface border border-purple-500 hover:bg-purple-600 hover:text-void text-purple-200 text-xs font-mono uppercase tracking-wider rounded-sm shadow-md transition-all text-center font-bold"
+                        >
+                          [接收残响频段记录 · 结束对话并归档]
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
-              }
-
-              const currentStep = tree.steps[dialogueStep] || tree.steps[0];
-              const isFinalStep = !currentStep.choices || currentStep.choices.length === 0;
-
-              return (
-                <div className="space-y-4 text-xs font-mono">
-                  {/* NPC Header Info */}
-                  <div className="flex items-center gap-3 p-3 bg-purple-950/30 border border-purple-500/30 rounded-sm">
-                    <div
-                      className="p-2.5 rounded text-white"
-                      style={{ backgroundColor: `${tree.steps[0]?.avatarColor || "#a855f7"}33` }}
-                    >
-                      <User className="w-5 h-5 text-purple-300" />
-                    </div>
-                    <div>
-                      <div className="font-bold text-sm text-holo-bright flex items-center gap-2">
-                        <span>{tree.name}</span>
-                        <span className="text-[10px] text-purple-300 bg-purple-900/40 px-1.5 py-0.5 rounded border border-purple-500/30 uppercase">
-                          {tree.speechRegister}
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-purple-400 mt-0.5">{currentStep.speakerRole}</div>
-                    </div>
-                  </div>
-
-                  {/* Dialogue Content */}
-                  <div className="p-4 bg-surface-dark/85 border border-holo-cyan/20 rounded-sm leading-relaxed text-holo-bright text-sm min-h-[90px] space-y-3">
-                    <p>{currentStep.text}</p>
-
-                    {/* Hysteresis Lie Tag */}
-                    {currentStep.hysteresisNote && (
-                      <div className="p-2.5 bg-slate-900/90 border border-amber-500/30 text-[11px] text-holo-lie italic flex items-center gap-2 rounded-sm">
-                        <ShieldAlert className="w-4 h-4 text-holo-amber shrink-0" />
-                        <span>[{currentStep.hysteresisNote}]</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Reward Proposition Card */}
-                  {currentStep.propositionReward && (
-                    <div className="p-3.5 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm animate-fadeIn">
-                      <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
-                      </div>
-                      <div className="text-holo-bright font-mono text-sm font-semibold">
-                        {currentStep.propositionReward.code}
-                      </div>
-                      <div className="text-[11px] text-slate-300 mt-0.5">
-                        （{currentStep.propositionReward.text}）
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Dialogue Choice Options or Resolution */}
-                  <div className="space-y-2 pt-2">
-                    {currentStep.choices && currentStep.choices.map((choice, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => setDialogueStep(choice.nextStep)}
-                        className="w-full text-left p-3 bg-surface-dark border border-holo-cyan/25 hover:border-holo-cyan hover:bg-surface rounded-sm text-slate-200 hover:text-holo-cyan transition-all text-xs flex items-center justify-between group"
-                      >
-                        <span>{idx + 1}. {choice.text}</span>
-                        <ArrowRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-holo-cyan shrink-0 ml-2" />
-                      </button>
-                    ))}
-
-                    {isFinalStep && (
-                      <button
-                        onClick={() => {
-                          if (currentStep.propositionReward) {
-                            onCollectProposition(
-                              currentStep.propositionReward.code,
-                              currentStep.propositionReward.text
-                            );
-                          }
-                          markHotspotComplete(activeModal.id);
-                          setActiveModal(null);
-                        }}
-                        className="w-full py-3 bg-gradient-to-r from-purple-900/50 to-surface border border-purple-500 hover:bg-purple-600 hover:text-void text-purple-200 text-xs font-mono uppercase tracking-wider rounded-sm shadow-md transition-all text-center font-bold"
-                      >
-                        [接收残响频段记录 · 结束对话并归档]
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
+              })()}
 
             {/* ---------------- 2. HELIX-7 OPERATE: 50m Dipole Antenna Panel ---------------- */}
             {activeModal.id === "hs-antenna-panel" && (
@@ -393,7 +503,7 @@ export default function SurfaceStageView({
                   <button
                     disabled={!isAntennaAligned}
                     onClick={() => {
-                      onCollectProposition(
+                      handleCollectReward(
                         "Helix.Signal.Unassigned",
                         "Helix-7 偶极天线捕获未分配信号"
                       );
@@ -453,7 +563,7 @@ export default function SurfaceStageView({
                 <div className="flex justify-end pt-3">
                   <button
                     onClick={() => {
-                      onCollectProposition(
+                      handleCollectReward(
                         "Helix.Beacon.Broadcasting",
                         "Helix-7 校准信标常驻引导广播"
                       );
@@ -524,7 +634,7 @@ export default function SurfaceStageView({
                 <div className="flex justify-end pt-3">
                   <button
                     onClick={() => {
-                      onCollectProposition(
+                      handleCollectReward(
                         "Kiln.Bus.Mutex",
                         "Kiln 总线互斥锁与硬件总线控制权"
                       );
@@ -608,7 +718,7 @@ export default function SurfaceStageView({
                   <button
                     disabled={!isLensFocused}
                     onClick={() => {
-                      onCollectProposition(
+                      handleCollectReward(
                         "Orchard.ROM.Exhaustion",
                         "Glass Orchard 全区只读存储读取耗尽"
                       );
@@ -681,7 +791,7 @@ export default function SurfaceStageView({
                   <button
                     disabled={!isOrganTuned}
                     onClick={() => {
-                      onCollectProposition(
+                      handleCollectReward(
                         "Choir.Hymn.IsClock",
                         "Choir Well 圣歌即中央时钟基频晶振"
                       );
@@ -736,7 +846,7 @@ export default function SurfaceStageView({
                 <div className="flex justify-end pt-3">
                   <button
                     onClick={() => {
-                      onCollectProposition(
+                      handleCollectReward(
                         "Ledger.Error.IsChecksum",
                         "Ledger 灰墨热瘟疫实为系统校验和报错"
                       );
@@ -783,7 +893,7 @@ export default function SurfaceStageView({
                 <div className="flex justify-end pt-3">
                   <button
                     onClick={() => {
-                      onCollectProposition(
+                      handleCollectReward(
                         "Ledger.Protocol.RecorderKey",
                         "Ledger 记录员协议为奇偶校验授权机制"
                       );
@@ -855,7 +965,7 @@ export default function SurfaceStageView({
                   <button
                     disabled={!isNeedleLocked}
                     onClick={() => {
-                      onCollectProposition(
+                      handleCollectReward(
                         "Needle.Pointer.Rebased",
                         "Needle 寻址指针重定基底解除迷航"
                       );
@@ -903,7 +1013,7 @@ export default function SurfaceStageView({
                 <div className="flex justify-end pt-3">
                   <button
                     onClick={() => {
-                      onCollectProposition(
+                      handleCollectReward(
                         "Marrow.God.IsProcess",
                         "Marrow 肉食神实为生物张量常驻守护进程"
                       );
@@ -968,7 +1078,7 @@ export default function SurfaceStageView({
                   <button
                     disabled={!isTensorSaturated}
                     onClick={() => {
-                      onCollectProposition(
+                      handleCollectReward(
                         "Marrow.Bio.WriteBack",
                         "Marrow 生物湿件写回与张量固化"
                       );
@@ -1029,7 +1139,7 @@ export default function SurfaceStageView({
                 <div className="flex justify-end pt-3">
                   <button
                     onClick={() => {
-                      onCollectProposition(
+                      handleCollectReward(
                         "Cinder.Court.IsSandbox",
                         "Cinder Court 宫廷悲剧实为 UI 沙盒红鲱鱼"
                       );
@@ -1101,7 +1211,7 @@ export default function SurfaceStageView({
                   <button
                     disabled={!isMirrorCleared}
                     onClick={() => {
-                      onCollectProposition(
+                      handleCollectReward(
                         "BlindSun.Prohibition.CycleTwo",
                         "Blind Sun 终极禁令：禁止完成第二轮运算"
                       );
@@ -1148,7 +1258,7 @@ export default function SurfaceStageView({
                 <div className="flex justify-end pt-3">
                   <button
                     onClick={() => {
-                      onCollectProposition(
+                      handleCollectReward(
                         "BlindSun.Director.Blindness",
                         "Blind Sun 科学院致盲以阻断自催化点火"
                       );
@@ -1211,7 +1321,7 @@ export default function SurfaceStageView({
                 <div className="flex justify-end pt-3">
                   <button
                     onClick={() => {
-                      onCollectProposition(
+                      handleCollectReward(
                         "Interval.Core.Recorder9",
                         "Black Interval 发现自我即第9号奇偶校验位"
                       );
@@ -1258,7 +1368,7 @@ export default function SurfaceStageView({
                 <div className="flex justify-end pt-3">
                   <button
                     onClick={() => {
-                      onCollectProposition(
+                      handleCollectReward(
                         "Interval.Memory.Vesper",
                         "Black Interval 晚星核心记忆完整闭环"
                       );
@@ -1311,7 +1421,7 @@ export default function SurfaceStageView({
                     <button
                       onClick={() => {
                         if (activeModal.proposition) {
-                          onCollectProposition(
+                          handleCollectReward(
                             activeModal.proposition,
                             `${planet.name} 节点提取命题`
                           );
@@ -1326,9 +1436,10 @@ export default function SurfaceStageView({
                   </div>
                 </div>
               )}
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* Bottom Telemetry Bar */}
       <div className="flex justify-between items-center text-xs font-mono text-holo-muted border-t border-holo-cyan/15 pt-3">
