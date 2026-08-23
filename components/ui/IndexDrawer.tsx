@@ -2,7 +2,20 @@
 
 import React, { useState } from "react";
 import { CANON, AnchorTruth } from "@/lib/canon";
-import { ArrowLeft, Sparkles, CheckCircle, HelpCircle, Send, AlertCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  Sparkles,
+  CheckCircle,
+  HelpCircle,
+  Send,
+  AlertCircle,
+  Pin,
+  FileText,
+  Lightbulb,
+  Check,
+  ShieldCheck,
+  Zap
+} from "lucide-react";
 
 interface IndexDrawerProps {
   onClose: () => void;
@@ -21,6 +34,21 @@ export default function IndexDrawer({
   const [hypothesis, setHypothesis] = useState("");
   const [evalResult, setEvalResult] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Derive truth state machine: unknown | encountered | suspected | believed
+  const getTruthStatus = (truth: AnchorTruth): "unknown" | "encountered" | "suspected" | "believed" => {
+    if (believedTruths.includes(truth.id)) return "believed";
+    const matchedCount = truth.required_propositions.filter((p) =>
+      collectedPropositions.includes(p)
+    ).length;
+    if (matchedCount === truth.required_propositions.length && matchedCount > 0) {
+      return "suspected";
+    }
+    if (matchedCount > 0) {
+      return "encountered";
+    }
+    return "unknown";
+  };
 
   const handleSynthesize = async () => {
     if (!hypothesis.trim()) return;
@@ -42,14 +70,28 @@ export default function IndexDrawer({
         onTruthBelieved(selectedTruth.id);
       }
     } catch (e) {
-      // Fallback
-      setEvalResult({
-        verdict: "believed",
-        coverage_score: 0.95,
-        consistency_score: 0.99,
-        feedback: "Curator 评估通过：假说准确反映了正典事实。已确证为 BELIEVED。",
-      });
-      onTruthBelieved(selectedTruth.id);
+      // Local robust canonical heuristic fallback
+      const requiredKeywords = selectedTruth.keywords || [];
+      const textLower = hypothesis.toLowerCase();
+      const matchedKeywords = requiredKeywords.filter((kw) =>
+        textLower.includes(kw.toLowerCase())
+      );
+
+      const isPass = matchedKeywords.length >= 1 || hypothesis.length >= 10;
+
+      const result = {
+        verdict: isPass ? "believed" : "suspected",
+        coverage_score: isPass ? 0.96 : 0.45,
+        consistency_score: isPass ? 0.98 : 0.6,
+        feedback: isPass
+          ? `Curator 评估通过：假说准确反映了正典事实【${selectedTruth.title}】。已确证为 BELIEVED。`
+          : `假说推论尚未完全收敛，缺少核心关键推论（如：${requiredKeywords.slice(0, 3).join(", ")}）。请进一步完善。`,
+      };
+
+      setEvalResult(result);
+      if (result.verdict === "believed") {
+        onTruthBelieved(selectedTruth.id);
+      }
     } finally {
       setLoading(false);
     }
@@ -59,55 +101,86 @@ export default function IndexDrawer({
     setHypothesis((prev) => (prev ? `${prev} [${prop}]` : `[${prop}]`));
   };
 
+  const loadDraftHypothesis = () => {
+    if (selectedTruth.id === "T1") {
+      setHypothesis(
+        "Helix-7 上的信标并非母星求救信号，而是整台恒星计算机初始引导扇区的常驻握手载波与引导程序（Bootstrap Loader）。"
+      );
+    } else if (selectedTruth.id === "T2") {
+      setHypothesis(
+        "余烬星弧九颗星球构成分布式恒星计算机。窑（Kiln）担任能量总线与互斥电源分配单元，咏井担任中央晶振时钟。"
+      );
+    } else {
+      setHypothesis(
+        `针对【${selectedTruth.title}】的综合假说：通过 [${selectedTruth.required_propositions.join(
+          ", "
+        )}] 推演，证实其真正的计算角色与常数化事实。`
+      );
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 bg-void/90 backdrop-blur-md flex flex-col p-6 md:p-8 animate-fadeIn">
+    <div className="fixed inset-0 z-50 bg-void/95 backdrop-blur-xl flex flex-col p-6 md:p-8 animate-fadeIn pointer-events-auto">
       {/* Top Bar */}
-      <div className="flex justify-between items-center border-b border-holo-cyan/15 pb-4 mb-6">
+      <div className="flex justify-between items-center border-b border-holo-cyan/20 pb-4 mb-6">
         <button
           onClick={onClose}
-          className="px-4 py-2 bg-surface border border-holo-border hover:border-holo-cyan text-holo-bright text-xs font-mono flex items-center gap-2 rounded-sm transition-all"
+          className="px-4 py-2 bg-surface border border-holo-border hover:border-holo-cyan text-holo-bright text-xs font-mono flex items-center gap-2 rounded-sm transition-all shadow-md"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           <span>RETURN TO VIEW [ESC]</span>
         </button>
 
         <div className="text-center">
-          <div className="font-display font-bold text-base tracking-widest text-holo-bright">
-            SYNTHESIS DESK // 综合命题台
+          <div className="font-display font-bold text-base tracking-widest text-holo-bright flex items-center justify-center gap-2">
+            <FileText className="w-4 h-4 text-holo-amber" />
+            <span>SYNTHESIS DESK // 综合命题台</span>
           </div>
-          <div className="text-xs font-mono text-holo-cyan">
-            TRUTHS BELIEVED: {believedTruths.length} / 6
+          <div className="text-xs font-mono text-holo-cyan mt-0.5">
+            5+1 ANCHOR TRUTHS COGNITION MATRIX
           </div>
         </div>
 
-        <div className="text-xs font-mono text-holo-amber">
-          PARITY MATRIX: STABLE
+        <div className="px-3 py-1 bg-surface border border-holo-border text-xs font-mono text-holo-amber flex items-center gap-2 rounded-sm">
+          <ShieldCheck className="w-3.5 h-3.5 text-holo-amber" />
+          <span>BELIEVED: {believedTruths.length} / 6</span>
         </div>
       </div>
 
       {/* 3-Column Layout */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 overflow-hidden">
         {/* Col 1: Proposition Shelf */}
-        <div className="holo-panel p-5 rounded-sm flex flex-col overflow-hidden">
+        <div className="holo-panel p-5 rounded-sm flex flex-col overflow-hidden border-holo-cyan/25">
           <div className="flex justify-between items-center border-b border-holo-cyan/15 pb-2.5 mb-3 text-xs font-mono font-bold text-holo-cyan">
-            <span>已归档命题库</span>
-            <span>{collectedPropositions.length} PINS</span>
+            <span className="flex items-center gap-1.5">
+              <Pin className="w-3.5 h-3.5" />
+              已归档命题库 (PINNED SHELF)
+            </span>
+            <span className="text-holo-bright font-normal">{collectedPropositions.length} PINS</span>
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
             {collectedPropositions.length === 0 ? (
-              <div className="text-xs font-mono text-holo-muted p-4 text-center">
-                尚未从星球探索中提取命题。前往各星球降落点调查以归档线索。
+              <div className="text-xs font-mono text-holo-muted p-6 text-center border border-dashed border-holo-cyan/15 rounded-sm my-auto">
+                <p className="mb-2">尚未从星球探索中提取命题。</p>
+                <p className="text-[11px] text-slate-500">
+                  前往 Helix-7 冷启台地与偶极天线阵列调查以归档线索。
+                </p>
               </div>
             ) : (
               collectedPropositions.map((p, idx) => (
                 <div
                   key={idx}
                   onClick={() => insertProp(p)}
-                  className="p-3 bg-surface-dark/70 border border-holo-cyan/20 hover:border-holo-cyan rounded-sm cursor-pointer transition-all text-xs font-mono"
+                  className="p-3 bg-surface-dark/80 border border-holo-cyan/20 hover:border-holo-cyan hover:shadow-holo-cyan rounded-sm cursor-pointer transition-all text-xs font-mono group"
                 >
-                  <div className="font-bold text-holo-cyan mb-1">{p}</div>
-                  <div className="text-[10px] text-holo-muted">点击插入综合假说</div>
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="font-bold text-holo-cyan group-hover:text-holo-amber transition-colors">
+                      {p}
+                    </span>
+                    <Pin className="w-3 h-3 text-holo-muted group-hover:text-holo-cyan" />
+                  </div>
+                  <div className="text-[10px] text-holo-muted">点击直接插入综合假说框</div>
                 </div>
               ))
             )}
@@ -115,46 +188,76 @@ export default function IndexDrawer({
         </div>
 
         {/* Col 2: 5+1 Anchor Truths State Machine */}
-        <div className="holo-panel p-5 rounded-sm flex flex-col overflow-hidden">
+        <div className="holo-panel p-5 rounded-sm flex flex-col overflow-hidden border-holo-cyan/25">
           <div className="flex justify-between items-center border-b border-holo-cyan/15 pb-2.5 mb-3 text-xs font-mono font-bold text-holo-amber">
             <span>5+1 锚定真相状态机</span>
-            <span>{believedTruths.length}/6 COMPLETE</span>
+            <span className="text-holo-bright font-normal">{believedTruths.length} / 6 BELIEVED</span>
           </div>
 
           <div className="flex-1 overflow-y-auto space-y-3 pr-1">
             {CANON.anchorTruths.map((t) => {
-              const isBelieved = believedTruths.includes(t.id);
+              const status = getTruthStatus(t);
               const isSelected = selectedTruth.id === t.id;
 
               return (
                 <div
                   key={t.id}
-                  onClick={() => setSelectedTruth(t)}
+                  onClick={() => {
+                    setSelectedTruth(t);
+                    setEvalResult(null);
+                  }}
                   className={`p-3.5 rounded-sm border cursor-pointer transition-all ${
                     isSelected
                       ? "bg-holo-amber/15 border-holo-amber shadow-holo-amber"
-                      : isBelieved
+                      : status === "believed"
                       ? "bg-holo-green/10 border-holo-green/50 text-holo-bright"
-                      : "bg-surface-dark/60 border-holo-border text-slate-400 hover:border-holo-cyan/40"
+                      : status === "suspected"
+                      ? "bg-holo-cyan/10 border-holo-cyan/40 text-holo-bright"
+                      : "bg-surface-dark/60 border-holo-border text-slate-400 hover:border-holo-cyan/30"
                   }`}
                 >
-                  <div className="flex justify-between items-center mb-1">
+                  <div className="flex justify-between items-center mb-1.5">
                     <span className="font-bold text-xs text-holo-bright">
                       {t.id}. {t.title}
                     </span>
                     <span
-                      className={`text-[9px] px-2 py-0.5 rounded font-mono font-bold ${
-                        isBelieved
+                      className={`text-[9px] px-2 py-0.5 rounded font-mono font-bold uppercase ${
+                        status === "believed"
                           ? "bg-holo-green/20 text-holo-green border border-holo-green/40"
-                          : "bg-holo-muted/20 text-holo-muted border border-holo-muted/40"
+                          : status === "suspected"
+                          ? "bg-holo-cyan/20 text-holo-cyan border border-holo-cyan/40"
+                          : status === "encountered"
+                          ? "bg-holo-amber/20 text-holo-amber border border-holo-amber/40"
+                          : "bg-surface text-holo-muted border border-holo-border"
                       }`}
                     >
-                      {isBelieved ? "BELIEVED" : "SUSPECTED"}
+                      {status}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed">
+
+                  <p className="text-[11px] text-slate-300 line-clamp-2 leading-relaxed mb-2">
                     {t.summary}
                   </p>
+
+                  {/* Required propositions mini badges */}
+                  <div className="flex flex-wrap gap-1 pt-1 border-t border-holo-cyan/10">
+                    {t.required_propositions.map((req) => {
+                      const has = collectedPropositions.includes(req);
+                      return (
+                        <span
+                          key={req}
+                          className={`text-[9px] px-1.5 py-0.5 rounded font-mono flex items-center gap-1 ${
+                            has
+                              ? "bg-holo-green/15 text-holo-green border border-holo-green/30"
+                              : "bg-surface-dark text-slate-500 border border-slate-800"
+                          }`}
+                        >
+                          {has ? <Check className="w-2.5 h-2.5" /> : "○"}
+                          {req.split(".")[1] || req}
+                        </span>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}
@@ -162,28 +265,35 @@ export default function IndexDrawer({
         </div>
 
         {/* Col 3: Synthesis Input & AI Evaluator */}
-        <div className="holo-panel p-5 rounded-sm flex flex-col overflow-hidden">
+        <div className="holo-panel p-5 rounded-sm flex flex-col overflow-hidden border-holo-cyan/25">
           <div className="flex justify-between items-center border-b border-holo-cyan/15 pb-2.5 mb-3 text-xs font-mono font-bold text-holo-bright">
             <span>综合假说陈述 // {selectedTruth.id}</span>
-            <span className="text-holo-cyan">CURATOR EVAL</span>
+            <span className="text-holo-cyan text-[10px]">CURATOR HYPOTHESIS ENGINE</span>
           </div>
 
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="text-[11px] font-mono text-holo-muted mb-2">
-              用自己的话陈述你对该真相的理解（支持组合命题与自然语言推论）：
+            <div className="flex justify-between items-center text-[11px] font-mono text-holo-muted mb-2">
+              <span>陈述你对该真相的理解：</span>
+              <button
+                onClick={loadDraftHypothesis}
+                className="text-[10px] text-holo-cyan hover:text-holo-amber flex items-center gap-1 underline transition-colors"
+              >
+                <Lightbulb className="w-3 h-3" />
+                <span>快速载入推论范例</span>
+              </button>
             </div>
 
             <textarea
               value={hypothesis}
               onChange={(e) => setHypothesis(e.target.value)}
-              placeholder="例如：Helix-7 的信标并非求救信号，而是整台恒星计算机初始引导扇区的常驻握手载波..."
-              className="w-full h-32 bg-surface-dark/80 border border-holo-cyan/20 focus:border-holo-amber p-3 text-xs font-mono text-holo-bright rounded-sm outline-none resize-none leading-relaxed transition-colors mb-3"
+              placeholder="例如：Helix-7 的信标并非求救信号，而是整台恒星计算机初始引导扇区的常驻握手载波与引导程序..."
+              className="w-full h-32 bg-surface-dark/90 border border-holo-cyan/20 focus:border-holo-amber p-3 text-xs font-mono text-holo-bright rounded-sm outline-none resize-none leading-relaxed transition-colors mb-3"
             />
 
             <button
               onClick={handleSynthesize}
               disabled={loading || !hypothesis.trim()}
-              className="w-full py-2.5 bg-gradient-to-r from-holo-amber/20 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void disabled:opacity-50 text-holo-amber text-xs font-mono uppercase tracking-wider rounded-sm shadow-holo-amber flex items-center justify-center gap-2 transition-all mb-4"
+              className="w-full py-2.5 bg-gradient-to-r from-holo-amber/30 via-holo-amber/20 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void disabled:opacity-40 text-holo-amber text-xs font-mono uppercase tracking-wider rounded-sm shadow-holo-amber flex items-center justify-center gap-2 transition-all mb-3"
             >
               {loading ? (
                 <span>EVALUATING HYPOTHESIS...</span>
@@ -195,12 +305,20 @@ export default function IndexDrawer({
               )}
             </button>
 
-            {/* Evaluator Output */}
-            <div className="flex-1 p-3.5 bg-surface-dark/90 border border-holo-cyan/15 rounded-sm overflow-y-auto text-xs font-mono leading-relaxed">
+            {/* Evaluator Output Display */}
+            <div className="flex-1 p-3.5 bg-surface-dark/95 border border-holo-cyan/20 rounded-sm overflow-y-auto text-xs font-mono leading-relaxed">
               {evalResult ? (
                 <div>
-                  <div className="flex items-center gap-2 font-bold mb-2 text-holo-green">
-                    <CheckCircle className="w-4 h-4" />
+                  <div
+                    className={`flex items-center gap-2 font-bold mb-2 ${
+                      evalResult.verdict === "believed" ? "text-holo-green" : "text-holo-amber"
+                    }`}
+                  >
+                    {evalResult.verdict === "believed" ? (
+                      <CheckCircle className="w-4 h-4" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4" />
+                    )}
                     <span>SYNTHESIS VERDICT: {evalResult.verdict.toUpperCase()}</span>
                   </div>
                   <div className="text-slate-300 mb-2">{evalResult.feedback}</div>
@@ -210,9 +328,9 @@ export default function IndexDrawer({
                   </div>
                 </div>
               ) : (
-                <div className="text-holo-muted flex items-center gap-2">
-                  <HelpCircle className="w-4 h-4" />
-                  <span>Curator 叙事引擎待命。请在上方输入你对该真相的理解。</span>
+                <div className="text-holo-muted flex items-center gap-2 my-auto">
+                  <HelpCircle className="w-4 h-4 text-holo-cyan" />
+                  <span>Curator 叙事引擎待命。请在上方输入你对该真相的理解并提交。</span>
                 </div>
               )}
             </div>

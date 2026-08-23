@@ -27,3 +27,7 @@ yarn-error.log*
 
 # Roundtable
 .roundtable/
+
+# TypeScript Build Info
+*.tsbuildinfo
+tsconfig.tsbuildinfo

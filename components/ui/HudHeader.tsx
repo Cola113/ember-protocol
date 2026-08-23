@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Sparkles, Compass, BookOpen, Ship, Network } from "lucide-react";
+import { Compass, BookOpen, Ship, Network } from "lucide-react";
 
 interface HudHeaderProps {
   currentView: "opening" | "galaxy" | "ship" | "index" | "survey" | "surface";

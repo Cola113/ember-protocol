@@ -106,3 +106,36 @@ Astral Noir 拒绝浮夸的彩虹渐变与纯紫暗色，采用极具物理质�
    - 左侧 NPC 极简线框肖像 + 残响波形动画。
    - 对话正文流式输出。
    - 若检测到 `lie: true`，右下角浮现 `[ECHO_HYSTERESIS // 磁滞推演中]` 灰标。
+
+---
+
+## 6. 动效规范 (Motion Specification)
+
+为保持 Astral Noir 科学仪器的精确感与冷峻氛围，所有动效与过渡均遵循以下物理参数：
+
+### 6.1 动效时长基准 (Durations)
+- **微交互反馈 (Micro-Interactions)**: `150ms`（按钮按下、热点聚焦、命题钉选吸附、标签激活）。
+- **面板展开与收起 (Panels & Drawers)**: `250ms`（测绘侧栏飞入、索引抽屉滑动、热点弹窗展开）。
+- **主要视图切换 (View Transitions)**: `400ms`（星系 ↔ 舰桥 ↔ 索引 ↔ 地表戏台，配合 Framer Motion / CSS opacity & backdrop-blur）。
+- **过场与降落镜头 (Cinematic Sequences)**: `800ms - 1200ms`（大气层俯冲阶段切换、3D 相机焦点平滑 Lerp、真相确证全息爆发）。
+
+### 6.2 缓动曲线 (Easing Curves)
+| 动效类型 | 贝塞尔曲线值 (`cubic-bezier`) | 适用场景 |
+|---|---|---|
+| **Natural / Standard** | `cubic-bezier(0.4, 0.0, 0.2, 1.0)` | 通用界面元素位移、色彩与透明度渐变 |
+| **Decelerate / Entrance** | `cubic-bezier(0.0, 0.0, 0.2, 1.0)` | 模态框弹出、测绘抽屉滑入、提示气泡出现 |
+| **Accelerate / Exit** | `cubic-bezier(0.4, 0.0, 1.0, 1.0)` | 面板关闭、退回轨道、过场元素淡出 |
+| **Camera & Holo Lerp** | `cubic-bezier(0.16, 1.0, 0.3, 1.0)` | R3F 3D 摄像机聚焦星球、全息光圈扩散与吸收 |
+| **Snap Spring** | `cubic-bezier(0.34, 1.56, 0.64, 1.0)` | 命题卡片钉入索引槽的微弹簧吸附反馈 |
+
+### 6.3 加载与流式状态 (Loading & Streaming States)
+1. **全息扫描线 (Holographic Scanline Cycle)**: 3s 垂直线性往复扫描（`linear-gradient` 扫描带 `translateY(0%) -> translateY(100%)`）。
+2. **量子脉冲 (Quantum Resonate Pulse)**: 2.0s 正弦波明暗循环（`opacity: 0.35` ↔ `1.0`, `scale: 0.95` ↔ `1.05`），用于未探索星球与信标载波。
+3. **电离层流体 (Atmospheric Descent Stream)**: 高频遥测数字与高度进度条平滑递减（50ms 采样步进），伴随 CRT 等离子体红黄渐变。
+4. **终端打字机流式 (Teletype Streaming)**: 单字步进 18ms - 25ms，快进模式 3ms - 5ms，光标 1.0s 闪烁（`blink 1s step-start infinite`）。
+
+### 6.4 微交互状态响应 (Micro-Interaction Feedback)
+- **Hover**: 边框辉光增强（`box-shadow: 0 0 12px rgba(56, 189, 248, 0.35)`），文本色转为高亮天青/琥珀，轻微放大 `scale(1.02)`。
+- **Active / Pressed**: 瞬时下沉 `scale(0.98)`，内发光增强（`inset 0 0 12px rgba(56, 189, 248, 0.2)`）。
+- **Truth Verified Burst**: 全息径向光环扩散（`scale: 0.5 -> 2.5`，`opacity: 1 -> 0`，伴随金色粒子震颤与星图节点同步点亮）。
+
