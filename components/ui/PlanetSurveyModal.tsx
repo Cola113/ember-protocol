@@ -9,6 +9,7 @@ interface PlanetSurveyModalProps {
   onClose: () => void;
   onLand: (planet: PlanetDef, site: LandingSite) => void;
   collectedPropositions: string[];
+  completedHotspotIds?: string[];
 }
 
 export default function PlanetSurveyModal({
@@ -16,6 +17,7 @@ export default function PlanetSurveyModal({
   onClose,
   onLand,
   collectedPropositions,
+  completedHotspotIds = [],
 }: PlanetSurveyModalProps) {
   const [selectedSite, setSelectedSite] = useState<LandingSite>(
     planet.landing_sites[0] || { id: "default", name: "Orbital Beacon", hotspots: [] }
@@ -90,12 +92,13 @@ export default function PlanetSurveyModal({
           </div>
           <div className="space-y-2">
             {planet.landing_sites.map((site) => {
-              const siteProps = site.hotspots
-                .map((h) => h.proposition)
-                .filter(Boolean) as string[];
               const isSiteFullyExplored =
-                siteProps.length > 0 &&
-                siteProps.every((p) => collectedPropositions.includes(p));
+                site.hotspots.length > 0 &&
+                site.hotspots.every(
+                  (h) =>
+                    completedHotspotIds.includes(h.id) ||
+                    (h.proposition && collectedPropositions.includes(h.proposition))
+                );
 
               return (
                 <div

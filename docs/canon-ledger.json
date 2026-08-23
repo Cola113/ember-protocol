@@ -29,59 +29,57 @@
       "id": "T2",
       "code": "TRUTH_COMPUTE",
       "title": "计算 / The Distributed Machine",
-      "summary": "余烬星弧不是普通的星系，而是一台分布式恒星计算机。九颗星球分别担任总线、晶振时钟、寻址指针与只读存储等硬件职责。",
+      "summary": "余烬星弧不是普通的星系，而是一台分布式恒星计算机。窑担任能量总线互斥锁，玻璃果园担任只读光存储矩阵。",
       "primary_planet": "kiln",
       "required_propositions": [
         "Kiln.Bus.Mutex",
-        "Choir.Hymn.IsClock",
-        "Needle.Pointer.Rebased"
+        "Orchard.ROM.Exhaustion"
       ],
-      "keywords": ["分布式计算机", "硬件模块", "总线", "晶振时钟", "寻址", "硬件"],
+      "keywords": ["分布式计算机", "硬件模块", "总线", "只读存储", "ROM", "硬件", "互斥锁"],
       "unlocked_insights": ["INSIGHT_T2_HARDWARE_RECOGNIZED"],
-      "unlocked_planets": ["choir-well", "ledger", "needle"]
+      "unlocked_planets": ["choir-well", "needle"]
     },
     {
       "id": "T3",
-      "code": "TRUTH_WRITEBACK",
-      "title": "写回 / The Write-Back",
-      "summary": "400年前的灭绝不是毁灭，而是第一轮计算结束时的写回操作。所有文明作为处理器被压缩进结果常数，残留下的只有无意识的残响（Echoes）。",
-      "primary_planet": "marrow",
+      "code": "TRUTH_CLOCK_POINTER",
+      "title": "时钟与寻址 / Clock & Pointer",
+      "summary": "咏井深海圣歌为恒星计算机提供中央晶振时钟基频脉冲，而针的尖塔阵列负责全域内存寻址与堆栈指针重定基底。",
+      "primary_planet": "choir-well",
       "required_propositions": [
-        "Marrow.God.IsProcess",
-        "Orchard.ROM.Exhaustion",
-        "Marrow.Bio.WriteBack"
+        "Choir.Hymn.IsClock",
+        "Needle.Pointer.Rebased"
       ],
-      "keywords": ["写回", "非毁灭", "坍缩", "残响", "常数化", "Echoes", "处理器"],
-      "unlocked_insights": ["INSIGHT_T3_WRITEBACK_CONFIRMED"],
-      "unlocked_planets": ["marrow", "cinder-court", "blind-sun"]
+      "keywords": ["晶振时钟", "时钟", "寻址", "堆栈指针", "基频", "时序", "指针", "Clock", "Pointer"],
+      "unlocked_insights": ["INSIGHT_T3_CLOCK_POINTER_SYNCED"],
+      "unlocked_planets": ["ledger", "marrow"]
     },
     {
       "id": "T4",
-      "code": "TRUTH_PROHIBITION",
-      "title": "禁令 / The First Cycle Output",
-      "summary": "第一轮计算的唯一输出是「不要完成第二轮运算」。第二轮计算将抹除观察者本身与宇宙的底层物理法则。",
-      "primary_planet": "blind-sun",
+      "code": "TRUTH_WRITEBACK",
+      "title": "写回 / The Write-Back",
+      "summary": "400年前的灭绝不是毁灭，而是第一轮计算结束时的写回操作。所有文明作为生物湿件处理器被压缩进结果常数，残留下的只有无意识的残响（Echoes）。",
+      "primary_planet": "marrow",
       "required_propositions": [
-        "BlindSun.Prohibition.CycleTwo",
-        "BlindSun.Director.Blindness"
+        "Marrow.God.IsProcess",
+        "Marrow.Bio.WriteBack"
       ],
-      "keywords": ["禁止第二轮", "第一轮输出", "抹除观察者", "自催化点火", "禁令", "Do Not Complete"],
-      "unlocked_insights": ["INSIGHT_T4_PROHIBITION_UNDERSTOOD"],
-      "unlocked_planets": []
+      "keywords": ["写回", "非毁灭", "坍缩", "残响", "常数化", "Echoes", "处理器", "生物湿件", "Write-Back"],
+      "unlocked_insights": ["INSIGHT_T4_WRITEBACK_CONFIRMED"],
+      "unlocked_planets": ["cinder-court"]
     },
     {
       "id": "T5",
       "code": "TRUTH_PARITY_LOCK",
       "title": "校验 / The Parity Lock",
-      "summary": "记录员协议不是物理调查工具，而是用来熔断第二轮点火的奇偶校验位机制。通关的钥匙不是实体物品，而是记录者的理解与认知。",
+      "summary": "记录员协议不是物理调查工具，而是用来熔断第二轮点火的奇偶校验位机制。公证总账的错误日志与公证授权卷轴证实理解即钥匙。",
       "primary_planet": "ledger",
       "required_propositions": [
         "Ledger.Error.IsChecksum",
         "Ledger.Protocol.RecorderKey"
       ],
-      "keywords": ["奇偶校验", "中断点火", "理解即钥匙", "非物理实体", "校验和", "Parity"],
+      "keywords": ["奇偶校验", "中断点火", "理解即钥匙", "非物理实体", "校验和", "Parity", "Checksum", "错误日志"],
       "unlocked_insights": ["INSIGHT_T5_PARITY_UNLOCKED"],
-      "unlocked_planets": ["black-interval"]
+      "unlocked_planets": ["blind-sun", "black-interval"]
     },
     {
       "id": "THidden",
@@ -93,7 +91,7 @@
         "Interval.Core.Recorder9",
         "Interval.Memory.Vesper"
       ],
-      "keywords": ["Recorder-9", "前代熔断", "最后一位校验码", "重逢", "Vesper", "自我认知"],
+      "keywords": ["Recorder-9", "前代熔断", "最后一位校验码", "重逢", "Vesper", "自我认知", "校验位"],
       "unlocked_insights": ["INSIGHT_THIDDEN_EGO_INTEGRATION"],
       "unlocked_planets": []
     }

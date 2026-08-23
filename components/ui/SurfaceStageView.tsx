@@ -36,6 +36,8 @@ interface SurfaceStageViewProps {
   onReturnOrbit: () => void;
   onCollectProposition: (code: string, text: string) => void;
   collectedPropositions: string[];
+  completedHotspotIds?: string[];
+  onCompleteHotspot?: (hotspotId: string) => void;
 }
 
 type Hotspot = LandingSite["hotspots"][number];
@@ -46,9 +48,19 @@ export default function SurfaceStageView({
   onReturnOrbit,
   onCollectProposition,
   collectedPropositions,
+  completedHotspotIds = [],
+  onCompleteHotspot,
 }: SurfaceStageViewProps) {
   const [activeModal, setActiveModal] = useState<Hotspot | null>(null);
   const [dialogueStep, setDialogueStep] = useState(0);
+  const [localCompletedHotspots, setLocalCompletedHotspots] = useState<string[]>([]);
+
+  const markHotspotComplete = (hotspotId: string) => {
+    setLocalCompletedHotspots((prev) =>
+      prev.includes(hotspotId) ? prev : [...prev, hotspotId]
+    );
+    onCompleteHotspot?.(hotspotId);
+  };
 
   // Interactive states for Operative & Inspect puzzles
   // Helix-7
@@ -127,7 +139,10 @@ export default function SurfaceStageView({
       {/* Surface Hotspots Grid */}
       <div className="my-auto max-w-4xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 py-4">
         {site.hotspots.map((hs) => {
-          const isCollected = hs.proposition && collectedPropositions.includes(hs.proposition);
+          const isCollected =
+            completedHotspotIds.includes(hs.id) ||
+            localCompletedHotspots.includes(hs.id) ||
+            Boolean(hs.proposition && collectedPropositions.includes(hs.proposition));
           return (
             <div
               key={hs.id}
@@ -308,6 +323,7 @@ export default function SurfaceStageView({
                               currentStep.propositionReward.text
                             );
                           }
+                          markHotspotComplete(activeModal.id);
                           setActiveModal(null);
                         }}
                         className="w-full py-3 bg-gradient-to-r from-purple-900/50 to-surface border border-purple-500 hover:bg-purple-600 hover:text-void text-purple-200 text-xs font-mono uppercase tracking-wider rounded-sm shadow-md transition-all text-center font-bold"
@@ -381,6 +397,7 @@ export default function SurfaceStageView({
                         "Helix.Signal.Unassigned",
                         "Helix-7 偶极天线捕获未分配信号"
                       );
+                      markHotspotComplete(activeModal.id);
                       setActiveModal(null);
                     }}
                     className="px-6 py-2.5 bg-gradient-to-r from-holo-amber/30 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void disabled:opacity-40 text-holo-amber text-xs font-mono uppercase tracking-wider rounded-sm shadow-holo-amber transition-all"
@@ -440,6 +457,7 @@ export default function SurfaceStageView({
                         "Helix.Beacon.Broadcasting",
                         "Helix-7 校准信标常驻引导广播"
                       );
+                      markHotspotComplete(activeModal.id);
                       setActiveModal(null);
                     }}
                     className="px-6 py-2.5 bg-gradient-to-r from-holo-cyan/30 to-surface border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright text-xs font-mono uppercase tracking-wider rounded-sm shadow-holo-cyan transition-all"
@@ -510,6 +528,7 @@ export default function SurfaceStageView({
                         "Kiln.Bus.Mutex",
                         "Kiln 总线互斥锁与硬件总线控制权"
                       );
+                      markHotspotComplete(activeModal.id);
                       setActiveModal(null);
                     }}
                     className="px-6 py-2.5 bg-gradient-to-r from-holo-amber/30 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void text-holo-amber text-xs font-mono uppercase tracking-wider rounded-sm shadow-holo-amber transition-all"
@@ -593,6 +612,7 @@ export default function SurfaceStageView({
                         "Orchard.ROM.Exhaustion",
                         "Glass Orchard 全区只读存储读取耗尽"
                       );
+                      markHotspotComplete(activeModal.id);
                       setActiveModal(null);
                     }}
                     className="px-6 py-2.5 bg-gradient-to-r from-emerald-900/40 to-surface border border-emerald-400 hover:bg-emerald-400 hover:text-void disabled:opacity-40 text-emerald-300 text-xs font-mono uppercase tracking-wider rounded-sm shadow-sm transition-all"
@@ -665,6 +685,7 @@ export default function SurfaceStageView({
                         "Choir.Hymn.IsClock",
                         "Choir Well 圣歌即中央时钟基频晶振"
                       );
+                      markHotspotComplete(activeModal.id);
                       setActiveModal(null);
                     }}
                     className="px-6 py-2.5 bg-gradient-to-r from-sky-900/40 to-surface border border-sky-400 hover:bg-sky-400 hover:text-void disabled:opacity-40 text-sky-300 text-xs font-mono uppercase tracking-wider rounded-sm shadow-sm transition-all"
@@ -719,6 +740,7 @@ export default function SurfaceStageView({
                         "Ledger.Error.IsChecksum",
                         "Ledger 灰墨热瘟疫实为系统校验和报错"
                       );
+                      markHotspotComplete(activeModal.id);
                       setActiveModal(null);
                     }}
                     className="px-6 py-2.5 bg-gradient-to-r from-amber-900/40 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void text-holo-amber text-xs font-mono uppercase tracking-wider rounded-sm shadow-holo-amber transition-all"
@@ -765,6 +787,7 @@ export default function SurfaceStageView({
                         "Ledger.Protocol.RecorderKey",
                         "Ledger 记录员协议为奇偶校验授权机制"
                       );
+                      markHotspotComplete(activeModal.id);
                       setActiveModal(null);
                     }}
                     className="px-6 py-2.5 bg-gradient-to-r from-amber-900/40 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void text-holo-amber text-xs font-mono uppercase tracking-wider rounded-sm shadow-holo-amber transition-all"
@@ -836,6 +859,7 @@ export default function SurfaceStageView({
                         "Needle.Pointer.Rebased",
                         "Needle 寻址指针重定基底解除迷航"
                       );
+                      markHotspotComplete(activeModal.id);
                       setActiveModal(null);
                     }}
                     className="px-6 py-2.5 bg-gradient-to-r from-indigo-900/40 to-surface border border-indigo-400 hover:bg-indigo-400 hover:text-void disabled:opacity-40 text-indigo-300 text-xs font-mono uppercase tracking-wider rounded-sm shadow-sm transition-all"
@@ -883,6 +907,7 @@ export default function SurfaceStageView({
                         "Marrow.God.IsProcess",
                         "Marrow 肉食神实为生物张量常驻守护进程"
                       );
+                      markHotspotComplete(activeModal.id);
                       setActiveModal(null);
                     }}
                     className="px-6 py-2.5 bg-gradient-to-r from-rose-900/40 to-surface border border-rose-500 hover:bg-rose-500 hover:text-void text-rose-300 text-xs font-mono uppercase tracking-wider rounded-sm shadow-sm transition-all"
@@ -947,6 +972,7 @@ export default function SurfaceStageView({
                         "Marrow.Bio.WriteBack",
                         "Marrow 生物湿件写回与张量固化"
                       );
+                      markHotspotComplete(activeModal.id);
                       setActiveModal(null);
                     }}
                     className="px-6 py-2.5 bg-gradient-to-r from-rose-900/40 to-surface border border-rose-500 hover:bg-rose-500 hover:text-void disabled:opacity-40 text-rose-300 text-xs font-mono uppercase tracking-wider rounded-sm shadow-sm transition-all"
@@ -1007,6 +1033,7 @@ export default function SurfaceStageView({
                         "Cinder.Court.IsSandbox",
                         "Cinder Court 宫廷悲剧实为 UI 沙盒红鲱鱼"
                       );
+                      markHotspotComplete(activeModal.id);
                       setActiveModal(null);
                     }}
                     className="px-6 py-2.5 bg-gradient-to-r from-purple-900/40 to-surface border border-purple-500 hover:bg-purple-600 hover:text-void text-purple-200 text-xs font-mono uppercase tracking-wider rounded-sm shadow-sm transition-all"
@@ -1078,6 +1105,7 @@ export default function SurfaceStageView({
                         "BlindSun.Prohibition.CycleTwo",
                         "Blind Sun 终极禁令：禁止完成第二轮运算"
                       );
+                      markHotspotComplete(activeModal.id);
                       setActiveModal(null);
                     }}
                     className="px-6 py-2.5 bg-gradient-to-r from-slate-700 to-surface border border-slate-400 hover:bg-slate-300 hover:text-void disabled:opacity-40 text-slate-200 text-xs font-mono uppercase tracking-wider rounded-sm shadow-sm transition-all"
@@ -1124,6 +1152,7 @@ export default function SurfaceStageView({
                         "BlindSun.Director.Blindness",
                         "Blind Sun 科学院致盲以阻断自催化点火"
                       );
+                      markHotspotComplete(activeModal.id);
                       setActiveModal(null);
                     }}
                     className="px-6 py-2.5 bg-gradient-to-r from-slate-700 to-surface border border-slate-400 hover:bg-slate-300 hover:text-void text-slate-200 text-xs font-mono uppercase tracking-wider rounded-sm shadow-sm transition-all"
@@ -1186,6 +1215,7 @@ export default function SurfaceStageView({
                         "Interval.Core.Recorder9",
                         "Black Interval 发现自我即第9号奇偶校验位"
                       );
+                      markHotspotComplete(activeModal.id);
                       setActiveModal(null);
                     }}
                     className="px-6 py-2.5 bg-gradient-to-r from-slate-200 to-white text-void font-bold text-xs font-mono uppercase tracking-wider rounded-sm shadow-lg hover:scale-[1.02] transition-all"
@@ -1232,6 +1262,7 @@ export default function SurfaceStageView({
                         "Interval.Memory.Vesper",
                         "Black Interval 晚星核心记忆完整闭环"
                       );
+                      markHotspotComplete(activeModal.id);
                       setActiveModal(null);
                     }}
                     className="px-6 py-2.5 bg-gradient-to-r from-slate-200 to-white text-void font-bold text-xs font-mono uppercase tracking-wider rounded-sm shadow-lg hover:scale-[1.02] transition-all"
@@ -1285,6 +1316,7 @@ export default function SurfaceStageView({
                             `${planet.name} 节点提取命题`
                           );
                         }
+                        markHotspotComplete(activeModal.id);
                         setActiveModal(null);
                       }}
                       className="px-6 py-2.5 bg-holo-cyan/20 border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright text-xs font-mono uppercase rounded-sm shadow-holo-cyan transition-all"

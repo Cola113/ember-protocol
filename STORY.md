@@ -305,21 +305,21 @@
 
 ```mermaid
 graph TD
-    T1[T1: 信号 The Beacon\nHelix-7 广播存在未标记载波] --> T2[T2: 计算 The Machine\nKiln 能量总线证明星球为硬件]
-    T2 --> T3[T3: 写回 The Write-Back\nMarrow 证明生物是运算基板]
-    T3 --> T4[T4: 禁令 The Prohibition\nBlind Sun 揭示第一轮输出]
-    T2 & T3 & T4 --> T5[T5: 校验 The Parity Lock\nLedger 证明理解即终止点火]
+    T1[T1: 信号 The Beacon\nHelix-7 广播存在未标记载波\n解锁 Kiln + Glass Orchard] --> T2[T2: 计算 The Machine\nKiln 总线互斥 + Orchard 只读存储证明硬件\n解锁 Choir Well + Needle]
+    T2 --> T3[T3: 时钟与寻址 The Clock & Pointer\nChoir Well 晶振时钟 + Needle 寻址指针\n解锁 Ledger + Marrow]
+    T3 --> T4[T4: 写回 The Write-Back\nMarrow 生物湿件证明文明被坍缩写回\n解锁 Cinder Court]
+    T3 --> T5[T5: 校验 The Parity Lock\nLedger 证明理解即终止点火\n解锁 Blind Sun + Black Interval]
     T1 & T2 & T3 & T4 & T5 --> THidden[T? 隐藏: 晚星归宿 Identity\nBlack Interval 发现自我即第9校验码]
 ```
 
-| 真相编号 | 锚定名称 | 核心命题 ID 链条 | 玩家将发现的核心概念 | 验证所需关键词 (Synthesis Criteria) |
-|---|---|---|---|---|
-| **T1** | **信号** (The Beacon) | `Helix.Beacon.Broadcasting` + `Helix.Signal.Unassigned` | 星系中存在一条跨星脉冲，它不是求救信号，而是一段引导程序的握手载波。 | `引导程序`, `载波`, `握手`, `非求救`, `Bootstrap` |
-| **T2** | **计算** (The Machine) | `Kiln.Bus.Mutex` + `Choir.Hymn.IsClock` + `Needle.Pointer.Rebased` | 九颗星球是同一台宏大恒星计算机的硬件模块（总线、时钟、寻址、存储）。 | `分布式计算机`, `硬件模块`, `总线`, `晶振时钟`, `寻址` |
-| **T3** | **写回** (The Write-Back) | `Marrow.God.IsProcess` + `Orchard.ROM.Exhaustion` + `Marrow.Bio.WriteBack` | 400年前的灭绝不是毁灭，而是运算完成时的“写回内存”，文明被坍缩为结果常数。 | `写回`, `非毁灭`, `坍缩`, `残响`, `常数化` |
-| **T4** | **禁令** (The Prohibition) | `BlindSun.Prohibition.CycleTwo` + `BlindSun.Director.Blindness` | 第一轮计算的输出是「不要完成第二轮」；第二轮将把外部宇宙与物理法则本身抹除。 | `禁止第二轮`, `第一轮输出`, `抹除观察者`, `自催化点火` |
-| **T5** | **校验** (The Parity Lock) | `Ledger.Error.IsChecksum` + `Ledger.Protocol.RecorderKey` | 记录员协议不是调查工具，而是中断第二轮点火的奇偶校验机制；钥匙不是物品，而是认知。 | `奇偶校验`, `中断点火`, `理解即钥匙`, `非物理实体` |
-| **T?** | **晚星归宿** (The Parity Bit) | `Interval.Core.Recorder9` + `Interval.Memory.Vesper` | 玩家自己 Vesper 就是第9号校验位，前8代均已在上一周期熔断，本次苏醒是最后的闭环。 | `Recorder-9`, `前代熔断`, `最后一位校验码`, `重逢` |
+| 真相编号 | 锚定名称 | 核心命题 ID 链条 | 玩家将发现的核心概念 | 验证所需关键词 (Synthesis Criteria) | 解锁星球 |
+|---|---|---|---|---|---|
+| **T1** | **信号** (The Beacon) | `Helix.Beacon.Broadcasting` + `Helix.Signal.Unassigned` | 星系中存在一条跨星脉冲，它不是求救信号，而是一段引导程序的握手载波。 | `引导程序`, `载波`, `握手`, `非求救`, `Bootstrap` | 窑 (Kiln), 玻璃果园 (Glass Orchard) |
+| **T2** | **计算** (The Machine) | `Kiln.Bus.Mutex` + `Orchard.ROM.Exhaustion` | 九颗星球是同一台宏大恒星计算机的硬件模块（总线互斥、只读光存储）。 | `分布式计算机`, `硬件模块`, `总线`, `只读存储`, `ROM`, `硬件` | 咏井 (Choir Well), 针 (Needle) |
+| **T3** | **时钟与寻址** (Clock & Pointer) | `Choir.Hymn.IsClock` + `Needle.Pointer.Rebased` | 咏井深海圣歌为计算机中央晶振时钟，针的尖塔阵列负责全域内存寻址与堆栈指针重定基底。 | `晶振时钟`, `时钟`, `寻址`, `堆栈指针`, `基频`, `指针` | 总账 (Ledger), 髓 (Marrow) |
+| **T4** | **写回** (The Write-Back) | `Marrow.God.IsProcess` + `Marrow.Bio.WriteBack` | 400年前的灭绝不是毁灭，而是运算完成时的“写回内存”，文明湿件被坍缩为结果常数。 | `写回`, `非毁灭`, `坍缩`, `残响`, `常数化`, `生物湿件` | 烬廷 (Cinder Court) |
+| **T5** | **校验** (The Parity Lock) | `Ledger.Error.IsChecksum` + `Ledger.Protocol.RecorderKey` | 记录员协议不是调查工具，而是中断第二轮点火的奇偶校验机制；钥匙不是物品，而是认知。 | `奇偶校验`, `中断点火`, `理解即钥匙`, `非物理实体`, `校验和` | 盲日 (Blind Sun), 黑间隔 (Black Interval) |
+| **T?** | **晚星归宿** (The Parity Bit) | `Interval.Core.Recorder9` + `Interval.Memory.Vesper` | 玩家自己 Vesper 就是第9号校验位，前8代均已在上一周期熔断，本次苏醒是最后的闭环。 | `Recorder-9`, `前代熔断`, `最后一位校验码`, `重逢`, `Vesper` | 无 (触发终局) |
 
 ---
 
