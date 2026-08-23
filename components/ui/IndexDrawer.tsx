@@ -14,7 +14,7 @@ import {
   Lightbulb,
   Check,
   ShieldCheck,
-  Zap
+  Lock
 } from "lucide-react";
 
 interface IndexDrawerProps {
@@ -22,6 +22,15 @@ interface IndexDrawerProps {
   collectedPropositions: string[];
   believedTruths: string[];
   onTruthBelieved: (truthId: string) => void;
+}
+
+interface EvalResult {
+  truth_id?: string;
+  verdict: "believed" | "suspected" | "partial";
+  coverage_score: number;
+  consistency_score: number;
+  feedback: string;
+  memory_recovered_delta?: number;
 }
 
 export default function IndexDrawer({
@@ -32,7 +41,7 @@ export default function IndexDrawer({
 }: IndexDrawerProps) {
   const [selectedTruth, setSelectedTruth] = useState<AnchorTruth>(CANON.anchorTruths[0]);
   const [hypothesis, setHypothesis] = useState("");
-  const [evalResult, setEvalResult] = useState<any | null>(null);
+  const [evalResult, setEvalResult] = useState<EvalResult | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Derive truth state machine: unknown | encountered | suspected | believed
@@ -50,8 +59,14 @@ export default function IndexDrawer({
     return "unknown";
   };
 
+  const missingProps = selectedTruth.required_propositions.filter(
+    (p) => !collectedPropositions.includes(p)
+  );
+  const hasAllRequiredProps = missingProps.length === 0;
+  const isAlreadyBelieved = believedTruths.includes(selectedTruth.id);
+
   const handleSynthesize = async () => {
-    if (!hypothesis.trim()) return;
+    if (!hypothesis.trim() || !hasAllRequiredProps) return;
     setLoading(true);
 
     try {
@@ -64,28 +79,42 @@ export default function IndexDrawer({
           pinnedPropositions: collectedPropositions,
         }),
       });
-      const data = await res.json();
+      const data: EvalResult = await res.json();
       setEvalResult(data);
       if (data.verdict === "believed") {
         onTruthBelieved(selectedTruth.id);
       }
     } catch (e) {
-      // Local robust canonical heuristic fallback
+      // Local robust canonical heuristic fallback with strict proposition guard
+      if (!hasAllRequiredProps) {
+        setEvalResult({
+          truth_id: selectedTruth.id,
+          verdict: "partial",
+          coverage_score: 0.2,
+          consistency_score: 0.4,
+          feedback: `前置命题未集齐：必须先在相关星球收集全部必要命题（缺少：${missingProps.join(", ")}）。`,
+          memory_recovered_delta: 0,
+        });
+        return;
+      }
+
       const requiredKeywords = selectedTruth.keywords || [];
       const textLower = hypothesis.toLowerCase();
       const matchedKeywords = requiredKeywords.filter((kw) =>
         textLower.includes(kw.toLowerCase())
       );
 
-      const isPass = matchedKeywords.length >= 1 || hypothesis.length >= 10;
+      const isPass = matchedKeywords.length >= 1;
 
-      const result = {
-        verdict: isPass ? "believed" : "suspected",
-        coverage_score: isPass ? 0.96 : 0.45,
+      const result: EvalResult = {
+        truth_id: selectedTruth.id,
+        verdict: isPass ? "believed" : "partial",
+        coverage_score: isPass ? 0.95 : 0.45,
         consistency_score: isPass ? 0.98 : 0.6,
         feedback: isPass
           ? `Curator 评估通过：假说准确反映了正典事实【${selectedTruth.title}】。已确证为 BELIEVED。`
           : `假说推论尚未完全收敛，缺少核心关键推论（如：${requiredKeywords.slice(0, 3).join(", ")}）。请进一步完善。`,
+        memory_recovered_delta: isPass ? 0.103 : 0,
       };
 
       setEvalResult(result);
@@ -276,7 +305,8 @@ export default function IndexDrawer({
               <span>陈述你对该真相的理解：</span>
               <button
                 onClick={loadDraftHypothesis}
-                className="text-[10px] text-holo-cyan hover:text-holo-amber flex items-center gap-1 underline transition-colors"
+                disabled={!hasAllRequiredProps}
+                className="text-[10px] text-holo-cyan hover:text-holo-amber disabled:opacity-30 disabled:hover:text-holo-cyan flex items-center gap-1 underline transition-colors"
               >
                 <Lightbulb className="w-3 h-3" />
                 <span>快速载入推论范例</span>
@@ -286,17 +316,37 @@ export default function IndexDrawer({
             <textarea
               value={hypothesis}
               onChange={(e) => setHypothesis(e.target.value)}
-              placeholder="例如：Helix-7 的信标并非求救信号，而是整台恒星计算机初始引导扇区的常驻握手载波与引导程序..."
-              className="w-full h-32 bg-surface-dark/90 border border-holo-cyan/20 focus:border-holo-amber p-3 text-xs font-mono text-holo-bright rounded-sm outline-none resize-none leading-relaxed transition-colors mb-3"
+              placeholder={
+                hasAllRequiredProps
+                  ? "例如：Helix-7 的信标并非求救信号，而是整台恒星计算机初始引导扇区的常驻握手载波与引导程序..."
+                  : `前置命题未集齐：还需收集 ${missingProps.length} 个必要命题 (${missingProps.join(", ")}) 才能开启综合推演。`
+              }
+              disabled={!hasAllRequiredProps && !isAlreadyBelieved}
+              className="w-full h-32 bg-surface-dark/90 border border-holo-cyan/20 focus:border-holo-amber disabled:opacity-40 p-3 text-xs font-mono text-holo-bright rounded-sm outline-none resize-none leading-relaxed transition-colors mb-2"
             />
+
+            {/* Required propositions status warning */}
+            {!hasAllRequiredProps && !isAlreadyBelieved && (
+              <div className="p-2.5 bg-holo-amber/10 border border-holo-amber/30 rounded-sm text-[11px] font-mono text-holo-amber flex items-center gap-2 mb-2">
+                <Lock className="w-3.5 h-3.5 shrink-0" />
+                <span>
+                  未满足前置条件：需收集全部 {selectedTruth.required_propositions.length} 个必要命题（缺少 {missingProps.length} 个）
+                </span>
+              </div>
+            )}
 
             <button
               onClick={handleSynthesize}
-              disabled={loading || !hypothesis.trim()}
-              className="w-full py-2.5 bg-gradient-to-r from-holo-amber/30 via-holo-amber/20 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void disabled:opacity-40 text-holo-amber text-xs font-mono uppercase tracking-wider rounded-sm shadow-holo-amber flex items-center justify-center gap-2 transition-all mb-3"
+              disabled={loading || !hypothesis.trim() || !hasAllRequiredProps}
+              className="w-full py-2.5 bg-gradient-to-r from-holo-amber/30 via-holo-amber/20 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-holo-amber text-holo-amber text-xs font-mono uppercase tracking-wider rounded-sm shadow-holo-amber flex items-center justify-center gap-2 transition-all mb-3"
             >
               {loading ? (
                 <span>EVALUATING HYPOTHESIS...</span>
+              ) : !hasAllRequiredProps ? (
+                <>
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>需要先收集 {missingProps.length} 个前置命题</span>
+                </>
               ) : (
                 <>
                   <Send className="w-3.5 h-3.5" />
@@ -330,7 +380,11 @@ export default function IndexDrawer({
               ) : (
                 <div className="text-holo-muted flex items-center gap-2 my-auto">
                   <HelpCircle className="w-4 h-4 text-holo-cyan" />
-                  <span>Curator 叙事引擎待命。请在上方输入你对该真相的理解并提交。</span>
+                  <span>
+                    {hasAllRequiredProps
+                      ? "必要前置命题已集齐。请在上方陈述你对该真相的理解并提交评估。"
+                      : `请先在相关星球探索收集所需的前置命题（缺少：${missingProps.join(", ")}）。`}
+                  </span>
                 </div>
               )}
             </div>

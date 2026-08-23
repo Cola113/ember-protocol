@@ -138,4 +138,3 @@ Astral Noir 拒绝浮夸的彩虹渐变与纯紫暗色，采用极具物理质�
 - **Hover**: 边框辉光增强（`box-shadow: 0 0 12px rgba(56, 189, 248, 0.35)`），文本色转为高亮天青/琥珀，轻微放大 `scale(1.02)`。
 - **Active / Pressed**: 瞬时下沉 `scale(0.98)`，内发光增强（`inset 0 0 12px rgba(56, 189, 248, 0.2)`）。
 - **Truth Verified Burst**: 全息径向光环扩散（`scale: 0.5 -> 2.5`，`opacity: 1 -> 0`，伴随金色粒子震颤与星图节点同步点亮）。
-

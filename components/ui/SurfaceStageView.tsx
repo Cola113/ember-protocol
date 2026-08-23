@@ -25,6 +25,8 @@ interface SurfaceStageViewProps {
   collectedPropositions: string[];
 }
 
+type Hotspot = LandingSite["hotspots"][number];
+
 export default function SurfaceStageView({
   planet,
   site,
@@ -32,7 +34,7 @@ export default function SurfaceStageView({
   onCollectProposition,
   collectedPropositions,
 }: SurfaceStageViewProps) {
-  const [activeModal, setActiveModal] = useState<any | null>(null);
+  const [activeModal, setActiveModal] = useState<Hotspot | null>(null);
   const [dialogueStep, setDialogueStep] = useState(0);
 
   // Mini-interactive states for puzzles/operations
@@ -40,7 +42,7 @@ export default function SurfaceStageView({
   const [mutexRoute, setMutexRoute] = useState<"A" | "B" | "MUTEX_LOCKED">("A");
   const [beaconCalibrated, setBeaconCalibrated] = useState(false);
 
-  const handleHotspotClick = (hotspot: any) => {
+  const handleHotspotClick = (hotspot: Hotspot) => {
     setActiveModal(hotspot);
     setDialogueStep(0);
   };

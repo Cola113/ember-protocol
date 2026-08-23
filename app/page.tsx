@@ -93,12 +93,21 @@ export default function HomePage() {
   };
 
   const handleTruthBelieved = (truthId: string) => {
+    const truthObj = CANON.anchorTruths.find((t) => t.id === truthId);
+    if (!truthObj) return;
+
+    // Defensive guard: confirm all required propositions are collected before believing
+    const hasAllRequired = truthObj.required_propositions.every((p) =>
+      collectedPropositions.includes(p)
+    );
+    if (!hasAllRequired) {
+      console.warn(`Truth ${truthId} synthesis rejected: missing required propositions`);
+      return;
+    }
+
     if (!believedTruths.includes(truthId)) {
       setBelievedTruths((prev) => [...prev, truthId]);
-      const truthObj = CANON.anchorTruths.find((t) => t.id === truthId);
-      if (truthObj) {
-        setUnlockedTruthOverlay(truthObj);
-      }
+      setUnlockedTruthOverlay(truthObj);
     }
   };
 
