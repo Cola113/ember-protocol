@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>余烬协议 // 3D 星系总览 · Galaxy View</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void: #050811;
+      --bg-surface: rgba(10, 20, 35, 0.82);
+      --border-holo: rgba(56, 189, 248, 0.22);
+      --primary-cyan: #38bdf8;
+      --accent-amber: #f59e0b;
+      --text-bright: #e0f2fe;
+      --text-muted: #64748b;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0; padding: 0;
+      user-select: none;
+    }
+    body {
+      background: var(--bg-void);
+      color: var(--text-bright);
+      font-family: 'JetBrains Mono', monospace;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .crt-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%),
+                  linear-gradient(90deg, rgba(56, 189, 248, 0.02), rgba(0, 0, 0, 0.01), rgba(245, 158, 11, 0.02));
+      background-size: 100% 3px, 4px 100%;
+      pointer-events: none;
+      z-index: 100;
+    }
+    .vignette {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      box-shadow: inset 0 0 160px rgba(0, 0, 0, 0.9);
+      pointer-events: none;
+      z-index: 99;
+    }
+
+    /* Top HUD */
+    .top-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 64px;
+      padding: 0 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(180deg, rgba(5, 8, 17, 0.95), transparent);
+      border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+      z-index: 50;
+    }
+    .title-group {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .title-text {
+      font-family: 'Cinzel', serif;
+      font-size: 18px;
+      letter-spacing: 0.15em;
+      color: var(--text-bright);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      background: rgba(8, 18, 32, 0.9);
+      border: 1px solid var(--border-holo);
+      border-radius: 2px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--primary-cyan);
+    }
+    .badge-amber {
+      color: var(--accent-amber);
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+    .pulse-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px currentColor;
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    .hud-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .btn-hud {
+      background: rgba(10, 20, 35, 0.85);
+      border: 1px solid var(--border-holo);
+      color: var(--text-bright);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      padding: 8px 16px;
+      border-radius: 2px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    .btn-hud:hover, .btn-hud.active {
+      background: rgba(56, 189, 248, 0.18);
+      border-color: var(--primary-cyan);
+      color: var(--primary-cyan);
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+    }
+
+    /* 3D View Canvas Container */
+    #galaxy-canvas {
+      width: 100vw;
+      height: 100vh;
+      position: absolute;
+      top: 0; left: 0;
+      z-index: 10;
+      cursor: grab;
+    }
+    #galaxy-canvas:active {
+      cursor: grabbing;
+    }
+
+    /* Bottom Status Bar */
+    .bottom-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 52px;
+      padding: 0 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(0deg, rgba(5, 8, 17, 0.95), transparent);
+      border-top: 1px solid rgba(56, 189, 248, 0.12);
+      font-size: 11px;
+      color: var(--text-muted);
+      z-index: 50;
+    }
+    .stat-item {
+      display: flex;
+      gap: 8px;
+    }
+    .stat-val {
+      color: var(--primary-cyan);
+      font-weight: 600;
+    }
+
+    /* Fly-in Planet Quick Peek Drawer */
+    .planet-peek-modal {
+      position: absolute;
+      top: 90px;
+      right: 32px;
+      width: 360px;
+      background: var(--bg-surface);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-holo);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.75), inset 0 0 20px rgba(56, 189, 248, 0.05);
+      border-radius: 4px;
+      padding: 24px;
+      z-index: 60;
+      display: none;
+      animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes slideIn {
+      0% { opacity: 0; transform: translateX(20px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+    .peek-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .peek-name {
+      font-family: 'Cinzel', serif;
+      font-size: 16px;
+      color: var(--text-bright);
+    }
+    .peek-role {
+      font-size: 11px;
+      color: var(--primary-cyan);
+      margin-top: 4px;
+    }
+    .peek-desc {
+      font-size: 12px;
+      line-height: 1.7;
+      color: #cbd5e1;
+      margin-bottom: 16px;
+    }
+    .peek-meta {
+      font-size: 11px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 10px 12px;
+      border-radius: 2px;
+      border-left: 2px solid var(--primary-cyan);
+      margin-bottom: 18px;
+    }
+    .btn-enter-survey {
+      width: 100%;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(8, 18, 32, 0.95));
+      border: 1px solid var(--primary-cyan);
+      color: var(--text-bright);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      padding: 12px;
+      border-radius: 2px;
+      cursor: pointer;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .btn-enter-survey:hover {
+      background: var(--primary-cyan);
+      color: var(--bg-void);
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="crt-overlay"></div>
+  <div class="vignette"></div>
+
+  <!-- Top Navigation -->
+  <div class="top-bar">
+    <div class="title-group">
+      <div class="title-text">EMBER SPUR // 3D MAP</div>
+      <div class="badge"><span class="pulse-dot"></span><span>9 ACTIVE NODES</span></div>
+      <div class="badge badge-amber"><span>EMBER CYCLE: 39:42</span></div>
+    </div>
+    <div class="hud-controls">
+      <button class="btn-hud" id="btnToggleLinks" onclick="toggleClueLines()">
+        <span id="linkIndicator">◉</span> <span>INFERENCE NETWORK [L]</span>
+      </button>
+      <button class="btn-hud" onclick="window.location.href='index-panel.html'">
+        <span>SYNTHESIS INDEX [TAB]</span>
+      </button>
+      <button class="btn-hud" onclick="window.location.href='ship-interior.html'">
+        <span>ISV THRESHOLD</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Galaxy Canvas (2D/3D Star Arc Simulation) -->
+  <canvas id="galaxy-canvas"></canvas>
+
+  <!-- Fly-in Planet Peek Drawer -->
+  <div class="planet-peek-modal" id="peekModal">
+    <div class="peek-header">
+      <div>
+        <div class="peek-name" id="peekName">HELIX-7</div>
+        <div class="peek-role" id="peekRole">BOOTSTRAP LOADER / BIOS</div>
+      </div>
+      <button style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;" onclick="closePeek()">✕</button>
+    </div>
+    <div class="peek-desc" id="peekDesc">
+      矮行星监听站。持续向星系广播未标记载波。地表残留引导信标与偶极天线阵列。
+    </div>
+    <div class="peek-meta" id="peekMeta">
+      <div>STATUS: MAPPED // 信标持续广播中</div>
+      <div style="margin-top:4px; color:var(--primary-cyan);">LANDING SITES: 2 DISCOVERED</div>
+    </div>
+    <button class="btn-enter-survey" id="btnSurveyLink" onclick="goToSurvey()">
+      <span>进入轨道测绘 / 降落</span>
+      <span>→</span>
+    </button>
+  </div>
+
+  <!-- Bottom Telemetry -->
+  <div class="bottom-bar">
+    <div class="stat-item">
+      <span>SELECTED NODE:</span>
+      <span class="stat-val" id="selectedNodeLabel">NONE (HOVER OR CLICK PLANET)</span>
+    </div>
+    <div class="stat-item">
+      <span>CAMERA MODE:</span>
+      <span class="stat-val">ORBITAL LERP</span>
+    </div>
+    <div class="stat-item">
+      <span>HOLD LEFT MOUSE + DRAG TO ROTATE // SCROLL TO ZOOM</span>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('galaxy-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    const planets = [
+      { id: 'helix-7', name: '螺旋-7 (Helix-7)', role: '初始引导扇区 (Bootstrap)', x: -380, y: 80, z: -20, r: 12, color: '#38bdf8', status: 'MAPPED', desc: '矮行星监听站。持续广播未标记载波。' },
+      { id: 'kiln', name: '窑 (Kiln)', role: '能量总线 (Bus Mutex)', x: -260, y: -90, z: 40, r: 15, color: '#fb923c', status: 'SIGNAL DETECTED', desc: '黑曜石熔炉重工业星。能量互斥锁引发虚假内战。' },
+      { id: 'glass-orchard', name: '玻璃果园 (Glass Orchard)', role: '只读光存储 (ROM)', x: -140, y: 130, z: -60, r: 14, color: '#a7f3d0', status: 'SIGNAL DETECTED', desc: '超纯二氧化硅晶体林。大旱实为全区光数据读取。' },
+      { id: 'choir-well', name: '咏井 (Choir Well)', role: '晶振时钟 (System Clock)', x: -10, y: -150, z: 80, r: 16, color: '#38bdf8', status: 'UNMAPPED', desc: '重水海洋谐振塔。圣歌即系统时钟基频。' },
+      { id: 'ledger', name: '总账 (Ledger)', role: '错误日志与校验和 (Checksum)', x: 130, y: 70, z: -40, r: 15, color: '#facc15', status: 'UNMAPPED', desc: '哥特官僚都市。灰墨热实为校验和不一致报错。' },
+      { id: 'needle', name: '针 (Needle)', role: '寻址指针 (Stack Pointer)', x: 250, y: -80, z: 50, r: 13, color: '#e0e7ff', status: 'UNMAPPED', desc: '金属尖塔卫星。磁极颠倒实为坐标系基底偏移。' },
+      { id: 'marrow', name: '髓 (Marrow)', role: '生物基板 (Wetware TPU)', x: 360, y: 110, z: -20, r: 18, color: '#f43f5e', status: 'UNMAPPED', desc: '有机血肉世界。肉食之神实为核心常驻进程。' },
+      { id: 'cinder-court', name: '烬廷 (Cinder Court)', role: '用户沙盒 [红鲱鱼] (Dummy Sandbox)', x: 460, y: -30, z: 60, r: 14, color: '#c084fc', status: 'UNMAPPED', desc: '巴洛克阴谋宫廷。政治悲剧实为精巧的红鲱鱼。' },
+      { id: 'blind-sun', name: '盲日 (The Blind Sun)', role: '根控制台 (Root Hypervisor)', x: 570, y: 40, z: -70, r: 20, color: '#94a3b8', status: 'UNMAPPED', desc: '日食科学院。关停观测界面以阻止第二轮点火。' }
+    ];
+
+    let showClueLines = true;
+    let selectedPlanet = null;
+    let hoveredPlanet = null;
+    let rotX = 0.2;
+    let rotY = 0.1;
+    let isDragging = false;
+    let lastMouseX = 0;
+    let lastMouseY = 0;
+    let zoom = 1.0;
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Mouse Controls
+    canvas.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      lastMouseX = e.clientX;
+      lastMouseY = e.clientY;
+    });
+    window.addEventListener('mouseup', () => isDragging = false);
+    window.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        rotY += (e.clientX - lastMouseX) * 0.005;
+        rotX += (e.clientY - lastMouseY) * 0.005;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+      }
+      checkHover(e.clientX, e.clientY);
+    });
+    canvas.addEventListener('wheel', (e) => {
+      zoom += e.deltaY * -0.001;
+      zoom = Math.max(0.6, Math.min(2.0, zoom));
+    });
+
+    canvas.addEventListener('click', (e) => {
+      if (hoveredPlanet) {
+        selectPlanet(hoveredPlanet);
+      }
+    });
+
+    function checkHover(mx, my) {
+      hoveredPlanet = null;
+      const cx = width / 2;
+      const cy = height / 2;
+
+      for (let p of planets) {
+        // Project 3D to 2D
+        const proj = project3D(p.x, p.y, p.z);
+        const dist = Math.hypot(mx - (cx + proj.x), my - (cy + proj.y));
+        if (dist < p.r * zoom + 12) {
+          hoveredPlanet = p;
+          document.getElementById('selectedNodeLabel').innerText = `${p.name} // ${p.role}`;
+          break;
+        }
+      }
+      if (!hoveredPlanet && !selectedPlanet) {
+        document.getElementById('selectedNodeLabel').innerText = 'NONE (HOVER OR CLICK PLANET)';
+      }
+    }
+
+    function project3D(x, y, z) {
+      // Rotate Y
+      let x1 = x * Math.cos(rotY) - z * Math.sin(rotY);
+      let z1 = z * Math.cos(rotY) + x * Math.sin(rotY);
+      // Rotate X
+      let y2 = y * Math.cos(rotX) - z1 * Math.sin(rotX);
+      let z2 = z1 * Math.cos(rotX) + y * Math.sin(rotX);
+
+      const fov = 700;
+      const scale = (fov / (fov + z2)) * zoom;
+      return { x: x1 * scale, y: y2 * scale, scale: scale, z: z2 };
+    }
+
+    function render() {
+      ctx.fillStyle = '#050811';
+      ctx.fillRect(0, 0, width, height);
+
+      const cx = width / 2;
+      const cy = height / 2;
+
+      // Draw faint Ember Spur Arc
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.15)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 6]);
+      for (let i = 0; i < planets.length; i++) {
+        const proj = project3D(planets[i].x, planets[i].y, planets[i].z);
+        if (i === 0) ctx.moveTo(cx + proj.x, cy + proj.y);
+        else ctx.lineTo(cx + proj.x, cy + proj.y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Draw Clue Lines if enabled
+      if (showClueLines) {
+        const cluePairs = [
+          [0, 1], // Helix -> Kiln
+          [1, 3], // Kiln -> Choir Well (Mutex)
+          [1, 2], // Kiln -> Orchard (ROM)
+          [3, 4], // Choir Well -> Ledger (Clock -> Log)
+          [4, 6], // Ledger -> Marrow (Checksum -> Wetware)
+          [6, 8]  // Marrow -> Blind Sun (Writeback -> Prohibition)
+        ];
+        for (let [i1, i2] of cluePairs) {
+          const p1 = project3D(planets[i1].x, planets[i1].y, planets[i1].z);
+          const p2 = project3D(planets[i2].x, planets[i2].y, planets[i2].z);
+          const grad = ctx.createLinearGradient(cx + p1.x, cy + p1.y, cx + p2.x, cy + p2.y);
+          grad.addColorStop(0, 'rgba(56, 189, 248, 0.4)');
+          grad.addColorStop(1, 'rgba(245, 158, 11, 0.4)');
+          ctx.strokeStyle = grad;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(cx + p1.x, cy + p1.y);
+          ctx.lineTo(cx + p2.x, cy + p2.y);
+          ctx.stroke();
+        }
+      }
+
+      // Sort planets by Z for proper depth
+      const sorted = planets.map(p => ({ ...p, proj: project3D(p.x, p.y, p.z) }))
+                            .sort((a, b) => b.proj.z - a.proj.z);
+
+      for (let p of sorted) {
+        const px = cx + p.proj.x;
+        const py = cy + p.proj.y;
+        const pr = Math.max(4, p.r * p.proj.scale);
+
+        // Planet Glow Halo
+        const haloGrad = ctx.createRadialGradient(px, py, pr * 0.5, px, py, pr * 2.6);
+        haloGrad.addColorStop(0, p.color);
+        haloGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = haloGrad;
+        ctx.beginPath();
+        ctx.arc(px, py, pr * 2.6, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Planet Body
+        ctx.beginPath();
+        ctx.arc(px, py, pr, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+
+        // Selected / Hovered Ring
+        if (p === hoveredPlanet || p === selectedPlanet) {
+          ctx.strokeStyle = p === selectedPlanet ? '#f59e0b' : '#38bdf8';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(px, py, pr + 8 + 3 * Math.sin(Date.now() * 0.005), 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        // Label
+        ctx.fillStyle = '#e0f2fe';
+        ctx.font = '11px "JetBrains Mono"';
+        ctx.fillText(p.name, px + pr + 10, py + 4);
+      }
+
+      requestAnimationFrame(render);
+    }
+    render();
+
+    function toggleClueLines() {
+      showClueLines = !showClueLines;
+      const btn = document.getElementById('btnToggleLinks');
+      const ind = document.getElementById('linkIndicator');
+      if (showClueLines) {
+        btn.classList.add('active');
+        ind.innerText = '◉';
+      } else {
+        btn.classList.remove('active');
+        ind.innerText = '○';
+      }
+    }
+
+    function selectPlanet(p) {
+      selectedPlanet = p;
+      const modal = document.getElementById('peekModal');
+      document.getElementById('peekName').innerText = p.name;
+      document.getElementById('peekRole').innerText = p.role;
+      document.getElementById('peekDesc').innerText = p.desc;
+      document.getElementById('peekMeta').innerHTML = `<div>STATUS: ${p.status}</div><div style="margin-top:4px; color:var(--primary-cyan);">COORDINATES: [${p.x}, ${p.y}, ${p.z}]</div>`;
+      modal.style.display = 'block';
+    }
+
+    function closePeek() {
+      selectedPlanet = null;
+      document.getElementById('peekModal').style.display = 'none';
+    }
+
+    function goToSurvey() {
+      if (selectedPlanet) {
+        window.location.href = `planet-survey.html?planet=${selectedPlanet.id}`;
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        window.location.href = 'index-panel.html';
+      }
+      if (e.key === 'l' || e.key === 'L') {
+        toggleClueLines();
+      }
+    });
+  </script>
+</body>
+</html>

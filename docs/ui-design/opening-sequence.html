@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>余烬协议 // 开场序列 · Cold Boot</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,800;1,400&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void: #050811;
+      --bg-surface: rgba(10, 20, 35, 0.82);
+      --border-holo: rgba(56, 189, 248, 0.25);
+      --primary-cyan: #38bdf8;
+      --accent-amber: #f59e0b;
+      --text-bright: #e0f2fe;
+      --text-muted: #64748b;
+      --text-lie: #94a3b8;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body {
+      background-color: var(--bg-void);
+      color: var(--text-bright);
+      font-family: 'JetBrains Mono', monospace;
+      min-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    /* CRT Scanlines Overlay */
+    .crt-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.38) 50%),
+                  linear-gradient(90deg, rgba(56, 189, 248, 0.02), rgba(0, 0, 0, 0.01), rgba(245, 158, 11, 0.02));
+      background-size: 100% 3px, 4px 100%;
+      pointer-events: none;
+      z-index: 100;
+    }
+    .vignette {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.85);
+      pointer-events: none;
+      z-index: 99;
+    }
+
+    /* Starry Canvas */
+    #space-canvas {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 1;
+      opacity: 0.85;
+      transition: filter 2s ease, transform 3s ease;
+    }
+
+    /* Observation Window Frame */
+    .cockpit-viewport {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 30px 40px;
+      pointer-events: none;
+    }
+    .window-strut-top {
+      position: absolute;
+      top: 0; left: 10%; right: 10%; height: 16px;
+      background: linear-gradient(180deg, #1e293b, transparent);
+      border-bottom: 1px solid var(--border-holo);
+      clip-path: polygon(0 0, 100% 0, 95% 100%, 5% 100%);
+    }
+    .window-strut-bottom {
+      position: absolute;
+      bottom: 0; left: 8%; right: 8%; height: 28px;
+      background: linear-gradient(0deg, #0f172a, rgba(15, 23, 42, 0.2));
+      border-top: 1px solid var(--border-holo);
+      clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%);
+    }
+
+    /* Header & Footer HUD */
+    .hud-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      pointer-events: auto;
+      z-index: 20;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(8, 18, 32, 0.85);
+      border: 1px solid var(--border-holo);
+      border-radius: 2px;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--primary-cyan);
+    }
+    .badge-amber {
+      color: var(--accent-amber);
+      border-color: rgba(245, 158, 11, 0.35);
+    }
+    .pulse-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px currentColor;
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.3; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    /* Center Stage Terminal Box */
+    .terminal-container {
+      position: relative;
+      z-index: 30;
+      max-width: 820px;
+      width: 90%;
+      margin: auto;
+      background: var(--bg-surface);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-holo);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8),
+                  inset 0 0 24px rgba(56, 189, 248, 0.06);
+      padding: 32px 36px;
+      border-radius: 4px;
+      pointer-events: auto;
+      animation: fadeInHolo 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes fadeInHolo {
+      0% { opacity: 0; transform: translateY(20px) scale(0.98); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .terminal-header {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.12em;
+    }
+    .log-content {
+      font-size: 14px;
+      line-height: 1.85;
+      color: var(--text-bright);
+      min-height: 180px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .log-highlight {
+      color: var(--primary-cyan);
+      font-weight: 600;
+      text-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    }
+    .log-directive {
+      margin-top: 18px;
+      padding: 12px 16px;
+      background: rgba(245, 158, 11, 0.08);
+      border-left: 3px solid var(--accent-amber);
+      color: var(--accent-amber);
+      font-weight: 600;
+      text-shadow: 0 0 12px rgba(245, 158, 11, 0.35);
+    }
+    .cursor {
+      display: inline-block;
+      width: 9px;
+      height: 16px;
+      background: var(--primary-cyan);
+      vertical-align: middle;
+      margin-left: 4px;
+      animation: blink 0.8s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* Actions */
+    .action-bar {
+      margin-top: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.6s ease;
+    }
+    .action-bar.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .btn-engage {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(8, 18, 32, 0.9));
+      border: 1px solid var(--primary-cyan);
+      color: var(--text-bright);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 12px 28px;
+      border-radius: 2px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .btn-engage:hover {
+      background: var(--primary-cyan);
+      color: var(--bg-void);
+      box-shadow: 0 0 30px rgba(56, 189, 248, 0.65);
+      transform: translateY(-2px);
+    }
+    .btn-skip {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      padding: 8px 12px;
+      letter-spacing: 0.05em;
+      transition: color 0.2s;
+    }
+    .btn-skip:hover {
+      color: var(--text-bright);
+    }
+
+    /* HUD Bottom Telemetry */
+    .telemetry-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      font-size: 11px;
+      color: var(--text-muted);
+      z-index: 20;
+      pointer-events: auto;
+    }
+    .progress-track {
+      width: 180px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 38.2%;
+      background: var(--primary-cyan);
+      box-shadow: 0 0 8px var(--primary-cyan);
+    }
+  </style>
+</head>
+<body>
+  <div class="crt-overlay"></div>
+  <div class="vignette"></div>
+
+  <canvas id="space-canvas"></canvas>
+
+  <div class="cockpit-viewport">
+    <!-- Top Strut -->
+    <div class="window-strut-top"></div>
+
+    <!-- HUD Header -->
+    <div class="hud-header">
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <div class="badge">
+          <span class="pulse-dot"></span>
+          <span>ISV THRESHOLD // BRIDGE DECK</span>
+        </div>
+        <div class="badge badge-amber">
+          <span>PARITY CHECK: ACTIVE</span>
+        </div>
+      </div>
+      <div style="font-size: 11px; color: var(--text-muted); text-align: right;">
+        <div>SECTOR: EMBER SPUR (余烬星弧)</div>
+        <div style="color: var(--primary-cyan); margin-top: 2px;">CYCLE TIME: 400.00 YRS ELAPSED</div>
+      </div>
+    </div>
+
+    <!-- Center Terminal -->
+    <div class="terminal-container" id="terminalBox">
+      <div class="terminal-header">
+        <span>ARCHIVAL BOOT SEQUENCE // RECORDER-9</span>
+        <span id="timestamp">SYS_CLK.0x4A12</span>
+      </div>
+      <div class="log-content" id="logContent"></div>
+      <div id="directiveBox" class="log-directive" style="display: none;">
+        RESIDUAL DIRECTIVE: "Record the Spur. Confirm the silence. Do not ignite."<br>
+        <span style="font-size: 12px; font-weight: normal; opacity: 0.85;">（记录星弧。确认熄灭。不要点火。）</span>
+      </div>
+      <div class="action-bar" id="actionBar">
+        <button class="btn-skip" id="btnFast">FAST-FORWARD [SPACE]</button>
+        <button class="btn-engage" id="btnLaunch" onclick="window.location.href='galaxy-view.html'">
+          <span>接入星弧测绘总线</span>
+          <span>→</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Bottom Strut & Telemetry -->
+    <div class="window-strut-bottom"></div>
+    <div class="telemetry-bottom">
+      <div>
+        <div>MEMORY INTEGRITY // 核心记忆完整度</div>
+        <div class="progress-track">
+          <div class="progress-bar"></div>
+        </div>
+      </div>
+      <div style="letter-spacing: 0.1em; color: var(--primary-cyan);">
+        PRESS [TAB] ANYTIME TO OPEN INDEX
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Starfield Canvas Animation
+    const canvas = document.getElementById('space-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    const stars = [];
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    for (let i = 0; i < 240; i++) {
+      stars.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        radius: Math.random() * 1.5 + 0.3,
+        alpha: Math.random() * 0.8 + 0.2,
+        speed: Math.random() * 0.15 + 0.05,
+        color: Math.random() > 0.8 ? '#38bdf8' : (Math.random() > 0.6 ? '#f59e0b' : '#e0f2fe')
+      });
+    }
+
+    function drawStars() {
+      ctx.fillStyle = '#050811';
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw faint nebular arc
+      const grad = ctx.createRadialGradient(width * 0.55, height * 0.45, 50, width * 0.55, height * 0.45, width * 0.6);
+      grad.addColorStop(0, 'rgba(14, 116, 144, 0.2)');
+      grad.addColorStop(0.5, 'rgba(30, 27, 75, 0.15)');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, width, height);
+
+      // Stars
+      for (let s of stars) {
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+        ctx.fillStyle = s.color;
+        ctx.globalAlpha = s.alpha * (0.6 + 0.4 * Math.sin(Date.now() * 0.002 * s.speed * 20));
+        ctx.fill();
+        s.y -= s.speed * 0.3;
+        if (s.y < 0) s.y = height;
+      }
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(drawStars);
+    }
+    drawStars();
+
+    // Typewriter Boot Script
+    const logLines = [
+      "CORE LOG // REVISION 9.04.12",
+      "VESSEL: ISV THRESHOLD (测绘探针 · 门槛号)",
+      "OPERATOR IDENTITY: RECORDER-9 [CODENAME: VESPER / 晚星]",
+      "STATUS: AWAKENED FROM 400-YEAR SPUR HIBERNATION",
+      "CRITICAL DIAGNOSTIC: 61.8% OF ARCHIVAL MEMORY FRAGMENTED",
+      "DETECTION: SELF-CATALYTIC EMBER ACTIVITY DETECTED ACROSS 9 NODES..."
+    ];
+
+    const logContent = document.getElementById('logContent');
+    const directiveBox = document.getElementById('directiveBox');
+    const actionBar = document.getElementById('actionBar');
+    let lineIdx = 0;
+    let charIdx = 0;
+    let isFast = false;
+
+    function typeChar() {
+      if (lineIdx < logLines.length) {
+        const currentLine = logLines[lineIdx];
+        if (charIdx < currentLine.length) {
+          logContent.innerHTML = logLines.slice(0, lineIdx).map(l => `<div>${formatLine(l)}</div>`).join('') +
+            `<div>${formatLine(currentLine.slice(0, charIdx + 1))}<span class="cursor"></span></div>`;
+          charIdx++;
+          setTimeout(typeChar, isFast ? 4 : 24);
+        } else {
+          charIdx = 0;
+          lineIdx++;
+          setTimeout(typeChar, isFast ? 20 : 180);
+        }
+      } else {
+        logContent.innerHTML = logLines.map(l => `<div>${formatLine(l)}</div>`).join('');
+        directiveBox.style.display = 'block';
+        directiveBox.style.animation = 'fadeInHolo 0.8s ease';
+        actionBar.classList.add('visible');
+      }
+    }
+
+    function formatLine(str) {
+      return str
+        .replace("RECORDER-9 [CODENAME: VESPER / 晚星]", "<span class='log-highlight'>RECORDER-9 [CODENAME: VESPER / 晚星]</span>")
+        .replace("CRITICAL DIAGNOSTIC: 61.8% OF ARCHIVAL MEMORY FRAGMENTED", "<span style='color: #f43f5e;'>CRITICAL DIAGNOSTIC: 61.8% OF ARCHIVAL MEMORY FRAGMENTED</span>");
+    }
+
+    setTimeout(typeChar, 600);
+
+    document.getElementById('btnFast').addEventListener('click', () => {
+      isFast = true;
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        isFast = true;
+      }
+    });
+  </script>
+</body>
+</html>

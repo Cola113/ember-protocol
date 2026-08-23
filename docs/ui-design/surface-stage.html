@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>余烬协议 // 地表戏台 · Surface Stage</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void: #050811;
+      --bg-surface: rgba(10, 20, 35, 0.88);
+      --border-holo: rgba(56, 189, 248, 0.22);
+      --primary-cyan: #38bdf8;
+      --accent-amber: #f59e0b;
+      --text-bright: #e0f2fe;
+      --text-muted: #64748b;
+      --text-lie: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: var(--bg-void);
+      color: var(--text-bright);
+      font-family: 'JetBrains Mono', monospace;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .crt-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%),
+                  linear-gradient(90deg, rgba(56, 189, 248, 0.02), rgba(0, 0, 0, 0.01), rgba(245, 158, 11, 0.02));
+      background-size: 100% 3px, 4px 100%;
+      pointer-events: none;
+      z-index: 100;
+    }
+    .vignette {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      box-shadow: inset 0 0 160px rgba(0, 0, 0, 0.9);
+      pointer-events: none;
+      z-index: 99;
+    }
+
+    /* Top HUD */
+    .top-bar {
+      height: 56px;
+      padding: 0 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(180deg, rgba(5, 8, 17, 0.95), transparent);
+      border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+      z-index: 50;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      background: rgba(8, 18, 32, 0.9);
+      border: 1px solid var(--border-holo);
+      border-radius: 2px;
+      font-size: 11px;
+      color: var(--primary-cyan);
+    }
+
+    /* 3D Vignette Canvas */
+    #surface-canvas {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 10;
+    }
+
+    /* Hotspot Interactive Nodes Overlay */
+    .hotspots-layer {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 20;
+      pointer-events: none;
+    }
+    .hotspot-tag {
+      position: absolute;
+      pointer-events: auto;
+      transform: translate(-50%, -50%);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(8, 18, 32, 0.85);
+      border: 1px solid var(--border-holo);
+      backdrop-filter: blur(10px);
+      padding: 6px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .hotspot-tag:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: var(--primary-cyan);
+      transform: translate(-50%, -54%) scale(1.05);
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+    }
+    .hotspot-beacon {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--primary-cyan);
+      box-shadow: 0 0 10px var(--primary-cyan);
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(0.8); opacity: 0.4; }
+      50% { transform: scale(1.3); opacity: 1; }
+    }
+
+    /* Inspect Modal Dialog */
+    .holo-modal {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 580px;
+      max-width: 90%;
+      background: var(--bg-surface);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--border-holo);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.85), inset 0 0 24px rgba(56, 189, 248, 0.06);
+      border-radius: 4px;
+      padding: 28px;
+      z-index: 70;
+      display: none;
+      animation: modalFade 0.25s ease-out;
+    }
+    @keyframes modalFade {
+      from { opacity: 0; transform: translate(-50%, -48%) scale(0.96); }
+      to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+    .modal-title {
+      font-family: 'Cinzel', serif;
+      font-size: 16px;
+      color: var(--text-bright);
+      margin-bottom: 4px;
+    }
+    .modal-subtitle {
+      font-size: 11px;
+      color: var(--primary-cyan);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+    }
+    .modal-body {
+      font-size: 13px;
+      line-height: 1.8;
+      color: #cbd5e1;
+      margin-bottom: 24px;
+    }
+    .extracted-proposition-card {
+      background: rgba(8, 18, 32, 0.8);
+      border: 1px solid var(--accent-amber);
+      padding: 12px 16px;
+      border-radius: 2px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .prop-id { font-size: 12px; color: var(--accent-amber); font-weight: 600; }
+    .btn-action {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(8, 18, 32, 0.9));
+      border: 1px solid var(--primary-cyan);
+      color: var(--text-bright);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 10px 20px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-action:hover {
+      background: var(--primary-cyan);
+      color: var(--bg-void);
+    }
+
+    /* Dialogue Overlay */
+    .dialogue-modal {
+      position: absolute;
+      bottom: 80px; left: 50%;
+      transform: translateX(-50%);
+      width: 780px;
+      max-width: 92%;
+      background: var(--bg-surface);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--border-holo);
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.85);
+      border-radius: 4px;
+      padding: 24px;
+      z-index: 70;
+      display: none;
+    }
+    .dialogue-speaker {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: var(--primary-cyan);
+      font-weight: 600;
+    }
+    .lie-badge {
+      font-size: 10px;
+      color: var(--text-lie);
+      font-style: italic;
+      border: 1px dashed rgba(148, 163, 184, 0.4);
+      padding: 2px 6px;
+      border-radius: 2px;
+    }
+    .dialogue-text {
+      font-size: 14px;
+      line-height: 1.8;
+      color: var(--text-bright);
+      min-height: 60px;
+      margin-bottom: 18px;
+    }
+    .dialogue-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .opt-btn {
+      background: rgba(8, 18, 32, 0.7);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      color: #cbd5e1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 10px 14px;
+      text-align: left;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.2s;
+    }
+    .opt-btn:hover {
+      border-color: var(--primary-cyan);
+      color: var(--primary-cyan);
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    /* Bottom HUD Toolbar */
+    .bottom-bar {
+      height: 54px;
+      padding: 0 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(0deg, rgba(5, 8, 17, 0.95), transparent);
+      border-top: 1px solid rgba(56, 189, 248, 0.12);
+      font-size: 11px;
+      color: var(--text-muted);
+      z-index: 50;
+    }
+    .btn-return-ship {
+      background: transparent;
+      border: 1px solid var(--border-holo);
+      color: var(--text-bright);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 6px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-return-ship:hover {
+      border-color: var(--primary-cyan);
+      color: var(--primary-cyan);
+    }
+  </style>
+</head>
+<body>
+  <div class="crt-overlay"></div>
+  <div class="vignette"></div>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <div style="display:flex; gap:12px; align-items:center;">
+      <div class="badge">HELIX-7 // COLD-BOOT TERRACE</div>
+      <span style="font-size:11px; color:var(--text-muted);">SURFACE VIGNETTE (40×40m)</span>
+    </div>
+    <div style="display:flex; gap:12px;">
+      <button class="btn-return-ship" onclick="window.location.href='index-panel.html'">
+        <span>OPEN INDEX [TAB]</span>
+      </button>
+      <button class="btn-return-ship" onclick="window.location.href='planet-survey.html'">
+        <span>RETURN TO ORBIT</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- 3D Canvas Vignette -->
+  <canvas id="surface-canvas"></canvas>
+
+  <!-- Interactive Hotspots Layer -->
+  <div class="hotspots-layer">
+    <!-- Hotspot 1: Calibration Beacon -->
+    <div class="hotspot-tag" style="top: 48%; left: 34%;" onclick="openBeaconModal()">
+      <div class="hotspot-beacon"></div>
+      <span>[E] 校准信标 HB-0701</span>
+    </div>
+
+    <!-- Hotspot 2: Surveyor-01 Tarkis -->
+    <div class="hotspot-tag" style="top: 38%; left: 62%;" onclick="openTarkisDialogue()">
+      <div class="hotspot-beacon" style="background:#a855f7; box-shadow:0 0 10px #a855f7;"></div>
+      <span>[E] 对话: SURVEYOR-01 塔基</span>
+    </div>
+
+    <!-- Hotspot 3: 50m Dipole Antenna -->
+    <div class="hotspot-tag" style="top: 28%; left: 45%;" onclick="openAntennaModal()">
+      <div class="hotspot-beacon" style="background:#f59e0b; box-shadow:0 0 10px #f59e0b;"></div>
+      <span>[E] 检视: 50米偶极天线</span>
+    </div>
+  </div>
+
+  <!-- Inspect Modal: Calibration Beacon -->
+  <div class="holo-modal" id="beaconModal">
+    <div class="modal-title">校准信标 HB-0701 // CALIBRATION BEACON</div>
+    <div class="modal-subtitle">LOC: HELIX-7 · SECTOR NORTH RIDGE</div>
+    <div class="modal-body">
+      一座由耐蚀玄武岩与石英晶体铸成的初级脉冲发射塔。指示灯依然闪烁着清脆的蓝光。
+      探针传感器在载波末尾捕获到一段未标记的握手字：“等待总线应答……”。
+    </div>
+    <div class="extracted-proposition-card">
+      <div>
+        <div class="prop-id">PROPOSITION: Helix.Beacon.Broadcasting</div>
+        <div style="font-size:11px; color:#94a3b8; margin-top:2px;">
+          “Helix-7 的信标正持续广播未标记握手载波。”
+        </div>
+      </div>
+      <span style="font-size:11px; color:var(--accent-amber);">EXTRACTED</span>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button class="btn-action" onclick="closeModal('beaconModal')">钉入索引并关闭</button>
+    </div>
+  </div>
+
+  <!-- Inspect Modal: Dipole Antenna -->
+  <div class="holo-modal" id="antennaModal">
+    <div class="modal-title">50米偶极天线阵列 // DIPOLE ARRAY</div>
+    <div class="modal-subtitle">STATUS: ORIENTED TOWARD KILN (窑)</div>
+    <div class="modal-body">
+      抛物面天线已自动锁向窑所在的赤道熔炉总线空域。微弱的高频电磁嗡鸣正在被实时转译为可读音频。
+    </div>
+    <div class="extracted-proposition-card">
+      <div>
+        <div class="prop-id">PROPOSITION: Helix.Signal.Unassigned</div>
+        <div style="font-size:11px; color:#94a3b8; margin-top:2px;">
+          “信标信号并非求救，而是分布式计算机的引导扇区广播。”
+        </div>
+      </div>
+      <span style="font-size:11px; color:var(--accent-amber);">EXTRACTED</span>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:10px;">
+      <button class="btn-action" onclick="closeModal('antennaModal')">关闭</button>
+    </div>
+  </div>
+
+  <!-- NPC Dialogue Overlay: Surveyor-01 Tarkis -->
+  <div class="dialogue-modal" id="dialogueModal">
+    <div class="dialogue-speaker">
+      <span>SURVEYOR-01 塔基 (TARKIS) // 初级测绘员残响</span>
+      <span class="lie-badge" id="lieIndicator" style="display:none;">ECHO_HYSTERESIS // 磁滞推演中</span>
+    </div>
+    <div class="dialogue-text" id="dialogueText">
+      “塔基测绘员。我的交接班记录上写得很清楚，距第三舰队的巡逻艇到达还有十二分钟。信标只是在做常规的开机预热。”
+    </div>
+    <div class="dialogue-options" id="dialogueOptions">
+      <button class="opt-btn" onclick="nextDialogue(1)">
+        1. “舰队不会来了。星系已经沉默了四百年。”
+      </button>
+      <button class="opt-btn" onclick="nextDialogue(2)">
+        2. “告诉我天线里的杂音是什么。”
+      </button>
+      <button class="opt-btn" onclick="closeDialogue()">
+        3. [结束对话，保持观察]
+      </button>
+    </div>
+  </div>
+
+  <!-- Bottom Telemetry -->
+  <div class="bottom-bar">
+    <div>PROPOSITION HARVEST: 2/2 ON THIS VIGNETTE</div>
+    <div>USE MOUSE TO LOOK AROUND // CLICK HOTSPOTS TO ENGAGE</div>
+  </div>
+
+  <script>
+    // Canvas Surface Isometric Render
+    const canvas = document.getElementById('surface-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function drawStage() {
+      ctx.fillStyle = '#050811';
+      ctx.fillRect(0, 0, width, height);
+
+      const cx = width / 2;
+      const cy = height * 0.55;
+
+      // Isometric Low-Poly Platform Ground
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 140);
+      ctx.lineTo(cx + 340, cy);
+      ctx.lineTo(cx, cy + 140);
+      ctx.lineTo(cx - 340, cy);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Grid lines on stage
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
+      ctx.lineWidth = 1;
+      for (let i = -4; i <= 4; i++) {
+        ctx.beginPath();
+        ctx.moveTo(cx + i * 40, cy - 140 + Math.abs(i) * 20);
+        ctx.lineTo(cx + i * 40 + 150, cy + 140 - Math.abs(i) * 20);
+        ctx.stroke();
+      }
+
+      // Base Pillar (Beacon 3D geometry representation)
+      const bx = cx - 120, by = cy - 20;
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.3)';
+      ctx.fillRect(bx - 10, by - 60, 20, 60);
+      ctx.strokeStyle = '#38bdf8';
+      ctx.strokeRect(bx - 10, by - 60, 20, 60);
+
+      // Antenna Dish Representation
+      const ax = cx - 20, ay = cy - 80;
+      ctx.beginPath();
+      ctx.arc(ax, ay - 30, 35, Math.PI * 0.8, Math.PI * 1.8);
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Holographic Tarkis Projection Representation
+      const tx = cx + 130, ty = cy - 40;
+      ctx.fillStyle = 'rgba(168, 85, 247, 0.4)';
+      ctx.beginPath();
+      ctx.arc(tx, ty - 45, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillRect(tx - 10, ty - 30, 20, 40);
+      ctx.strokeStyle = 'rgba(168, 85, 247, 0.8)';
+      ctx.strokeRect(tx - 10, ty - 30, 20, 40);
+
+      requestAnimationFrame(drawStage);
+    }
+    drawStage();
+
+    function openBeaconModal() {
+      document.getElementById('beaconModal').style.display = 'block';
+    }
+    function openAntennaModal() {
+      document.getElementById('antennaModal').style.display = 'block';
+    }
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+    function openTarkisDialogue() {
+      document.getElementById('dialogueModal').style.display = 'block';
+    }
+    function closeDialogue() {
+      document.getElementById('dialogueModal').style.display = 'none';
+    }
+
+    function nextDialogue(choice) {
+      const textEl = document.getElementById('dialogueText');
+      const lieEl = document.getElementById('lieIndicator');
+      const optEl = document.getElementById('dialogueOptions');
+
+      if (choice === 1) {
+        lieEl.style.display = 'inline-block';
+        textEl.innerHTML = "“胡说！我昨晚还听到了 Kiln 传来的熔炉广播！他们说新的超导铜管已经铺设完毕，今天全星系都要通电！你听……你仔细听天线里的杂音，那不是回音，那是他们在说话！”";
+        optEl.innerHTML = `
+          <button class="opt-btn" onclick="nextDialogue(3)">1. “那是死者的磁滞回声。”</button>
+          <button class="opt-btn" onclick="closeDialogue()">2. [离开]</button>
+        `;
+      } else if (choice === 2) {
+        lieEl.style.display = 'none';
+        textEl.innerHTML = "“那是引导扇区的握手码。每次冷启动时，它都会向窑（Kiln）发送一组多路复用请求……”";
+        optEl.innerHTML = `
+          <button class="opt-btn" onclick="nextDialogue(1)">1. “但为什么没人接班？”</button>
+          <button class="opt-btn" onclick="closeDialogue()">2. [离开]</button>
+        `;
+      } else if (choice === 3) {
+        lieEl.style.display = 'none';
+        textEl.innerHTML = "“……如果他们真的不在了，那我这四百年来……到底是在等谁换班？记录者，拿走这个频率吧。别让天线停下，至少让它觉得，还有人在听。”";
+        optEl.innerHTML = `
+          <button class="opt-btn" onclick="closeDialogue()">[已获得全部线索 · 结束对话]</button>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>
