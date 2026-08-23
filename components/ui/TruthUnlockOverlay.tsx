@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import { CANON, AnchorTruth } from "@/lib/canon";
 import { Sparkles, Globe, ShieldCheck, ArrowRight, Activity } from "lucide-react";
 
@@ -13,6 +14,9 @@ export default function TruthUnlockOverlay({
   truth,
   onProceed,
 }: TruthUnlockOverlayProps) {
+  const onProceedRef = useRef(onProceed);
+  onProceedRef.current = onProceed;
+
   const unlockedPlanetDefs = CANON.planets.filter((p) =>
     truth.unlocked_planets.includes(p.id)
   );
@@ -20,15 +24,21 @@ export default function TruthUnlockOverlay({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === " " || e.key === "Enter" || e.key === "Escape") {
-        onProceed();
+        onProceedRef.current();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onProceed]);
+  }, []);
 
   return (
-    <div className="fixed inset-0 z-50 bg-void/90 backdrop-blur-xl flex flex-col items-center justify-center p-6 overflow-hidden pointer-events-auto animate-fadeIn">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 1.05 }}
+      transition={{ duration: 0.4 }}
+      className="fixed inset-0 z-50 bg-void/90 backdrop-blur-xl flex flex-col items-center justify-center p-6 overflow-hidden pointer-events-auto"
+    >
       {/* Holographic Radial Burst Effect */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <div className="w-[800px] h-[800px] rounded-full bg-gradient-to-r from-holo-amber/20 via-holo-cyan/10 to-transparent blur-3xl animate-pulse" />
@@ -112,6 +122,6 @@ export default function TruthUnlockOverlay({
           <ArrowRight className="w-4 h-4" />
         </button>
       </div>
-    </div>
+    </motion.div>
   );
 }

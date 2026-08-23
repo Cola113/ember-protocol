@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { motion } from "framer-motion";
 import { PlanetDef, LandingSite } from "@/lib/canon";
 import { X, ArrowDown, Radio, Activity, Cpu, User, MapPin, CheckCircle2 } from "lucide-react";
 
@@ -24,7 +25,13 @@ export default function PlanetSurveyModal({
   );
 
   return (
-    <div className="absolute top-20 right-8 bottom-16 w-full max-w-md holo-panel p-6 rounded-sm z-40 flex flex-col pointer-events-auto animate-fadeIn border-holo-cyan/40 shadow-2xl">
+    <motion.div
+      initial={{ opacity: 0, x: 50, scale: 0.98 }}
+      animate={{ opacity: 1, x: 0, scale: 1 }}
+      exit={{ opacity: 0, x: 50, scale: 0.98 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      className="absolute top-20 right-8 bottom-16 w-full max-w-md holo-panel p-6 rounded-sm z-40 flex flex-col pointer-events-auto border-holo-cyan/40 shadow-2xl"
+    >
       {/* Header */}
       <div className="flex justify-between items-start border-b border-holo-cyan/15 pb-3 mb-4">
         <div>
@@ -137,6 +144,6 @@ export default function PlanetSurveyModal({
         <ArrowDown className="w-4 h-4" />
         <span>执行大气层俯冲降落 (INITIATE DESCENT)</span>
       </button>
-    </div>
+    </motion.div>
   );
 }

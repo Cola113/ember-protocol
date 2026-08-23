@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import { PlanetDef, LandingSite } from "@/lib/canon";
 import { Radio, Zap, ShieldAlert, FastForward, CheckCircle2 } from "lucide-react";
 
@@ -15,6 +16,9 @@ export default function LandingCinematic({
   site,
   onComplete,
 }: LandingCinematicProps) {
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+
   const [phase, setPhase] = useState<number>(0);
   const [altitude, setAltitude] = useState<number>(180);
   const [heat, setHeat] = useState<number>(240);
@@ -33,11 +37,11 @@ export default function LandingCinematic({
     const t1 = setTimeout(() => setPhase(1), 1200); // Atmospheric burn
     const t2 = setTimeout(() => setPhase(2), 2600); // Radar locking & thruster burn
     const t3 = setTimeout(() => setPhase(3), 4200); // Touchdown
-    const t4 = setTimeout(() => onComplete(), 5400); // Auto complete
+    const t4 = setTimeout(() => onCompleteRef.current(), 5400); // Auto complete
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === " " || e.key === "Escape" || e.key === "Enter") {
-        onComplete();
+        onCompleteRef.current();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -50,7 +54,7 @@ export default function LandingCinematic({
       clearTimeout(t4);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onComplete]);
+  }, []);
 
   useEffect(() => {
     if (phase === 1) {
@@ -63,7 +67,13 @@ export default function LandingCinematic({
   }, [phase]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-void flex flex-col justify-between p-8 overflow-hidden pointer-events-auto animate-fadeIn">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.98 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 1.02 }}
+      transition={{ duration: 0.4 }}
+      className="fixed inset-0 z-50 bg-void flex flex-col justify-between p-8 overflow-hidden pointer-events-auto"
+    >
       {/* Background Plasma Shimmer & Holographic Grid */}
       <div
         className={`absolute inset-0 transition-opacity duration-700 pointer-events-none ${
@@ -193,6 +203,6 @@ export default function LandingCinematic({
         <span>VESPER AUTONOMOUS DESCENT ENGINE v9.4</span>
         <span className="text-holo-cyan">TARGET GRAVITY: {planet.category === "author" ? "0.88g" : "1.12g"}</span>
       </div>
-    </div>
+    </motion.div>
   );
 }

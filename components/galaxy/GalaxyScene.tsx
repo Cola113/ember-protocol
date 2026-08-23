@@ -462,21 +462,70 @@ function PlanetNode({
   );
 }
 
-// Camera Transition Rig
-function CameraRig({ targetPlanet }: { targetPlanet: PlanetDef | null }) {
+// Camera Transition Rig & Orbit Controller
+function CameraController({
+  targetPlanet,
+  controlsRef,
+}: {
+  targetPlanet: PlanetDef | null;
+  controlsRef: React.MutableRefObject<any>;
+}) {
   const { camera } = useThree();
+  const prevTargetIdRef = useRef<string | null>(null);
+  const isTransitioningRef = useRef(false);
+
+  const desiredTarget = useMemo(() => {
+    if (!targetPlanet) return new THREE.Vector3(0, 0, 0);
+    return new THREE.Vector3(
+      targetPlanet.coordinates.x * 0.8,
+      targetPlanet.coordinates.y * 0.8,
+      targetPlanet.coordinates.z * 0.8
+    );
+  }, [targetPlanet]);
+
+  const desiredCamPos = useMemo(() => {
+    if (!targetPlanet) return new THREE.Vector3(0, 60, 260);
+    return new THREE.Vector3(
+      desiredTarget.x + 28,
+      desiredTarget.y + 14,
+      desiredTarget.z + 38
+    );
+  }, [targetPlanet, desiredTarget]);
+
+  useEffect(() => {
+    const newId = targetPlanet?.id || null;
+    if (newId !== prevTargetIdRef.current) {
+      prevTargetIdRef.current = newId;
+      isTransitioningRef.current = true;
+      if (controlsRef.current) {
+        controlsRef.current.enabled = false;
+      }
+    }
+  }, [targetPlanet, controlsRef]);
 
   useFrame((_, delta) => {
-    if (targetPlanet) {
-      const targetPos = new THREE.Vector3(
-        targetPlanet.coordinates.x * 0.8 + 28,
-        targetPlanet.coordinates.y * 0.8 + 16,
-        targetPlanet.coordinates.z * 0.8 + 42
-      );
-      camera.position.lerp(targetPos, delta * 3.0);
-    } else {
-      const defaultPos = new THREE.Vector3(0, 60, 260);
-      camera.position.lerp(defaultPos, delta * 2.0);
+    const controls = controlsRef.current;
+    if (!controls) return;
+
+    if (isTransitioningRef.current) {
+      const speed = Math.min(delta * 4.5, 0.28);
+      controls.target.lerp(desiredTarget, speed);
+      camera.position.lerp(desiredCamPos, speed);
+
+      const targetDist = controls.target.distanceTo(desiredTarget);
+      const camDist = camera.position.distanceTo(desiredCamPos);
+
+      // Once arrived within proximity, snap to exact target, re-enable OrbitControls, and stop writing
+      if (targetDist < 0.25 && camDist < 0.6) {
+        controls.target.copy(desiredTarget);
+        camera.position.copy(desiredCamPos);
+        controls.enabled = true;
+        isTransitioningRef.current = false;
+      }
+    }
+
+    if (controls.enabled) {
+      controls.update();
     }
   });
 
@@ -489,6 +538,8 @@ export default function GalaxyScene({
   showInferenceLines,
   unlockedPlanetIds,
 }: GalaxySceneProps) {
+  const controlsRef = useRef<any>(null);
+
   // Only render planets that are mapped or explicitly unlocked
   const visiblePlanets = useMemo(
     () =>
@@ -523,12 +574,16 @@ export default function GalaxyScene({
           />
         ))}
 
-        <CameraRig targetPlanet={selectedPlanet} />
+        <CameraController
+          targetPlanet={selectedPlanet}
+          controlsRef={controlsRef}
+        />
         <OrbitControls
+          ref={controlsRef}
           enableDamping
-          dampingFactor={0.06}
-          maxDistance={700}
-          minDistance={18}
+          dampingFactor={0.07}
+          maxDistance={580}
+          minDistance={22}
         />
       </Canvas>
     </div>
