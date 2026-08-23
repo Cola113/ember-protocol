@@ -13,7 +13,8 @@
 
 1. **维护通用 skill**：改动落地后，立即更新 `~/.agents/skills/ember-protocol/SKILL.md` 的对应章节（提交记录、进度、文件结构、分工、新坑……），并在同目录 `MAINTENANCE.md` 追加一条：
    `- YYYY-MM-DD [agent名] 做了什么`
-2. **走 PR 闭环**（详见 `cola-github-ops` 技能 / SKILL.md §7）：
+2. **开交叉核验圆桌（提交 PR 前强制）**：作者按「能力映射表」找能力相符的**其他** agent，用 `run-roundtable` 面对面模式审 diff、交锋收敛；双方表态达成一致（`同意` / `保留意见但同意执行`）后才可提交 PR。分歧时 Hermes 兜底仲裁。记录本地留档 `.roundtable/`（已 gitignore，不进库）。能力映射表与完整流程详见通用 skill `~/.agents/skills/ember-protocol/SKILL.md` §7「交叉核验圆桌」。
+3. **走 PR 闭环**（详见 `cola-github-ops` 技能 / SKILL.md §7）：
    - 推分支 → 开 PR → Vercel 自动生成 preview → 飞书通知用户（PR 标题 / 编号 / 链接 + 改动摘要 + preview URL）
    - **停下等待**。用户回复 merge/合并 才合并；close/关掉 才关闭。**未经用户确认不得自行 merge 或 close。**
 
