@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useMemo } from "react";
+import React, { useRef, useState, useMemo, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Html } from "@react-three/drei";
 import * as THREE from "three";
@@ -13,21 +13,23 @@ interface GalaxySceneProps {
   unlockedPlanetIds: string[];
 }
 
-function Starfield({ count = 800 }) {
+// Background Starfield + Ember Spur Floating Dust
+function CosmicDust({ count = 1000 }) {
   const points = useMemo(() => {
     const coords = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     const cyan = new THREE.Color("#38bdf8");
     const amber = new THREE.Color("#f59e0b");
     const white = new THREE.Color("#e0f2fe");
+    const purple = new THREE.Color("#c084fc");
 
     for (let i = 0; i < count; i++) {
-      coords[i * 3] = (Math.random() - 0.5) * 800;
-      coords[i * 3 + 1] = (Math.random() - 0.5) * 500;
-      coords[i * 3 + 2] = (Math.random() - 0.5) * 800;
+      coords[i * 3] = (Math.random() - 0.5) * 900;
+      coords[i * 3 + 1] = (Math.random() - 0.5) * 600;
+      coords[i * 3 + 2] = (Math.random() - 0.5) * 900;
 
       const rand = Math.random();
-      const col = rand > 0.8 ? cyan : rand > 0.6 ? amber : white;
+      const col = rand > 0.75 ? cyan : rand > 0.55 ? amber : rand > 0.45 ? purple : white;
       colors[i * 3] = col.r;
       colors[i * 3 + 1] = col.g;
       colors[i * 3 + 2] = col.b;
@@ -39,7 +41,8 @@ function Starfield({ count = 800 }) {
 
   useFrame((_, delta) => {
     if (pointsRef.current) {
-      pointsRef.current.rotation.y += delta * 0.015;
+      pointsRef.current.rotation.y += delta * 0.012;
+      pointsRef.current.rotation.x += delta * 0.004;
     }
   });
 
@@ -60,90 +63,127 @@ function Starfield({ count = 800 }) {
         />
       </bufferGeometry>
       <pointsMaterial
-        size={1.8}
+        size={2.0}
         vertexColors
         transparent
-        opacity={0.85}
+        opacity={0.88}
         sizeAttenuation
       />
     </points>
   );
 }
 
+// Spur Curve: connects visible planets along the cosmic spine
 function SpurCurve({ visiblePlanets }: { visiblePlanets: PlanetDef[] }) {
-  const points = useMemo(() => {
-    return visiblePlanets.map(
+  const lineObj = useMemo(() => {
+    if (visiblePlanets.length < 2) return null;
+
+    const points = visiblePlanets.map(
       (p) => new THREE.Vector3(p.coordinates.x * 0.8, p.coordinates.y * 0.8, p.coordinates.z * 0.8)
     );
+
+    const curve = new THREE.CatmullRomCurve3(points);
+    const pts = curve.getPoints(120);
+    const geom = new THREE.BufferGeometry().setFromPoints(pts);
+
+    const mat = new THREE.LineDashedMaterial({
+      color: 0x38bdf8,
+      dashSize: 5,
+      gapSize: 4,
+      opacity: 0.45,
+      transparent: true,
+      linewidth: 1,
+    });
+
+    const line = new THREE.Line(geom, mat);
+    line.computeLineDistances(); // pi item 2 fix
+    return line;
   }, [visiblePlanets]);
 
-  const curve = useMemo(() => {
-    return new THREE.CatmullRomCurve3(points);
-  }, [points]);
+  // Clean up WebGL resources when unmounting or changing (pi item 3 fix)
+  useEffect(() => {
+    return () => {
+      if (lineObj) {
+        lineObj.geometry.dispose();
+        if (Array.isArray(lineObj.material)) {
+          lineObj.material.forEach((m) => m.dispose());
+        } else {
+          lineObj.material.dispose();
+        }
+      }
+    };
+  }, [lineObj]);
 
-  const lineGeometry = useMemo(() => {
-    const pts = curve.getPoints(100);
-    return new THREE.BufferGeometry().setFromPoints(pts);
-  }, [curve]);
-
-  return (
-    <primitive object={new THREE.Line(
-      lineGeometry,
-      new THREE.LineDashedMaterial({
-        color: 0x38bdf8,
-        dashSize: 4,
-        gapSize: 4,
-        opacity: 0.35,
-        transparent: true,
-      })
-    )} />
-  );
+  if (!lineObj) return null;
+  return <primitive object={lineObj} />;
 }
 
-function InferenceLines() {
-  const lines = useMemo(() => {
-    const pairs: [number, number][] = [
-      [0, 1], // Helix -> Kiln
-      [1, 3], // Kiln -> Choir
-      [1, 2], // Kiln -> Orchard
-      [3, 4], // Choir -> Ledger
-      [4, 6], // Ledger -> Marrow
-      [6, 8]  // Marrow -> Blind Sun
-    ];
+// Inference Lines between unlocked & visible planets only (pi item 4 fix)
+function InferenceLines({ visiblePlanets }: { visiblePlanets: PlanetDef[] }) {
+  const visibleIds = useMemo(() => new Set(visiblePlanets.map((p) => p.id)), [visiblePlanets]);
 
-    return pairs.map(([i1, i2]) => {
-      const p1 = CANON.planets[i1].coordinates;
-      const p2 = CANON.planets[i2].coordinates;
-      const geom = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(p1.x * 0.8, p1.y * 0.8, p1.z * 0.8),
-        new THREE.Vector3(p2.x * 0.8, p2.y * 0.8, p2.z * 0.8),
-      ]);
-      return geom;
-    });
-  }, []);
+  const canonicalPairs: [string, string][] = useMemo(
+    () => [
+      ["helix-7", "kiln"],
+      ["kiln", "choir-well"],
+      ["kiln", "glass-orchard"],
+      ["choir-well", "ledger"],
+      ["ledger", "marrow"],
+      ["marrow", "blind-sun"],
+      ["ledger", "black-interval"],
+    ],
+    []
+  );
+
+  const activeLines = useMemo(() => {
+    const planetsMap = new Map(CANON.planets.map((p) => [p.id, p]));
+
+    return canonicalPairs
+      .filter(([id1, id2]) => visibleIds.has(id1) && visibleIds.has(id2))
+      .map(([id1, id2]) => {
+        const p1 = planetsMap.get(id1)!;
+        const p2 = planetsMap.get(id2)!;
+
+        const geom = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(p1.coordinates.x * 0.8, p1.coordinates.y * 0.8, p1.coordinates.z * 0.8),
+          new THREE.Vector3(p2.coordinates.x * 0.8, p2.coordinates.y * 0.8, p2.coordinates.z * 0.8),
+        ]);
+
+        const mat = new THREE.LineBasicMaterial({
+          color: 0xf59e0b,
+          opacity: 0.65,
+          transparent: true,
+        });
+
+        const line = new THREE.Line(geom, mat);
+        return line;
+      });
+  }, [visibleIds, canonicalPairs]);
+
+  // Proper disposal
+  useEffect(() => {
+    return () => {
+      activeLines.forEach((line) => {
+        line.geometry.dispose();
+        if (Array.isArray(line.material)) {
+          line.material.forEach((m) => m.dispose());
+        } else {
+          line.material.dispose();
+        }
+      });
+    };
+  }, [activeLines]);
 
   return (
     <group>
-      {lines.map((geom, idx) => (
-        <primitive
-          key={idx}
-          object={
-            new THREE.Line(
-              geom,
-              new THREE.LineBasicMaterial({
-                color: 0xf59e0b,
-                opacity: 0.5,
-                transparent: true,
-                linewidth: 2,
-              })
-            )
-          }
-        />
+      {activeLines.map((line, idx) => (
+        <primitive key={idx} object={line} />
       ))}
     </group>
   );
 }
 
+// Visual Node for a Planet with distinct materials and orbital animations
 function PlanetNode({
   planet,
   isSelected,
@@ -154,6 +194,7 @@ function PlanetNode({
   onSelect: (p: PlanetDef) => void;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const ringRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
 
   const pos: [number, number, number] = [
@@ -164,29 +205,47 @@ function PlanetNode({
 
   useFrame((_, delta) => {
     if (meshRef.current) {
-      meshRef.current.rotation.y += delta * 0.3;
+      meshRef.current.rotation.y += delta * 0.4;
+    }
+    if (ringRef.current) {
+      ringRef.current.rotation.z += delta * 0.2;
     }
   });
 
-  const radius = planet.category === "author" ? 5 : 7;
+  const radius = planet.category === "author" ? 5.5 : 7.5;
+
+  // Custom visual nuances per planet
+  const isMagma = planet.id === "kiln";
+  const isCrystal = planet.id === "glass-orchard" || planet.id === "helix-7";
 
   return (
     <group position={pos}>
-      {/* Orbit Ring */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[radius * 1.5, radius * 1.55, 32]} />
+      {/* Interactive Orbit Ring */}
+      <mesh ref={ringRef} rotation={[Math.PI / 2.2, 0, 0]}>
+        <ringGeometry args={[radius * 1.6, radius * 1.68, 48]} />
         <meshBasicMaterial
           color={planet.color}
-          opacity={hovered || isSelected ? 0.6 : 0.2}
+          opacity={hovered || isSelected ? 0.75 : 0.22}
           transparent
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Main Planet Mesh */}
+      {/* Secondary Inner Dash Ring */}
+      <mesh rotation={[Math.PI / 3, Math.PI / 4, 0]}>
+        <ringGeometry args={[radius * 1.35, radius * 1.38, 32]} />
+        <meshBasicMaterial
+          color={isSelected ? "#f59e0b" : "#38bdf8"}
+          opacity={isSelected ? 0.8 : hovered ? 0.4 : 0.1}
+          transparent
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {/* Main Planet Sphere */}
       <mesh
         ref={meshRef}
-        scale={hovered || isSelected ? 1.25 : 1.0}
+        scale={hovered || isSelected ? 1.3 : 1.0}
         onClick={(e) => {
           e.stopPropagation();
           onSelect(planet);
@@ -197,60 +256,70 @@ function PlanetNode({
         }}
         onPointerOut={() => setHovered(false)}
       >
-        <sphereGeometry args={[radius, 32, 32]} />
+        <sphereGeometry args={[radius, 36, 36]} />
         <meshStandardMaterial
           color={planet.color}
-          roughness={0.4}
-          metalness={0.6}
+          roughness={isCrystal ? 0.1 : isMagma ? 0.8 : 0.4}
+          metalness={isCrystal ? 0.9 : isMagma ? 0.2 : 0.6}
           emissive={planet.color}
-          emissiveIntensity={hovered || isSelected ? 0.6 : 0.25}
+          emissiveIntensity={hovered || isSelected ? 0.85 : isMagma ? 0.55 : 0.35}
         />
       </mesh>
 
-      {/* Atmospheric Halo */}
-      <mesh scale={1.35}>
-        <sphereGeometry args={[radius, 16, 16]} />
+      {/* Atmospheric Halo Glow */}
+      <mesh scale={1.45}>
+        <sphereGeometry args={[radius, 24, 24]} />
         <meshBasicMaterial
           color={planet.color}
           transparent
-          opacity={hovered || isSelected ? 0.25 : 0.08}
+          opacity={hovered || isSelected ? 0.35 : 0.12}
           side={THREE.BackSide}
         />
       </mesh>
 
-      {/* 2D HTML Billboard Tag */}
-      <Html distanceFactor={220} position={[0, radius + 5, 0]}>
+      {/* 2D HTML Tag */}
+      <Html distanceFactor={220} position={[0, radius + 6, 0]} center>
         <div
           onClick={(e) => {
             e.stopPropagation();
             onSelect(planet);
           }}
-          className={`px-2 py-1 rounded border font-mono text-[11px] whitespace-nowrap cursor-pointer transition-all duration-200 ${
+          className={`px-3 py-1.5 rounded border font-mono text-[11px] whitespace-nowrap cursor-pointer transition-all duration-200 select-none shadow-lg ${
             isSelected
-              ? "bg-surface border-holo-amber text-holo-amber shadow-holo-amber"
+              ? "bg-surface border-holo-amber text-holo-amber shadow-holo-amber scale-105"
               : hovered
-              ? "bg-surface border-holo-cyan text-holo-cyan shadow-holo-cyan"
-              : "bg-surface/80 border-holo-border text-holo-bright"
+              ? "bg-surface border-holo-cyan text-holo-cyan shadow-holo-cyan scale-105"
+              : "bg-surface/85 border-holo-border text-holo-bright hover:border-holo-cyan/50"
           }`}
         >
-          {planet.name}
+          <div className="flex items-center gap-1.5">
+            <span
+              className="w-2 h-2 rounded-full animate-pulse"
+              style={{ backgroundColor: planet.color }}
+            />
+            <span className="font-bold">{planet.name}</span>
+          </div>
         </div>
       </Html>
     </group>
   );
 }
 
+// Camera Transition Rig
 function CameraRig({ targetPlanet }: { targetPlanet: PlanetDef | null }) {
   const { camera } = useThree();
 
   useFrame((_, delta) => {
     if (targetPlanet) {
       const targetPos = new THREE.Vector3(
-        targetPlanet.coordinates.x * 0.8 + 25,
-        targetPlanet.coordinates.y * 0.8 + 15,
-        targetPlanet.coordinates.z * 0.8 + 40
+        targetPlanet.coordinates.x * 0.8 + 28,
+        targetPlanet.coordinates.y * 0.8 + 16,
+        targetPlanet.coordinates.z * 0.8 + 42
       );
-      camera.position.lerp(targetPos, delta * 2.5);
+      camera.position.lerp(targetPos, delta * 3.0);
+    } else {
+      const defaultPos = new THREE.Vector3(0, 60, 260);
+      camera.position.lerp(defaultPos, delta * 2.0);
     }
   });
 
@@ -263,8 +332,7 @@ export default function GalaxyScene({
   showInferenceLines,
   unlockedPlanetIds,
 }: GalaxySceneProps) {
-  // Only render planets that are mapped or explicitly unlocked;
-  // hidden planets (e.g. black-interval) are invisible until unlocked.
+  // Only render planets that are mapped or explicitly unlocked
   const visiblePlanets = useMemo(
     () =>
       CANON.planets.filter(
@@ -277,16 +345,17 @@ export default function GalaxyScene({
   return (
     <div className="w-full h-full relative cursor-grab active:cursor-grabbing">
       <Canvas
-        camera={{ position: [0, 60, 260], fov: 50, near: 1, far: 2000 }}
+        camera={{ position: [0, 60, 260], fov: 50, near: 1, far: 2500 }}
         style={{ background: "#050811" }}
       >
-        <ambientLight intensity={0.4} />
-        <pointLight position={[100, 150, 100]} intensity={1.5} color="#e0f2fe" />
-        <pointLight position={[-100, -50, -100]} intensity={0.8} color="#38bdf8" />
+        <ambientLight intensity={0.5} />
+        <pointLight position={[120, 180, 120]} intensity={1.8} color="#e0f2fe" />
+        <pointLight position={[-120, -60, -120]} intensity={1.0} color="#38bdf8" />
+        <pointLight position={[0, -100, 100]} intensity={0.6} color="#f59e0b" />
 
-        <Starfield />
+        <CosmicDust />
         <SpurCurve visiblePlanets={visiblePlanets} />
-        {showInferenceLines && <InferenceLines />}
+        {showInferenceLines && <InferenceLines visiblePlanets={visiblePlanets} />}
 
         {visiblePlanets.map((planet) => (
           <PlanetNode
@@ -300,9 +369,9 @@ export default function GalaxyScene({
         <CameraRig targetPlanet={selectedPlanet} />
         <OrbitControls
           enableDamping
-          dampingFactor={0.05}
-          maxDistance={600}
-          minDistance={20}
+          dampingFactor={0.06}
+          maxDistance={700}
+          minDistance={18}
         />
       </Canvas>
     </div>

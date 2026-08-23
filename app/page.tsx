@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
-import { CANON, PlanetDef, LandingSite } from "@/lib/canon";
+import { CANON, PlanetDef, LandingSite, AnchorTruth } from "@/lib/canon";
 import HudHeader from "@/components/ui/HudHeader";
 import OpeningTerminal from "@/components/ui/OpeningTerminal";
 import PlanetSurveyModal from "@/components/ui/PlanetSurveyModal";
 import SurfaceStageView from "@/components/ui/SurfaceStageView";
 import IndexDrawer from "@/components/ui/IndexDrawer";
 import ShipInteriorView from "@/components/ui/ShipInteriorView";
+import LandingCinematic from "@/components/ui/LandingCinematic";
+import TruthUnlockOverlay from "@/components/ui/TruthUnlockOverlay";
 
 // Dynamically import 3D R3F Galaxy Canvas with SSR disabled
 const GalaxyScene = dynamic(() => import("@/components/galaxy/GalaxyScene"), {
@@ -23,20 +25,19 @@ const GalaxyScene = dynamic(() => import("@/components/galaxy/GalaxyScene"), {
 
 export default function HomePage() {
   const [currentView, setCurrentView] = useState<
-    "opening" | "galaxy" | "ship" | "index" | "survey" | "surface"
+    "opening" | "galaxy" | "ship" | "index" | "survey" | "landing_cinematic" | "surface"
   >("opening");
 
   const [selectedPlanet, setSelectedPlanet] = useState<PlanetDef | null>(null);
   const [activeSite, setActiveSite] = useState<LandingSite | null>(null);
   const [showInferenceLines, setShowInferenceLines] = useState(true);
 
-  // Player state — propositions start empty; the player collects them
-  // from hotspots (e.g. Helix.Signal.Unassigned from the Dipole Antenna
-  // Arrays operate hotspot, NOT pre-granted).
-  const [collectedPropositions, setCollectedPropositions] = useState<string[]>([
-    "Helix.Beacon.Broadcasting",
-  ]);
-  const [believedTruths, setBelievedTruths] = useState<string[]>(["T1"]);
+  // Player state — starts empty so player explores Helix-7 first, collects propositions, and unlocks T1!
+  const [collectedPropositions, setCollectedPropositions] = useState<string[]>([]);
+  const [believedTruths, setBelievedTruths] = useState<string[]>([]);
+
+  // Newly unlocked truth for cinematic overlay
+  const [unlockedTruthOverlay, setUnlockedTruthOverlay] = useState<AnchorTruth | null>(null);
 
   // Derive unlocked planets from believed truths' unlocked_planets fields
   const unlockedPlanetIds = useMemo(
@@ -47,11 +48,12 @@ export default function HomePage() {
     [believedTruths]
   );
 
-  // Keyboard shortcut for Index (TAB or ESC)
+  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Tab") {
         e.preventDefault();
+        if (currentView === "opening" || currentView === "landing_cinematic") return;
         setCurrentView((prev) => (prev === "index" ? "galaxy" : "index"));
       }
       if (e.key === "Escape") {
@@ -78,10 +80,10 @@ export default function HomePage() {
     setCurrentView("survey");
   };
 
-  const handleLanding = (planet: PlanetDef, site: LandingSite) => {
+  const handleInitiateLanding = (planet: PlanetDef, site: LandingSite) => {
     setSelectedPlanet(planet);
     setActiveSite(site);
-    setCurrentView("surface");
+    setCurrentView("landing_cinematic");
   };
 
   const handleCollectProp = (code: string, text: string) => {
@@ -91,8 +93,21 @@ export default function HomePage() {
   };
 
   const handleTruthBelieved = (truthId: string) => {
+    const truthObj = CANON.anchorTruths.find((t) => t.id === truthId);
+    if (!truthObj) return;
+
+    // Defensive guard: confirm all required propositions are collected before believing
+    const hasAllRequired = truthObj.required_propositions.every((p) =>
+      collectedPropositions.includes(p)
+    );
+    if (!hasAllRequired) {
+      console.warn(`Truth ${truthId} synthesis rejected: missing required propositions`);
+      return;
+    }
+
     if (!believedTruths.includes(truthId)) {
       setBelievedTruths((prev) => [...prev, truthId]);
+      setUnlockedTruthOverlay(truthObj);
     }
   };
 
@@ -103,7 +118,7 @@ export default function HomePage() {
         className={`absolute inset-0 transition-opacity duration-700 ${
           currentView === "galaxy" || currentView === "survey"
             ? "opacity-100 pointer-events-auto"
-            : "opacity-30 pointer-events-none"
+            : "opacity-25 pointer-events-none"
         }`}
       >
         <GalaxyScene
@@ -115,7 +130,7 @@ export default function HomePage() {
       </div>
 
       {/* Top Astral Noir HUD */}
-      {currentView !== "opening" && (
+      {currentView !== "opening" && currentView !== "landing_cinematic" && (
         <HudHeader
           currentView={currentView}
           onNavigate={(view) => {
@@ -140,22 +155,34 @@ export default function HomePage() {
             setSelectedPlanet(null);
             setCurrentView("galaxy");
           }}
-          onLand={handleLanding}
+          onLand={handleInitiateLanding}
+          collectedPropositions={collectedPropositions}
         />
       )}
 
-      {/* View 3: Surface Landing Stage */}
+      {/* View 3: Landing Atmospheric Descent Cinematic */}
+      {currentView === "landing_cinematic" && selectedPlanet && activeSite && (
+        <LandingCinematic
+          planet={selectedPlanet}
+          site={activeSite}
+          onComplete={() => setCurrentView("surface")}
+        />
+      )}
+
+      {/* View 4: Surface Landing Stage */}
       {currentView === "surface" && selectedPlanet && activeSite && (
         <SurfaceStageView
           planet={selectedPlanet}
           site={activeSite}
-          onReturnOrbit={() => setCurrentView("survey")}
+          onReturnOrbit={() => {
+            setCurrentView("survey");
+          }}
           onCollectProposition={handleCollectProp}
           collectedPropositions={collectedPropositions}
         />
       )}
 
-      {/* View 4: Ship Deck Interior */}
+      {/* View 5: Ship Deck Interior */}
       {currentView === "ship" && (
         <ShipInteriorView
           onNavigateGalaxy={() => setCurrentView("galaxy")}
@@ -164,13 +191,25 @@ export default function HomePage() {
         />
       )}
 
-      {/* View 5: Synthesis / Index Drawer */}
+      {/* View 6: Synthesis / Index Drawer */}
       {currentView === "index" && (
         <IndexDrawer
           onClose={() => setCurrentView("galaxy")}
           collectedPropositions={collectedPropositions}
           believedTruths={believedTruths}
           onTruthBelieved={handleTruthBelieved}
+        />
+      )}
+
+      {/* View 7: Truth Unlock Celebration Cutscene */}
+      {unlockedTruthOverlay && (
+        <TruthUnlockOverlay
+          truth={unlockedTruthOverlay}
+          onProceed={() => {
+            setUnlockedTruthOverlay(null);
+            setCurrentView("galaxy");
+            setSelectedPlanet(null);
+          }}
         />
       )}
     </main>
