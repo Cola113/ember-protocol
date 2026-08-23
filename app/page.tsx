@@ -74,7 +74,7 @@ export default function HomePage() {
 
     const interval = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
-      setEmberCycleSecondsLeft((prev) => (prev > 0 ? prev - 1 : TOTAL_CYCLE_SECONDS));
+      setEmberCycleSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
 
     return () => clearInterval(interval);
@@ -89,9 +89,10 @@ export default function HomePage() {
         completedHotspotIds,
         elapsedSeconds,
         playTimeMinutes: Math.floor(elapsedSeconds / 60),
+        emberCycleSecondsLeft,
       });
     }
-  }, [collectedPropositions, believedTruths, completedHotspotIds, elapsedSeconds]);
+  }, [collectedPropositions, believedTruths, completedHotspotIds, elapsedSeconds, emberCycleSecondsLeft]);
 
   const handleCompleteHotspot = (hotspotId: string) => {
     if (!completedHotspotIds.includes(hotspotId)) {
@@ -105,6 +106,7 @@ export default function HomePage() {
     setBelievedTruths(data.believedTruths || []);
     setCompletedHotspotIds(data.completedHotspotIds || []);
     setElapsedSeconds(data.elapsedSeconds || (data.playTimeMinutes ? data.playTimeMinutes * 60 : 0));
+    setEmberCycleSecondsLeft(data.emberCycleSecondsLeft !== undefined ? data.emberCycleSecondsLeft : 2382);
     setSelectedPlanet(null);
     setActiveSite(null);
     setUnlockedTruthOverlay(null);
@@ -307,6 +309,8 @@ export default function HomePage() {
               completedHotspotIds={completedHotspotIds}
               onLoadSave={handleLoadSave}
               onNewGame={handleNewGame}
+              elapsedSeconds={elapsedSeconds}
+              emberCycleSecondsLeft={emberCycleSecondsLeft}
             />
           </motion.div>
         )}

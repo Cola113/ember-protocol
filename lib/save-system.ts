@@ -15,6 +15,7 @@ export interface SaveSlotData {
   memoryIntegrity: number;
   playTimeMinutes: number;
   elapsedSeconds?: number;
+  emberCycleSecondsLeft?: number;
 }
 
 const STORAGE_KEY_PREFIX = "ember_protocol_save_";
@@ -92,6 +93,11 @@ export function validateAndNormalizeSave(
       ? Math.max(0, data.playTimeMinutes)
       : Math.floor(elapsedSeconds / 60);
 
+  const emberCycleSecondsLeft =
+    typeof data.emberCycleSecondsLeft === "number" && !isNaN(data.emberCycleSecondsLeft)
+      ? Math.max(0, data.emberCycleSecondsLeft)
+      : 2382;
+
   const memoryIntegrity =
     typeof data.memoryIntegrity === "number" && !isNaN(data.memoryIntegrity)
       ? data.memoryIntegrity
@@ -115,6 +121,7 @@ export function validateAndNormalizeSave(
     memoryIntegrity,
     playTimeMinutes,
     elapsedSeconds,
+    emberCycleSecondsLeft,
   };
 }
 
@@ -153,6 +160,7 @@ export interface SavePayload {
   currentSector?: string;
   playTimeMinutes?: number;
   elapsedSeconds?: number;
+  emberCycleSecondsLeft?: number;
 }
 
 export function saveGame(
@@ -191,6 +199,11 @@ export function saveGame(
       ? Math.max(0, payload.playTimeMinutes)
       : Math.floor(elapsedSeconds / 60);
 
+  const emberCycleSecondsLeft =
+    typeof payload.emberCycleSecondsLeft === "number" && !isNaN(payload.emberCycleSecondsLeft)
+      ? Math.max(0, payload.emberCycleSecondsLeft)
+      : 2382;
+
   const slotData: SaveSlotData = {
     version: SAVE_SCHEMA_VERSION,
     id: slotId,
@@ -203,6 +216,7 @@ export function saveGame(
     memoryIntegrity,
     playTimeMinutes,
     elapsedSeconds,
+    emberCycleSecondsLeft,
   };
 
   if (typeof window !== "undefined") {

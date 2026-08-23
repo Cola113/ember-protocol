@@ -27,7 +27,10 @@ export default function TruthUnlockOverlay({
     truth.unlocked_planets.includes(p.id)
   );
 
+  const previousActiveElement = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
+    previousActiveElement.current = document.activeElement as HTMLElement | null;
     // Auto-focus proceed button for keyboard accessibility
     buttonRef.current?.focus();
 
@@ -38,7 +41,10 @@ export default function TruthUnlockOverlay({
       }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      previousActiveElement.current?.focus();
+    };
   }, []);
 
   return (

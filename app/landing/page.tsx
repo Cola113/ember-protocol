@@ -216,7 +216,7 @@ export default function LandingPage() {
                       <h3 className="font-display font-bold text-sm md:text-base text-holo-bright">
                         {feat.title}
                       </h3>
-                      <div className="text-[10px] font-mono text-slate-500 tracking-wider">
+                      <div className="text-[10px] font-mono text-slate-400 tracking-wider">
                         {feat.subtitle}
                       </div>
                     </div>
@@ -284,7 +284,7 @@ export default function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 w-full border-t border-holo-cyan/15 bg-surface-dark/95 px-6 md:px-12 py-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-mono text-slate-500">
+      <footer className="relative z-10 w-full border-t border-holo-cyan/15 bg-surface-dark/95 px-6 md:px-12 py-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-mono text-slate-400">
         <div>
           <span>余烬协议 // THE EMBER PROTOCOL</span>
           <span className="mx-2">·</span>

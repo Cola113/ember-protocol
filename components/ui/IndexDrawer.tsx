@@ -52,6 +52,45 @@ export default function IndexDrawer({
   const [draggedProp, setDraggedProp] = useState<string | null>(null);
   const [pinnedFlashProp, setPinnedFlashProp] = useState<string | null>(null);
 
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const previousActiveElement = React.useRef<HTMLElement | null>(null);
+
+  // Store active element on mount and restore on unmount
+  React.useEffect(() => {
+    previousActiveElement.current = document.activeElement as HTMLElement | null;
+    containerRef.current?.focus();
+    return () => {
+      previousActiveElement.current?.focus();
+    };
+  }, []);
+
+  // Trap focus within the dialog modal
+  React.useEffect(() => {
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !containerRef.current) return;
+      const focusableElements = containerRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusableElements.length === 0) return;
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement || document.activeElement === containerRef.current) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleTab);
+    return () => window.removeEventListener("keydown", handleTab);
+  }, []);
+
   // Derive truth state machine: unknown | encountered | suspected | believed
   const getTruthStatus = (truth: AnchorTruth): "unknown" | "encountered" | "suspected" | "believed" => {
     if (believedTruths.includes(truth.id)) return "believed";
@@ -185,6 +224,8 @@ export default function IndexDrawer({
 
   return (
     <motion.div
+      ref={containerRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-label="公证索引台与演绎推理图谱"
@@ -192,7 +233,7 @@ export default function IndexDrawer({
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.98, y: 10 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed inset-0 z-50 bg-void/95 backdrop-blur-xl flex flex-col p-5 md:p-8 pointer-events-auto"
+      className="fixed inset-0 z-50 bg-void/95 backdrop-blur-xl flex flex-col p-5 md:p-8 pointer-events-auto outline-none"
     >
       {/* Top Bar */}
       <div className="flex justify-between items-center border-b border-holo-cyan/20 pb-4 mb-5">

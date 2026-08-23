@@ -9,9 +9,6 @@ import {
   Sparkles,
   X,
   ChevronRight,
-  HelpCircle,
-  CheckCircle2,
-  Ship,
 } from "lucide-react";
 
 const ONBOARDING_STORAGE_KEY = "ember_protocol_onboarding_acknowledged_v1";
@@ -38,8 +35,8 @@ const HINT_STEPS: OnboardingHintItem[] = [
     id: "synthesis_index",
     title: "公证索引与演绎推理",
     badge: "STEP 02 // 逻辑收敛",
-    description: "收集命题后，按 TAB 随时展开【公证索引台】。钉选命题并陈述假说，收敛确证 6 大锚定真相。",
-    shortcut: "快捷键 [TAB]",
+    description: "收集命题后，点击右上角【INDEX】按钮展开公证索引台。钉选命题并陈述假说，收敛确证 6 大锚定真相。",
+    shortcut: "右上角 [INDEX]",
     icon: BookOpen,
   },
   {
@@ -142,7 +139,7 @@ export default function OnboardingHints({ currentView }: OnboardingHintsProps) {
           <div className="flex items-center gap-1.5 text-[10px] font-mono text-holo-cyan font-bold tracking-widest uppercase">
             <Sparkles className="w-3.5 h-3.5 text-holo-amber" />
             <span>{currentHint.badge}</span>
-            <span className="text-slate-500">
+            <span className="text-slate-400">
               ({currentStepIndex + 1}/{HINT_STEPS.length})
             </span>
           </div>

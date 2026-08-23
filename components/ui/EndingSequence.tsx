@@ -156,12 +156,49 @@ export default function EndingSequence({
   const containerRef = useRef<HTMLDivElement>(null);
   const logTimerRef = useRef<NodeJS.Timeout | null>(null);
   const typewriterIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isSkippedRef = useRef(false);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
+
+  // Store previous active element on mount and restore on unmount
+  useEffect(() => {
+    previousActiveElement.current = document.activeElement as HTMLElement | null;
+    return () => {
+      previousActiveElement.current?.focus();
+    };
+  }, []);
 
   // Focus trap for accessibility
   useEffect(() => {
     if (containerRef.current) {
       containerRef.current.focus();
     }
+  }, [step]);
+
+  // Focus cycling trap within the full-screen dialog
+  useEffect(() => {
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !containerRef.current) return;
+      const focusableElements = containerRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusableElements.length === 0) return;
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement || document.activeElement === containerRef.current) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleTab);
+    return () => window.removeEventListener("keydown", handleTab);
   }, [step]);
 
   const activeEndingDef = selectedEnding ? ENDINGS[selectedEnding] : null;
@@ -177,19 +214,21 @@ export default function EndingSequence({
     return `${minutes}分 ${secs}秒`;
   }, [elapsedSeconds]);
 
-  // Handle cutscene typewriter
+  // Handle cutscene typewriter - step 1: transmission logs
   useEffect(() => {
     if (step !== "cutscene" || !activeEndingDef) return;
 
     if (logTimerRef.current) clearInterval(logTimerRef.current);
     if (typewriterIntervalRef.current) clearInterval(typewriterIntervalRef.current);
 
+    isSkippedRef.current = false;
     setLogIndex(0);
     setTypedEpilogue("");
     setIsEpilogueDone(false);
 
     // Progression of transmission logs
     logTimerRef.current = setInterval(() => {
+      if (isSkippedRef.current) return;
       setLogIndex((prev) => {
         if (prev < activeEndingDef.transmissionLog.length - 1) {
           return prev + 1;
@@ -211,14 +250,22 @@ export default function EndingSequence({
     };
   }, [step, activeEndingDef]);
 
-  // Typewriter for epilogue narrative
+  // Typewriter for epilogue narrative - step 2
   useEffect(() => {
     if (step !== "cutscene" || !activeEndingDef) return;
+    if (isSkippedRef.current || isEpilogueDone) return;
     if (logIndex < activeEndingDef.transmissionLog.length - 1) return;
 
     const fullText = activeEndingDef.epilogueLog;
     let charIdx = 0;
     typewriterIntervalRef.current = setInterval(() => {
+      if (isSkippedRef.current) {
+        if (typewriterIntervalRef.current) {
+          clearInterval(typewriterIntervalRef.current);
+          typewriterIntervalRef.current = null;
+        }
+        return;
+      }
       charIdx += 2;
       setTypedEpilogue(fullText.slice(0, charIdx));
       if (charIdx >= fullText.length) {
@@ -236,10 +283,11 @@ export default function EndingSequence({
         typewriterIntervalRef.current = null;
       }
     };
-  }, [step, logIndex, activeEndingDef]);
+  }, [step, logIndex, activeEndingDef, isEpilogueDone]);
 
   const handleSkipCutscene = () => {
     if (!activeEndingDef) return;
+    isSkippedRef.current = true;
     if (logTimerRef.current) {
       clearInterval(logTimerRef.current);
       logTimerRef.current = null;
@@ -421,7 +469,7 @@ export default function EndingSequence({
                           disabled={isLocked}
                           className={`w-full py-2.5 px-3 rounded-sm border font-mono text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2 transition-all shadow-md ${
                             isLocked
-                              ? "bg-surface-dark text-slate-500 border-slate-700 cursor-not-allowed"
+                              ? "bg-surface-dark text-slate-400 border-slate-700 cursor-not-allowed"
                               : "group-hover:brightness-110"
                           }`}
                           style={
