@@ -1,0 +1,408 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "spur_name": "The Ember Spur (余烬星弧)",
+  "vessel": "ISV Threshold",
+  "recorder": {
+    "model": "Recorder-9",
+    "codename": "Vesper (晚星)",
+    "role": "Parity Check Bit (第9号奇偶校验位)",
+    "initial_memory_integrity": 0.382,
+    "residual_directive": "Record the Spur. Confirm the silence. Do not ignite."
+  },
+  "anchor_truths": [
+    {
+      "id": "T1",
+      "code": "TRUTH_BEACON",
+      "title": "信号 / The Beacon",
+      "summary": "Helix-7 上的信标并非求救信号，而是整台恒星计算机初始引导扇区的常驻广播与握手载波。",
+      "primary_planet": "helix-7",
+      "required_propositions": [
+        "Helix.Beacon.Broadcasting",
+        "Helix.Signal.Unassigned"
+      ],
+      "keywords": ["引导程序", "载波", "握手", "非求救", "Bootstrap", "信标"],
+      "unlocked_insights": ["INSIGHT_T1_BOOTSTRAP_DISCOVERED"],
+      "unlocked_planets": ["kiln", "glass-orchard"]
+    },
+    {
+      "id": "T2",
+      "code": "TRUTH_COMPUTE",
+      "title": "计算 / The Distributed Machine",
+      "summary": "余烬星弧不是普通的星系，而是一台分布式恒星计算机。九颗星球分别担任总线、晶振时钟、寻址指针与只读存储等硬件职责。",
+      "primary_planet": "kiln",
+      "required_propositions": [
+        "Kiln.Bus.Mutex",
+        "Choir.Hymn.IsClock",
+        "Needle.Pointer.Rebased"
+      ],
+      "keywords": ["分布式计算机", "硬件模块", "总线", "晶振时钟", "寻址", "硬件"],
+      "unlocked_insights": ["INSIGHT_T2_HARDWARE_RECOGNIZED"],
+      "unlocked_planets": ["choir-well", "ledger", "needle"]
+    },
+    {
+      "id": "T3",
+      "code": "TRUTH_WRITEBACK",
+      "title": "写回 / The Write-Back",
+      "summary": "400年前的灭绝不是毁灭，而是第一轮计算结束时的写回操作。所有文明作为处理器被压缩进结果常数，残留下的只有无意识的残响（Echoes）。",
+      "primary_planet": "marrow",
+      "required_propositions": [
+        "Marrow.God.IsProcess",
+        "Orchard.ROM.Exhaustion",
+        "Marrow.Bio.WriteBack"
+      ],
+      "keywords": ["写回", "非毁灭", "坍缩", "残响", "常数化", "Echoes", "处理器"],
+      "unlocked_insights": ["INSIGHT_T3_WRITEBACK_CONFIRMED"],
+      "unlocked_planets": ["marrow", "cinder-court", "blind-sun"]
+    },
+    {
+      "id": "T4",
+      "code": "TRUTH_PROHIBITION",
+      "title": "禁令 / The First Cycle Output",
+      "summary": "第一轮计算的唯一输出是「不要完成第二轮运算」。第二轮计算将抹除观察者本身与宇宙的底层物理法则。",
+      "primary_planet": "blind-sun",
+      "required_propositions": [
+        "BlindSun.Prohibition.CycleTwo",
+        "BlindSun.Director.Blindness"
+      ],
+      "keywords": ["禁止第二轮", "第一轮输出", "抹除观察者", "自催化点火", "禁令", "Do Not Complete"],
+      "unlocked_insights": ["INSIGHT_T4_PROHIBITION_UNDERSTOOD"],
+      "unlocked_planets": []
+    },
+    {
+      "id": "T5",
+      "code": "TRUTH_PARITY_LOCK",
+      "title": "校验 / The Parity Lock",
+      "summary": "记录员协议不是物理调查工具，而是用来熔断第二轮点火的奇偶校验位机制。通关的钥匙不是实体物品，而是记录者的理解与认知。",
+      "primary_planet": "ledger",
+      "required_propositions": [
+        "Ledger.Error.IsChecksum",
+        "Ledger.Protocol.RecorderKey"
+      ],
+      "keywords": ["奇偶校验", "中断点火", "理解即钥匙", "非物理实体", "校验和", "Parity"],
+      "unlocked_insights": ["INSIGHT_T5_PARITY_UNLOCKED"],
+      "unlocked_planets": ["black-interval"]
+    },
+    {
+      "id": "THidden",
+      "code": "TRUTH_RECORDER_VESPER",
+      "title": "晚星归宿 / The Parity Bit",
+      "summary": "Vesper 自己就是第9号校验位。前8代探针在过去的周期中已相继熔断，本次苏醒是终结自催化轮回的最后重逢。",
+      "primary_planet": "black-interval",
+      "required_propositions": [
+        "Interval.Core.Recorder9",
+        "Interval.Memory.Vesper"
+      ],
+      "keywords": ["Recorder-9", "前代熔断", "最后一位校验码", "重逢", "Vesper", "自我认知"],
+      "unlocked_insights": ["INSIGHT_THIDDEN_EGO_INTEGRATION"],
+      "unlocked_planets": []
+    }
+  ],
+  "planets": [
+    {
+      "id": "helix-7",
+      "name": "螺旋-7 (Helix-7)",
+      "color": "#38bdf8",
+      "coordinates": { "x": -180, "y": 20, "z": -40 },
+      "category": "author",
+      "apparent_civilization": "前哨监听站（首航信使）",
+      "believed_extinction": "通信设备故障导致与母星失联，人员在孤寂中老去",
+      "true_compute_role": "初始引导扇区 (Bootstrap Loader / BIOS)",
+      "initial_state": "mapped",
+      "landing_sites": [
+        {
+          "id": "site-helix-coldboot",
+          "name": "冷启台地 (Cold-Boot Terrace)",
+          "hotspots": [
+            { "id": "hs-beacon", "name": "校准信标 HB-0701", "type": "inspect", "proposition": "Helix.Beacon.Broadcasting" },
+            { "id": "hs-tarkis", "name": "Surveyor-01 塔基", "type": "dialogue", "npc_id": "npc-tarkis" }
+          ]
+        },
+        {
+          "id": "site-helix-antenna",
+          "name": "偶极天线阵列 (Dipole Arrays)",
+          "hotspots": [
+            { "id": "hs-antenna-panel", "name": "50米天线对齐舵", "type": "operate", "proposition": "Helix.Signal.Unassigned" }
+          ]
+        }
+      ],
+      "anchor_npc": {
+        "id": "npc-tarkis",
+        "name": "Surveyor-01 塔基 (Tarkis)",
+        "role": "初级测绘员残响",
+        "personality": "刻板、认真、手持交接清单，拒绝承认舰队不会到来",
+        "taboos": ["第二轮", "死者", "400年"],
+        "speech_register": "protocol-formal"
+      }
+    },
+    {
+      "id": "kiln",
+      "name": "窑 (Kiln)",
+      "color": "#fb923c",
+      "coordinates": { "x": -120, "y": -45, "z": 10 },
+      "category": "author",
+      "apparent_civilization": "熔火同盟（锻造工业）",
+      "believed_extinction": "高炉派与地脉派争夺地热控制权爆发全面内战",
+      "true_compute_role": "能量总线与电源分配单元 (Power Distribution / Bus Mutex)",
+      "initial_state": "unmapped",
+      "landing_sites": [
+        {
+          "id": "site-kiln-conduit",
+          "name": "断裂总管 (The Fractured Conduit)",
+          "hotspots": [
+            { "id": "hs-bus-valve", "name": "双向互斥阀", "type": "operate", "proposition": "Kiln.Bus.Mutex" }
+          ]
+        },
+        {
+          "id": "site-kiln-forge",
+          "name": "第一锻炉底舱 (Forge-01 Sub-Chamber)",
+          "hotspots": [
+            { "id": "hs-vulkan", "name": "Forge-Master 沃坎", "type": "dialogue", "npc_id": "npc-vulkan" }
+          ]
+        }
+      ],
+      "anchor_npc": {
+        "id": "npc-vulkan",
+        "name": "Forge-Master 沃坎 (Vulkan)",
+        "role": "老锻造师残响",
+        "personality": "狂暴、多疑、坚信战争仍在继续",
+        "taboos": ["和平", "计算", "无人幸存"],
+        "speech_register": "aggressive-craftsman"
+      }
+    },
+    {
+      "id": "glass-orchard",
+      "name": "玻璃果园 (Glass Orchard)",
+      "color": "#a7f3d0",
+      "coordinates": { "x": -60, "y": 60, "z": -20 },
+      "category": "author",
+      "apparent_civilization": "晶林隐士（树状晶体农业）",
+      "believed_extinction": "千年不遇的大旱导致晶体无法凝聚光之果实",
+      "true_compute_role": "只读光存储矩阵 (Read-Only Memory / ROM)",
+      "initial_state": "unmapped",
+      "landing_sites": [
+        {
+          "id": "site-orchard-canopy",
+          "name": "折射林冠 (Prism Canopy)",
+          "hotspots": [
+            { "id": "hs-selene", "name": "Keeper 塞勒涅", "type": "dialogue", "npc_id": "npc-selene" }
+          ]
+        },
+        {
+          "id": "site-orchard-readhead",
+          "name": "深坑读头 (The Pit Read-Head)",
+          "hotspots": [
+            { "id": "hs-readhead-lens", "name": "深坑巨型物镜", "type": "operate", "proposition": "Orchard.ROM.Exhaustion" }
+          ]
+        }
+      ],
+      "anchor_npc": {
+        "id": "npc-selene",
+        "name": "Keeper 塞勒涅 (Selene)",
+        "role": "守林人残响",
+        "personality": "空灵、迟缓、带有轻微解离感",
+        "taboos": ["未来", "擦写", "死亡"],
+        "speech_register": "poetic-dreamer"
+      }
+    },
+    {
+      "id": "choir-well",
+      "name": "咏井 (Choir Well)",
+      "color": "#38bdf8",
+      "coordinates": { "x": 0, "y": -70, "z": 40 },
+      "category": "author",
+      "apparent_civilization": "深渊唱诗班（深海神权）",
+      "believed_extinction": "听闻神明终极和弦集体步入深海升天",
+      "true_compute_role": "中央时钟发生器与压电晶振 (System Clock / Oscillator)",
+      "initial_state": "unmapped",
+      "landing_sites": [
+        {
+          "id": "site-choir-basilica",
+          "name": "浸水大教堂 (Submerged Basilica)",
+          "hotspots": [
+            { "id": "hs-orpheus", "name": "Cantor 俄尔甫斯", "type": "dialogue", "npc_id": "npc-orpheus" },
+            { "id": "hs-organ", "name": "钛合金定频管风琴", "type": "operate", "proposition": "Choir.Hymn.IsClock" }
+          ]
+        }
+      ],
+      "anchor_npc": {
+        "id": "npc-orpheus",
+        "name": "Cantor 俄尔甫斯 (Orpheus)",
+        "role": "大乐正残响",
+        "personality": "狂热、敏锐、对相位差极度执着",
+        "taboos": ["寂静", "无神", "程序"],
+        "speech_register": "liturgical-musical"
+      }
+    },
+    {
+      "id": "ledger",
+      "name": "总账 (Ledger)",
+      "color": "#facc15",
+      "coordinates": { "x": 60, "y": 30, "z": -15 },
+      "category": "author",
+      "apparent_civilization": "公证者法庭（哥特官僚都市）",
+      "believed_extinction": "灰墨热瘟疫导致全城检疫失效",
+      "true_compute_role": "系统错误日志与校验和层 (Error Log / Checksum Validator)",
+      "initial_state": "unmapped",
+      "landing_sites": [
+        {
+          "id": "site-ledger-sanctum",
+          "name": "公证中枢 (Notary Sanctum)",
+          "hotspots": [
+            { "id": "hs-valentine", "name": "Archivist 瓦伦丁", "type": "dialogue", "npc_id": "npc-valentine" },
+            { "id": "hs-difference-engine", "name": "机械差分机", "type": "inspect", "proposition": "Ledger.Error.IsChecksum" },
+            { "id": "hs-protocol-vault", "name": "终审授权卷轴", "type": "inspect", "proposition": "Ledger.Protocol.RecorderKey" }
+          ]
+        }
+      ],
+      "anchor_npc": {
+        "id": "npc-valentine",
+        "name": "Archivist 瓦伦丁 (Valentine)",
+        "role": "高级公证员残响",
+        "personality": "理性、强迫症、追求绝对哈希对齐",
+        "taboos": ["治愈", "意外", "算错了"],
+        "speech_register": "bureaucratic-legal"
+      }
+    },
+    {
+      "id": "needle",
+      "name": "针 (Needle)",
+      "color": "#e0e7ff",
+      "coordinates": { "x": 110, "y": -40, "z": 25 },
+      "category": "author",
+      "apparent_civilization": "星引行会（灯塔航海月）",
+      "believed_extinction": "磁极颠倒罗盘失效导致船队虚空迷航",
+      "true_compute_role": "内存寻址与堆栈指针 (Address Bus & Pointer)",
+      "initial_state": "unmapped",
+      "landing_sites": [
+        {
+          "id": "site-needle-apex",
+          "name": "天顶指北针 (Zenith Apex)",
+          "hotspots": [
+            { "id": "hs-ayla", "name": "Navigator 艾拉", "type": "dialogue", "npc_id": "npc-ayla" },
+            { "id": "hs-parallax-laser", "name": "三轴激光测距仪", "type": "operate", "proposition": "Needle.Pointer.Rebased" }
+          ]
+        }
+      ],
+      "anchor_npc": {
+        "id": "npc-ayla",
+        "name": "Navigator 艾拉 (Ayla)",
+        "role": "末代领航员残响",
+        "personality": "骄傲、不屈、紧握失灵的陀螺仪",
+        "taboos": ["沉没", "盲目", "地址溢出"],
+        "speech_register": "nautical-heroic"
+      }
+    },
+    {
+      "id": "marrow",
+      "name": "髓 (Marrow)",
+      "color": "#f43f5e",
+      "coordinates": { "x": 160, "y": 45, "z": -10 },
+      "category": "author",
+      "apparent_civilization": "原质神教（活体生态与血肉崇拜）",
+      "believed_extinction": "肉食之神降临吞噬所有信徒",
+      "true_compute_role": "生物湿件与张量逻辑基板 (Wetware Tensor Unit)",
+      "initial_state": "unmapped",
+      "landing_sites": [
+        {
+          "id": "site-marrow-ventricle",
+          "name": "搏动心室 (The Pulsing Ventricle)",
+          "hotspots": [
+            { "id": "hs-moira", "name": "Communion Mother 莫依拉", "type": "dialogue", "npc_id": "npc-moira" },
+            { "id": "hs-nerve-cluster", "name": "光敏神经突触簇", "type": "inspect", "proposition": "Marrow.God.IsProcess" },
+            { "id": "hs-bio-matrix", "name": "硬化几丁质基板", "type": "operate", "proposition": "Marrow.Bio.WriteBack" }
+          ]
+        }
+      ],
+      "anchor_npc": {
+        "id": "npc-moira",
+        "name": "Communion Mother 莫依拉 (Moira)",
+        "role": "原质神母残响",
+        "personality": "慈爱而令人战栗的狂喜，视写回为神圣并联",
+        "taboos": ["硅基", "程序名", "寄生"],
+        "speech_register": "maternal-ecstatic"
+      }
+    },
+    {
+      "id": "cinder-court",
+      "name": "烬廷 (Cinder Court)",
+      "color": "#c084fc",
+      "coordinates": { "x": 190, "y": -10, "z": 30 },
+      "category": "author",
+      "apparent_civilization": "七曜贵族王朝（巴洛克阴谋宫廷）",
+      "believed_extinction": "皇太子被鸩杀引发七大家族宴会互刺与自毁",
+      "true_compute_role": "用户交互与沙盒终端 [红鲱鱼] (UI Shell / Dummy Sandbox)",
+      "initial_state": "unmapped",
+      "landing_sites": [
+        {
+          "id": "site-cinder-banquet",
+          "name": "血色宴会厅 (The Scarlet Banquet)",
+          "hotspots": [
+            { "id": "hs-julian", "name": "Chancellor 尤利安", "type": "dialogue", "npc_id": "npc-julian" },
+            { "id": "hs-sandbox-terminal", "name": "伪装在壁炉后的终端", "type": "inspect", "proposition": "Cinder.Court.IsSandbox" }
+          ]
+        }
+      ],
+      "anchor_npc": {
+        "id": "npc-julian",
+        "name": "Chancellor 尤利安 (Julian)",
+        "role": "帝国宰相残响",
+        "personality": "玩世不恭、优雅颓废、热衷于讲述家族阴谋",
+        "taboos": ["程序", "虚拟", "红鲱鱼"],
+        "speech_register": "aristocratic-cynical"
+      }
+    },
+    {
+      "id": "blind-sun",
+      "name": "盲日 (The Blind Sun)",
+      "color": "#94a3b8",
+      "coordinates": { "x": 240, "y": 20, "z": -35 },
+      "category": "author",
+      "apparent_civilization": "终极科学院（日食环星研究所）",
+      "believed_extinction": "学者们饮下致盲药剂选择集体沉默自我终结",
+      "true_compute_role": "只读监控内核与根控制台 (Root Console / Hypervisor)",
+      "initial_state": "unmapped",
+      "landing_sites": [
+        {
+          "id": "site-blindsun-observatory",
+          "name": "日冕观测台 (Coronagraph Observatory)",
+          "hotspots": [
+            { "id": "hs-nova", "name": "Director 诺瓦", "type": "dialogue", "npc_id": "npc-nova" },
+            { "id": "hs-blackened-mirror", "name": "涂黑的视界镜", "type": "operate", "proposition": "BlindSun.Prohibition.CycleTwo" },
+            { "id": "hs-blindness-archive", "name": "致盲药剂配方石碑", "type": "inspect", "proposition": "BlindSun.Director.Blindness" }
+          ]
+        }
+      ],
+      "anchor_npc": {
+        "id": "npc-nova",
+        "name": "Director 诺瓦 (Nova)",
+        "role": "科学院院长残响",
+        "personality": "深邃、释然、清醒地知道一切已经终结",
+        "taboos": [],
+        "speech_register": "philosophical-serene"
+      }
+    },
+    {
+      "id": "black-interval",
+      "name": "黑间隔 (Black Interval)",
+      "color": "#f8fafc",
+      "coordinates": { "x": 40, "y": 10, "z": 0 },
+      "category": "hidden",
+      "apparent_civilization": "无（零地址几何多面体）",
+      "believed_extinction": "无",
+      "true_compute_role": "零地址空间与校验位插座 (Null Address / Parity Socket)",
+      "initial_state": "hidden",
+      "landing_sites": [
+        {
+          "id": "site-interval-hearth",
+          "name": "终极综合台 (Grand Synthesis Hearth)",
+          "hotspots": [
+            { "id": "hs-sarcophagus", "name": "Recorder-09 插座", "type": "inspect", "proposition": "Interval.Core.Recorder9" },
+            { "id": "hs-vesper-mirror", "name": "晚星记忆核心", "type": "inspect", "proposition": "Interval.Memory.Vesper" }
+          ]
+        }
+      ],
+      "anchor_npc": null
+    }
+  ]
+}
