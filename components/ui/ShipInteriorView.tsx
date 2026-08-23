@@ -127,7 +127,11 @@ export default function ShipInteriorView({
   );
 
   return (
-    <div className="relative w-full h-full flex flex-col justify-between p-6 md:p-8 z-30 pointer-events-auto overflow-y-auto">
+    <div
+      role="region"
+      aria-label="ISV Threshold 探针舰桥总控室"
+      className="relative w-full h-full flex flex-col justify-between p-6 md:p-8 z-30 pointer-events-auto overflow-y-auto"
+    >
       {/* Top Banner */}
       <div className="flex justify-between items-center">
         <div className="font-display font-bold text-base text-holo-bright">

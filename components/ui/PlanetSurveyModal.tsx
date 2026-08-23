@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { PlanetDef, LandingSite } from "@/lib/canon";
 import { X, ArrowDown, Radio, Activity, Cpu, User, MapPin, CheckCircle2 } from "lucide-react";
@@ -23,14 +23,24 @@ export default function PlanetSurveyModal({
   const [selectedSite, setSelectedSite] = useState<LandingSite>(
     planet.landing_sites[0] || { id: "default", name: "Orbital Beacon", hotspots: [] }
   );
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    modalRef.current?.focus();
+  }, []);
 
   return (
     <motion.div
+      ref={modalRef}
+      tabIndex={-1}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="planet-survey-title"
       initial={{ opacity: 0, x: 50, scale: 0.98 }}
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 50, scale: 0.98 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute top-20 right-8 bottom-16 w-full max-w-md holo-panel p-6 rounded-sm z-40 flex flex-col pointer-events-auto border-holo-cyan/40 shadow-2xl"
+      className="absolute top-20 right-8 bottom-16 w-full max-w-md holo-panel p-6 rounded-sm z-40 flex flex-col pointer-events-auto border-holo-cyan/40 shadow-2xl outline-none"
     >
       {/* Header */}
       <div className="flex justify-between items-start border-b border-holo-cyan/15 pb-3 mb-4">
@@ -40,7 +50,7 @@ export default function PlanetSurveyModal({
               className="w-3 h-3 rounded-full animate-pulse"
               style={{ backgroundColor: planet.color, boxShadow: `0 0 8px ${planet.color}` }}
             />
-            <h2 className="font-display font-bold text-lg text-holo-bright">
+            <h2 id="planet-survey-title" className="font-display font-bold text-lg text-holo-bright">
               {planet.name}
             </h2>
           </div>
@@ -51,6 +61,7 @@ export default function PlanetSurveyModal({
         </div>
         <button
           onClick={onClose}
+          aria-label="关闭星球遥测检视窗口"
           className="p-1 hover:text-holo-cyan text-holo-muted transition-colors rounded hover:bg-surface-dark"
         >
           <X className="w-5 h-5" />
@@ -110,6 +121,14 @@ export default function PlanetSurveyModal({
               return (
                 <div
                   key={site.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`选择降落点：${site.name}`}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      setSelectedSite(site);
+                    }
+                  }}
                   onClick={() => setSelectedSite(site)}
                   className={`p-3 rounded-sm border cursor-pointer transition-all duration-200 ${
                     selectedSite.id === site.id
@@ -139,7 +158,7 @@ export default function PlanetSurveyModal({
       {/* Landing Action Button */}
       <button
         onClick={() => onLand(planet, selectedSite)}
-        className="w-full py-3 bg-gradient-to-r from-holo-amber/30 via-holo-amber/20 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void text-holo-amber font-mono text-xs tracking-widest uppercase flex items-center justify-center gap-2 rounded-sm shadow-holo-amber transition-all duration-200"
+        className="w-full py-3 bg-gradient-to-r from-holo-amber/30 via-holo-amber/20 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void text-holo-amber font-mono text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2 rounded-sm shadow-holo-amber transition-all duration-200"
       >
         <ArrowDown className="w-4 h-4" />
         <span>执行大气层俯冲降落 (INITIATE DESCENT)</span>

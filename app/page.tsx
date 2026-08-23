@@ -12,6 +12,8 @@ import IndexDrawer from "@/components/ui/IndexDrawer";
 import ShipInteriorView from "@/components/ui/ShipInteriorView";
 import LandingCinematic from "@/components/ui/LandingCinematic";
 import TruthUnlockOverlay from "@/components/ui/TruthUnlockOverlay";
+import EndingSequence, { EndingType } from "@/components/ui/EndingSequence";
+import OnboardingHints from "@/components/ui/OnboardingHints";
 import { SaveSlotData, saveGame } from "@/lib/save-system";
 
 // Dynamically import 3D R3F Galaxy Canvas with SSR disabled
@@ -27,7 +29,7 @@ const GalaxyScene = dynamic(() => import("@/components/galaxy/GalaxyScene"), {
 
 export default function HomePage() {
   const [currentView, setCurrentView] = useState<
-    "opening" | "galaxy" | "ship" | "index" | "survey" | "landing_cinematic" | "surface"
+    "opening" | "galaxy" | "ship" | "index" | "survey" | "landing_cinematic" | "surface" | "ending"
   >("opening");
 
   const [selectedPlanet, setSelectedPlanet] = useState<PlanetDef | null>(null);
@@ -38,9 +40,19 @@ export default function HomePage() {
   const [collectedPropositions, setCollectedPropositions] = useState<string[]>([]);
   const [believedTruths, setBelievedTruths] = useState<string[]>([]);
   const [completedHotspotIds, setCompletedHotspotIds] = useState<string[]>([]);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   // Newly unlocked truth for cinematic overlay
   const [unlockedTruthOverlay, setUnlockedTruthOverlay] = useState<AnchorTruth | null>(null);
+
+  // Elapsed exploration time counter
+  useEffect(() => {
+    if (currentView === "opening") return;
+    const interval = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [currentView]);
 
   // Derive unlocked planets from believed truths' unlocked_planets fields
   const unlockedPlanetIds = useMemo(
@@ -50,6 +62,8 @@ export default function HomePage() {
         .flatMap((t) => t.unlocked_planets),
     [believedTruths]
   );
+
+  const hasHiddenTruth = believedTruths.includes("THidden");
 
   // Auto-save progress whenever propositions, truths or completed hotspots update
   useEffect(() => {
@@ -85,6 +99,7 @@ export default function HomePage() {
     setCollectedPropositions([]);
     setBelievedTruths([]);
     setCompletedHotspotIds([]);
+    setElapsedSeconds(0);
     setSelectedPlanet(null);
     setActiveSite(null);
     setCurrentView("opening");
@@ -95,7 +110,12 @@ export default function HomePage() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Tab") {
         e.preventDefault();
-        if (currentView === "opening" || currentView === "landing_cinematic") return;
+        if (
+          currentView === "opening" ||
+          currentView === "landing_cinematic" ||
+          currentView === "ending"
+        )
+          return;
         setCurrentView((prev) => (prev === "index" ? "galaxy" : "index"));
       }
       if (e.key === "Escape") {
@@ -154,7 +174,11 @@ export default function HomePage() {
   };
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-void">
+    <main
+      role="main"
+      aria-label="余烬协议探索界面"
+      className="relative w-screen h-screen overflow-hidden bg-void"
+    >
       {/* Persistent 3D Galaxy Canvas */}
       <div
         className={`absolute inset-0 transition-all duration-700 ${
@@ -172,17 +196,23 @@ export default function HomePage() {
       </div>
 
       {/* Top Astral Noir HUD */}
-      {currentView !== "opening" && currentView !== "landing_cinematic" && (
-        <HudHeader
-          currentView={currentView}
-          onNavigate={(view) => {
-            if (view === "galaxy") setSelectedPlanet(null);
-            setCurrentView(view);
-          }}
-          showInferenceLines={showInferenceLines}
-          onToggleInference={() => setShowInferenceLines((prev) => !prev)}
-        />
-      )}
+      {currentView !== "opening" &&
+        currentView !== "landing_cinematic" &&
+        currentView !== "ending" && (
+          <HudHeader
+            currentView={currentView}
+            onNavigate={(view) => {
+              if (view === "galaxy") setSelectedPlanet(null);
+              setCurrentView(view);
+            }}
+            showInferenceLines={showInferenceLines}
+            onToggleInference={() => setShowInferenceLines((prev) => !prev)}
+            hasHiddenTruth={hasHiddenTruth}
+          />
+        )}
+
+      {/* Onboarding Guidance Tooltip Bubbles */}
+      <OnboardingHints currentView={currentView} />
 
       {/* Main Full-Screen View Transitions */}
       <AnimatePresence mode="wait">
@@ -264,6 +294,30 @@ export default function HomePage() {
             />
           </motion.div>
         )}
+
+        {/* View 8: Ending Sequence (P4 Three Resolution Protocols) */}
+        {currentView === "ending" && (
+          <motion.div
+            key="ending-view"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="absolute inset-0 z-50"
+          >
+            <EndingSequence
+              onReturnTitle={() => {
+                setSelectedPlanet(null);
+                setActiveSite(null);
+                setCurrentView("opening");
+              }}
+              onNewGame={handleNewGame}
+              collectedPropositions={collectedPropositions}
+              believedTruths={believedTruths}
+              elapsedSeconds={elapsedSeconds}
+            />
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* View 2: Planet Survey Fly-in Modal */}
@@ -300,9 +354,14 @@ export default function HomePage() {
           <TruthUnlockOverlay
             truth={unlockedTruthOverlay}
             onProceed={() => {
+              const wasHidden = unlockedTruthOverlay.id === "THidden";
               setUnlockedTruthOverlay(null);
-              setCurrentView("galaxy");
-              setSelectedPlanet(null);
+              if (wasHidden) {
+                setCurrentView("ending");
+              } else {
+                setCurrentView("galaxy");
+                setSelectedPlanet(null);
+              }
             }}
           />
         )}
@@ -310,4 +369,3 @@ export default function HomePage() {
     </main>
   );
 }
-
