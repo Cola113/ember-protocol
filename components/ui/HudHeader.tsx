@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Compass, BookOpen, Ship, Network, AlertTriangle } from "lucide-react";
 
 interface HudHeaderProps {
@@ -8,7 +8,8 @@ interface HudHeaderProps {
   onNavigate: (view: "opening" | "galaxy" | "ship" | "index" | "ending") => void;
   showInferenceLines: boolean;
   onToggleInference: () => void;
-  hasHiddenTruth?: boolean;
+  canResolveEnding?: boolean;
+  emberCycleSecondsLeft?: number;
 }
 
 export default function HudHeader({
@@ -16,17 +17,9 @@ export default function HudHeader({
   onNavigate,
   showInferenceLines,
   onToggleInference,
-  hasHiddenTruth = false,
+  canResolveEnding = false,
+  emberCycleSecondsLeft = 2382,
 }: HudHeaderProps) {
-  const [secondsLeft, setSecondsLeft] = useState(2382); // 39:42
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 2400));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60).toString().padStart(2, "0");
     const s = (secs % 60).toString().padStart(2, "0");
@@ -54,12 +47,12 @@ export default function HudHeader({
 
       {/* Right: Actions & Timer */}
       <nav aria-label="HUD 导航操作栏" className="flex items-center gap-2 md:gap-3">
-        {/* Hidden Truth Final Resolution Trigger Badge */}
-        {hasHiddenTruth && currentView !== "ending" && (
+        {/* Full Canon Resolution Trigger Badge */}
+        {canResolveEnding && currentView !== "ending" && (
           <button
             onClick={() => onNavigate("ending")}
             className="px-3 py-1.5 rounded-sm border border-holo-amber bg-holo-amber/25 hover:bg-holo-amber hover:text-void text-holo-amber text-xs font-mono font-bold flex items-center gap-1.5 shadow-holo-amber animate-pulse transition-all"
-            aria-label="执行终局决议协议"
+            aria-label="执行全域终局决议协议"
           >
             <AlertTriangle className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">RESOLUTION READY</span>
@@ -103,10 +96,10 @@ export default function HudHeader({
               ? "bg-holo-amber/20 border-holo-amber text-holo-amber shadow-holo-amber"
               : "bg-surface border-holo-border text-holo-bright hover:border-holo-amber"
           }`}
-          aria-label="打开公证索引台 (快捷键 TAB)"
+          aria-label="打开公证索引台"
         >
           <BookOpen className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">INDEX [TAB]</span>
+          <span className="hidden sm:inline">INDEX</span>
         </button>
 
         <button
@@ -124,7 +117,7 @@ export default function HudHeader({
 
         <div className="pl-3 border-l border-holo-cyan/20 text-right font-mono text-xs hidden sm:block">
           <div className="text-holo-muted text-[10px]">EMBER CYCLE</div>
-          <div className="text-holo-amber font-bold">{formatTime(secondsLeft)}</div>
+          <div className="text-holo-amber font-bold">{formatTime(emberCycleSecondsLeft)}</div>
         </div>
       </nav>
     </header>

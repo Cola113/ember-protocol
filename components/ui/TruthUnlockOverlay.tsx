@@ -8,24 +8,32 @@ import { Sparkles, Globe, ShieldCheck, ArrowRight, Activity, AlertTriangle } fro
 interface TruthUnlockOverlayProps {
   truth: AnchorTruth;
   onProceed: () => void;
+  canResolveEnding?: boolean;
 }
 
 export default function TruthUnlockOverlay({
   truth,
   onProceed,
+  canResolveEnding = false,
 }: TruthUnlockOverlayProps) {
   const onProceedRef = useRef(onProceed);
   onProceedRef.current = onProceed;
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const isHiddenTruth = truth.id === "THidden";
+  const shouldDirectToEnding = isHiddenTruth && canResolveEnding;
 
   const unlockedPlanetDefs = CANON.planets.filter((p) =>
     truth.unlocked_planets.includes(p.id)
   );
 
   useEffect(() => {
+    // Auto-focus proceed button for keyboard accessibility
+    buttonRef.current?.focus();
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === " " || e.key === "Enter" || e.key === "Escape") {
+      if (e.key === "Escape") {
+        e.preventDefault();
         onProceedRef.current();
       }
     };
@@ -132,7 +140,7 @@ export default function TruthUnlockOverlay({
             <span>RECORDER-9 核心记忆校验完整度：</span>
           </div>
           <div className="text-holo-amber font-bold">
-            {isHiddenTruth ? (
+            {shouldDirectToEnding ? (
               <span className="text-holo-green text-sm">100.0% (全域收敛)</span>
             ) : (
               <>
@@ -144,10 +152,11 @@ export default function TruthUnlockOverlay({
 
         {/* Action Button */}
         <button
+          ref={buttonRef}
           onClick={onProceed}
-          className="w-full py-3.5 bg-gradient-to-r from-holo-amber/30 via-holo-amber/20 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void text-holo-amber font-mono text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2 rounded-sm shadow-holo-amber transition-all duration-200"
+          className="w-full py-3.5 bg-gradient-to-r from-holo-amber/30 via-holo-amber/20 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void text-holo-amber font-mono text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2 rounded-sm shadow-holo-amber transition-all duration-200 outline-none focus:ring-2 focus:ring-holo-amber"
         >
-          {isHiddenTruth ? (
+          {shouldDirectToEnding ? (
             <>
               <span>启动全域终局决议 (PROCEED TO RESOLUTION PROTOCOL)</span>
               <AlertTriangle className="w-4 h-4" />

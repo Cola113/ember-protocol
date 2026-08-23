@@ -127,7 +127,7 @@ export default function OnboardingHints({ currentView }: OnboardingHintsProps) {
         role="complementary"
         aria-label="新手操作引导提示"
         aria-live="polite"
-        className="fixed bottom-8 left-8 z-40 max-w-sm w-full holo-panel p-4 rounded-sm border-holo-cyan/50 shadow-holo-cyan pointer-events-auto"
+        className="fixed bottom-6 inset-x-4 sm:inset-x-auto sm:bottom-8 sm:left-8 z-40 sm:max-w-sm w-auto sm:w-full holo-panel p-4 rounded-sm border-holo-cyan/50 shadow-holo-cyan pointer-events-auto"
       >
         {/* Progress Bar Header */}
         <div className="w-full h-1 bg-surface-dark rounded-full overflow-hidden mb-3">

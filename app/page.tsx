@@ -27,6 +27,8 @@ const GalaxyScene = dynamic(() => import("@/components/galaxy/GalaxyScene"), {
   ),
 });
 
+const TOTAL_CYCLE_SECONDS = 2400; // 40 minutes cycle
+
 export default function HomePage() {
   const [currentView, setCurrentView] = useState<
     "opening" | "galaxy" | "ship" | "index" | "survey" | "landing_cinematic" | "surface" | "ending"
@@ -41,18 +43,10 @@ export default function HomePage() {
   const [believedTruths, setBelievedTruths] = useState<string[]>([]);
   const [completedHotspotIds, setCompletedHotspotIds] = useState<string[]>([]);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [emberCycleSecondsLeft, setEmberCycleSecondsLeft] = useState(2382);
 
   // Newly unlocked truth for cinematic overlay
   const [unlockedTruthOverlay, setUnlockedTruthOverlay] = useState<AnchorTruth | null>(null);
-
-  // Elapsed exploration time counter
-  useEffect(() => {
-    if (currentView === "opening") return;
-    const interval = setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [currentView]);
 
   // Derive unlocked planets from believed truths' unlocked_planets fields
   const unlockedPlanetIds = useMemo(
@@ -63,7 +57,28 @@ export default function HomePage() {
     [believedTruths]
   );
 
-  const hasHiddenTruth = believedTruths.includes("THidden");
+  // Canonical gating: all 6 truths (T1-T5 + THidden) must be believed to enter resolution protocols
+  const canResolveEnding = useMemo(
+    () =>
+      CANON.anchorTruths.length > 0 &&
+      CANON.anchorTruths.every((t) => believedTruths.includes(t.id)),
+    [believedTruths]
+  );
+
+  // Overwrite threshold: Remaining countdown <= 25% (<= 600 seconds)
+  const canOverwrite = (emberCycleSecondsLeft / TOTAL_CYCLE_SECONDS) <= 0.25;
+
+  // Realtime game session timers (Freezes during opening and ending cutscenes)
+  useEffect(() => {
+    if (currentView === "opening" || currentView === "ending") return;
+
+    const interval = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+      setEmberCycleSecondsLeft((prev) => (prev > 0 ? prev - 1 : TOTAL_CYCLE_SECONDS));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentView]);
 
   // Auto-save progress whenever propositions, truths or completed hotspots update
   useEffect(() => {
@@ -72,9 +87,11 @@ export default function HomePage() {
         collectedPropositions,
         believedTruths,
         completedHotspotIds,
+        elapsedSeconds,
+        playTimeMinutes: Math.floor(elapsedSeconds / 60),
       });
     }
-  }, [collectedPropositions, believedTruths, completedHotspotIds]);
+  }, [collectedPropositions, believedTruths, completedHotspotIds, elapsedSeconds]);
 
   const handleCompleteHotspot = (hotspotId: string) => {
     if (!completedHotspotIds.includes(hotspotId)) {
@@ -82,13 +99,12 @@ export default function HomePage() {
     }
   };
 
-  // Explicit Progress-Only Recovery Contract:
-  // Restores canonical progress (propositions, truths, completed hotspots)
-  // Resets all transient view routing back to galactic overview
+  // Explicit Progress-Only Recovery Contract
   const handleLoadSave = (data: SaveSlotData) => {
     setCollectedPropositions(data.collectedPropositions || []);
     setBelievedTruths(data.believedTruths || []);
     setCompletedHotspotIds(data.completedHotspotIds || []);
+    setElapsedSeconds(data.elapsedSeconds || (data.playTimeMinutes ? data.playTimeMinutes * 60 : 0));
     setSelectedPlanet(null);
     setActiveSite(null);
     setUnlockedTruthOverlay(null);
@@ -100,24 +116,17 @@ export default function HomePage() {
     setBelievedTruths([]);
     setCompletedHotspotIds([]);
     setElapsedSeconds(0);
+    setEmberCycleSecondsLeft(2382);
     setSelectedPlanet(null);
     setActiveSite(null);
+    setUnlockedTruthOverlay(null);
     setCurrentView("opening");
   };
 
-  // Keyboard shortcuts
+  // Keyboard navigation & Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Tab") {
-        e.preventDefault();
-        if (
-          currentView === "opening" ||
-          currentView === "landing_cinematic" ||
-          currentView === "ending"
-        )
-          return;
-        setCurrentView((prev) => (prev === "index" ? "galaxy" : "index"));
-      }
+      // Allow Escape to dismiss survey or index modals
       if (e.key === "Escape") {
         if (currentView === "survey") {
           setSelectedPlanet(null);
@@ -126,9 +135,14 @@ export default function HomePage() {
           setCurrentView("galaxy");
         }
       }
+
+      // 'L' key toggles inference lines on galaxy map
       if (e.key === "l" || e.key === "L") {
         if (currentView === "galaxy") {
-          setShowInferenceLines((prev) => !prev);
+          const activeTag = document.activeElement?.tagName;
+          if (activeTag !== "INPUT" && activeTag !== "TEXTAREA") {
+            setShowInferenceLines((prev) => !prev);
+          }
         }
       }
     };
@@ -203,11 +217,13 @@ export default function HomePage() {
             currentView={currentView}
             onNavigate={(view) => {
               if (view === "galaxy") setSelectedPlanet(null);
+              if (view === "ending" && !canResolveEnding) return;
               setCurrentView(view);
             }}
             showInferenceLines={showInferenceLines}
             onToggleInference={() => setShowInferenceLines((prev) => !prev)}
-            hasHiddenTruth={hasHiddenTruth}
+            canResolveEnding={canResolveEnding}
+            emberCycleSecondsLeft={emberCycleSecondsLeft}
           />
         )}
 
@@ -296,7 +312,7 @@ export default function HomePage() {
         )}
 
         {/* View 8: Ending Sequence (P4 Three Resolution Protocols) */}
-        {currentView === "ending" && (
+        {currentView === "ending" && canResolveEnding && (
           <motion.div
             key="ending-view"
             initial={{ opacity: 0 }}
@@ -315,6 +331,7 @@ export default function HomePage() {
               collectedPropositions={collectedPropositions}
               believedTruths={believedTruths}
               elapsedSeconds={elapsedSeconds}
+              canOverwrite={canOverwrite}
             />
           </motion.div>
         )}
@@ -353,10 +370,11 @@ export default function HomePage() {
         {unlockedTruthOverlay && (
           <TruthUnlockOverlay
             truth={unlockedTruthOverlay}
+            canResolveEnding={canResolveEnding}
             onProceed={() => {
-              const wasHidden = unlockedTruthOverlay.id === "THidden";
+              const shouldGoToEnding = unlockedTruthOverlay.id === "THidden" && canResolveEnding;
               setUnlockedTruthOverlay(null);
-              if (wasHidden) {
+              if (shouldGoToEnding) {
                 setCurrentView("ending");
               } else {
                 setCurrentView("galaxy");

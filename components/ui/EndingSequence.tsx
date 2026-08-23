@@ -1,28 +1,23 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CANON, AnchorTruth } from "@/lib/canon";
+import { CANON } from "@/lib/canon";
 import {
   ShieldCheck,
-  Zap,
-  RotateCcw,
   Sparkles,
-  Terminal,
-  Clock,
-  BookOpen,
-  CheckCircle2,
-  Globe,
-  Home,
   RefreshCw,
-  Award,
-  Radio,
-  Sliders,
-  ChevronRight,
+  Home,
+  Check,
   AlertTriangle,
   Play,
-  Check,
-  Compass,
+  Terminal,
+  ChevronRight,
+  BookOpen,
+  Clock,
+  RotateCcw,
+  Award,
+  Lock,
 } from "lucide-react";
 
 export type EndingType = "seal_off" | "overwrite" | "recurse";
@@ -34,6 +29,7 @@ interface EndingSequenceProps {
   believedTruths: string[];
   elapsedSeconds?: number;
   initialEnding?: EndingType | null;
+  canOverwrite?: boolean;
 }
 
 interface EndingDefinition {
@@ -146,6 +142,7 @@ export default function EndingSequence({
   believedTruths,
   elapsedSeconds = 1420,
   initialEnding = null,
+  canOverwrite = true,
 }: EndingSequenceProps) {
   const [selectedEnding, setSelectedEnding] = useState<EndingType | null>(initialEnding);
   const [step, setStep] = useState<"select" | "cutscene" | "stats">(
@@ -155,7 +152,10 @@ export default function EndingSequence({
   const [typedEpilogue, setTypedEpilogue] = useState("");
   const [isEpilogueDone, setIsEpilogueDone] = useState(false);
   const [showPropList, setShowPropList] = useState(false);
+
   const containerRef = useRef<HTMLDivElement>(null);
+  const logTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const typewriterIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Focus trap for accessibility
   useEffect(() => {
@@ -181,23 +181,34 @@ export default function EndingSequence({
   useEffect(() => {
     if (step !== "cutscene" || !activeEndingDef) return;
 
+    if (logTimerRef.current) clearInterval(logTimerRef.current);
+    if (typewriterIntervalRef.current) clearInterval(typewriterIntervalRef.current);
+
     setLogIndex(0);
     setTypedEpilogue("");
     setIsEpilogueDone(false);
 
     // Progression of transmission logs
-    const logTimer = setInterval(() => {
+    logTimerRef.current = setInterval(() => {
       setLogIndex((prev) => {
         if (prev < activeEndingDef.transmissionLog.length - 1) {
           return prev + 1;
         } else {
-          clearInterval(logTimer);
+          if (logTimerRef.current) {
+            clearInterval(logTimerRef.current);
+            logTimerRef.current = null;
+          }
           return prev;
         }
       });
     }, 450);
 
-    return () => clearInterval(logTimer);
+    return () => {
+      if (logTimerRef.current) {
+        clearInterval(logTimerRef.current);
+        logTimerRef.current = null;
+      }
+    };
   }, [step, activeEndingDef]);
 
   // Typewriter for epilogue narrative
@@ -207,26 +218,59 @@ export default function EndingSequence({
 
     const fullText = activeEndingDef.epilogueLog;
     let charIdx = 0;
-    const typeTimer = setInterval(() => {
+    typewriterIntervalRef.current = setInterval(() => {
       charIdx += 2;
       setTypedEpilogue(fullText.slice(0, charIdx));
       if (charIdx >= fullText.length) {
-        clearInterval(typeTimer);
+        if (typewriterIntervalRef.current) {
+          clearInterval(typewriterIntervalRef.current);
+          typewriterIntervalRef.current = null;
+        }
         setIsEpilogueDone(true);
       }
     }, 20);
 
-    return () => clearInterval(typeTimer);
+    return () => {
+      if (typewriterIntervalRef.current) {
+        clearInterval(typewriterIntervalRef.current);
+        typewriterIntervalRef.current = null;
+      }
+    };
   }, [step, logIndex, activeEndingDef]);
 
   const handleSkipCutscene = () => {
     if (!activeEndingDef) return;
+    if (logTimerRef.current) {
+      clearInterval(logTimerRef.current);
+      logTimerRef.current = null;
+    }
+    if (typewriterIntervalRef.current) {
+      clearInterval(typewriterIntervalRef.current);
+      typewriterIntervalRef.current = null;
+    }
     setLogIndex(activeEndingDef.transmissionLog.length - 1);
     setTypedEpilogue(activeEndingDef.epilogueLog);
     setIsEpilogueDone(true);
   };
 
+  // Keyboard Space / Enter listener for cutscene skipping
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (step === "cutscene" && !isEpilogueDone) {
+        if (e.key === " " || e.key === "Spacebar" || e.key === "Enter") {
+          e.preventDefault();
+          handleSkipCutscene();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [step, isEpilogueDone, activeEndingDef]);
+
   const handleChooseEnding = (endingId: EndingType) => {
+    if (endingId === "overwrite" && !canOverwrite) {
+      return;
+    }
     setSelectedEnding(endingId);
     setStep("cutscene");
   };
@@ -294,7 +338,7 @@ export default function EndingSequence({
                   请选择终局决议协议 (RESOLUTION PROTOCOL)
                 </h1>
                 <p className="text-xs md:text-sm font-mono text-slate-300 max-w-2xl mx-auto leading-relaxed">
-                  九颗星球的真相已经收敛。作为第一轮计算留下的最后一位奇偶校验码（Recorder-9
+                  六大真相（T1-T5 与隐藏真相）已全部收敛。作为第一轮计算留下的最后一位奇偶校验码（Recorder-9
                   / Vesper），你拥有对整台恒星计算机自催化链路的最终裁决权。
                 </p>
               </div>
@@ -303,27 +347,32 @@ export default function EndingSequence({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {(Object.keys(ENDINGS) as EndingType[]).map((key) => {
                   const ending = ENDINGS[key];
+                  const isLocked = ending.id === "overwrite" && !canOverwrite;
+
                   return (
                     <motion.div
                       key={ending.id}
-                      whileHover={{ scale: 1.02, y: -4 }}
-                      whileTap={{ scale: 0.98 }}
-                      className={`holo-panel p-6 rounded-sm border flex flex-col justify-between transition-all duration-300 relative group cursor-pointer ${
-                        ending.id === "seal_off"
-                          ? "hover:border-sky-400 hover:shadow-holo-cyan border-sky-500/30 bg-sky-950/20"
+                      whileHover={isLocked ? {} : { scale: 1.02, y: -4 }}
+                      whileTap={isLocked ? {} : { scale: 0.98 }}
+                      className={`holo-panel p-6 rounded-sm border flex flex-col justify-between transition-all duration-300 relative group ${
+                        isLocked
+                          ? "opacity-60 border-amber-500/20 bg-amber-950/10 cursor-not-allowed"
+                          : ending.id === "seal_off"
+                          ? "hover:border-sky-400 hover:shadow-holo-cyan border-sky-500/30 bg-sky-950/20 cursor-pointer"
                           : ending.id === "overwrite"
-                          ? "hover:border-amber-400 hover:shadow-holo-amber border-amber-500/30 bg-amber-950/20"
-                          : "hover:border-emerald-400 hover:shadow-emerald-500/30 border-emerald-500/30 bg-emerald-950/20"
+                          ? "hover:border-amber-400 hover:shadow-holo-amber border-amber-500/30 bg-amber-950/20 cursor-pointer"
+                          : "hover:border-emerald-400 hover:shadow-emerald-500/30 border-emerald-500/30 bg-emerald-950/20 cursor-pointer"
                       }`}
-                      onClick={() => handleChooseEnding(ending.id)}
+                      onClick={() => !isLocked && handleChooseEnding(ending.id)}
                       role="button"
-                      tabIndex={0}
+                      tabIndex={isLocked ? -1 : 0}
+                      aria-disabled={isLocked}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
+                        if (!isLocked && (e.key === "Enter" || e.key === " ")) {
                           handleChooseEnding(ending.id);
                         }
                       }}
-                      aria-label={`选择结局：${ending.title}`}
+                      aria-label={`选择结局：${ending.title}${isLocked ? " (已锁定)" : ""}`}
                     >
                       <div>
                         {/* Top Badge */}
@@ -331,7 +380,7 @@ export default function EndingSequence({
                           <span>{ending.code}</span>
                           <span
                             className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: ending.color }}
+                            style={{ backgroundColor: isLocked ? "#64748b" : ending.color }}
                           />
                         </div>
 
@@ -341,7 +390,7 @@ export default function EndingSequence({
                         </h2>
                         <div
                           className="text-xs font-mono font-semibold mb-4"
-                          style={{ color: ending.color }}
+                          style={{ color: isLocked ? "#94a3b8" : ending.color }}
                         >
                           {ending.subtitle}
                         </div>
@@ -350,6 +399,16 @@ export default function EndingSequence({
                         <p className="text-xs font-mono text-slate-300 leading-relaxed mb-4">
                           {ending.summary}
                         </p>
+
+                        {/* Lock Explanation for Overwrite */}
+                        {isLocked && (
+                          <div className="p-2.5 bg-void/80 border border-amber-500/30 rounded text-[11px] font-mono text-holo-amber flex items-start gap-2 mb-2">
+                            <Lock className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                            <span>
+                              【写回互斥锁生效】需待余烬周期衰减至 25% 以下（倒计时 &lt; 10:00）方可绕过物理常数写回锁。
+                            </span>
+                          </div>
+                        )}
                       </div>
 
                       {/* Card Bottom Footer */}
@@ -359,15 +418,33 @@ export default function EndingSequence({
                         </div>
                         <button
                           type="button"
-                          className="w-full py-2.5 px-3 rounded-sm border font-mono text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2 transition-all shadow-md group-hover:brightness-110"
-                          style={{
-                            backgroundColor: `${ending.color}22`,
-                            borderColor: ending.color,
-                            color: ending.color,
-                          }}
+                          disabled={isLocked}
+                          className={`w-full py-2.5 px-3 rounded-sm border font-mono text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2 transition-all shadow-md ${
+                            isLocked
+                              ? "bg-surface-dark text-slate-500 border-slate-700 cursor-not-allowed"
+                              : "group-hover:brightness-110"
+                          }`}
+                          style={
+                            isLocked
+                              ? undefined
+                              : {
+                                  backgroundColor: `${ending.color}22`,
+                                  borderColor: ending.color,
+                                  color: ending.color,
+                                }
+                          }
                         >
-                          <span>执行决议 (EXECUTE)</span>
-                          <ChevronRight className="w-4 h-4" />
+                          {isLocked ? (
+                            <>
+                              <Lock className="w-3.5 h-3.5" />
+                              <span>互斥锁锁定 (LOCKED)</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>执行决议 (EXECUTE)</span>
+                              <ChevronRight className="w-4 h-4" />
+                            </>
+                          )}
                         </button>
                       </div>
                     </motion.div>
@@ -415,7 +492,7 @@ export default function EndingSequence({
                   <button
                     onClick={handleSkipCutscene}
                     className="px-3 py-1 bg-surface-dark border border-holo-border hover:border-holo-cyan text-[11px] font-mono text-slate-300 rounded hover:text-white transition-all flex items-center gap-1.5"
-                    aria-label="快速跳过打字机动画"
+                    aria-label="快速跳过打字机动画 (快捷键 SPACE)"
                   >
                     <span>快速展开 [SPACE]</span>
                     <Play className="w-3 h-3" />
@@ -425,7 +502,7 @@ export default function EndingSequence({
 
               {/* Realtime Terminal Telemetry Stream */}
               <div className="p-4 bg-void/90 border border-slate-700/80 rounded font-mono text-xs space-y-1.5 max-h-48 overflow-y-auto">
-                <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
+                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
                   <Terminal className="w-3 h-3 text-holo-cyan" />
                   <span>PARITY BUS TELEMETRY FEED (1420.405 MHz)</span>
                 </div>
@@ -471,7 +548,7 @@ export default function EndingSequence({
                   <div className="italic text-slate-300 font-serif text-sm">
                     {activeEndingDef.quote}
                   </div>
-                  <div className="text-[11px] text-slate-500">
+                  <div className="text-[11px] text-slate-400">
                     {activeEndingDef.quoteAuthor}
                   </div>
                 </motion.div>
@@ -542,7 +619,7 @@ export default function EndingSequence({
                   <div className="font-display font-bold text-2xl text-holo-cyan">
                     {believedTruths.length} / 6
                   </div>
-                  <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                  <div className="text-[10px] text-slate-400 font-mono mt-0.5">
                     {believedTruths.length === 6 ? "100% 正典收敛" : "部分收敛"}
                   </div>
                 </div>
@@ -556,7 +633,7 @@ export default function EndingSequence({
                   <div className="font-display font-bold text-2xl text-holo-amber">
                     {collectedPropositions.length}
                   </div>
-                  <div className="text-[10px] text-slate-500 font-mono mt-0.5">全息书卷条目</div>
+                  <div className="text-[10px] text-slate-400 font-mono mt-0.5">全息书卷条目</div>
                 </div>
 
                 {/* Stat 3: Parity Integrity */}
@@ -578,7 +655,7 @@ export default function EndingSequence({
                     )}
                     %
                   </div>
-                  <div className="text-[10px] text-slate-500 font-mono mt-0.5">晚星自我连续性</div>
+                  <div className="text-[10px] text-slate-400 font-mono mt-0.5">晚星自我连续性</div>
                 </div>
 
                 {/* Stat 4: Exploration Time */}
@@ -590,7 +667,7 @@ export default function EndingSequence({
                   <div className="font-display font-bold text-xl md:text-2xl text-purple-300">
                     {formattedPlayTime}
                   </div>
-                  <div className="text-[10px] text-slate-500 font-mono mt-0.5">标准巡航时间</div>
+                  <div className="text-[10px] text-slate-400 font-mono mt-0.5">标准巡航时间</div>
                 </div>
               </div>
 
@@ -611,7 +688,7 @@ export default function EndingSequence({
                         className={`p-3 rounded-sm border flex items-center justify-between text-xs font-mono ${
                           isBelieved
                             ? "bg-surface-dark/80 border-holo-cyan/40 text-slate-200"
-                            : "bg-void/60 border-slate-800 text-slate-600"
+                            : "bg-void/60 border-slate-800 text-slate-400"
                         }`}
                       >
                         <div className="flex items-center gap-2">
@@ -644,7 +721,7 @@ export default function EndingSequence({
                   className="text-xs font-mono text-holo-amber hover:underline flex items-center gap-1"
                 >
                   <span>{showPropList ? "折叠命题清单 ▲" : "展开已收集命题详细清单 ▼"}</span>
-                  <span className="text-slate-500">({collectedPropositions.length})</span>
+                  <span className="text-slate-400">({collectedPropositions.length})</span>
                 </button>
 
                 {showPropList && (
@@ -654,7 +731,7 @@ export default function EndingSequence({
                     className="mt-2 p-3 bg-void/90 border border-slate-700/60 rounded text-[11px] font-mono text-slate-300 max-h-40 overflow-y-auto space-y-1"
                   >
                     {collectedPropositions.length === 0 ? (
-                      <div className="text-slate-500">暂无命题记录</div>
+                      <div className="text-slate-400">暂无命题记录</div>
                     ) : (
                       collectedPropositions.map((prop, idx) => (
                         <div key={idx} className="flex items-center gap-2">
@@ -701,7 +778,7 @@ export default function EndingSequence({
       </main>
 
       {/* Bottom Telemetry Bar */}
-      <footer className="relative z-10 w-full border-t border-holo-cyan/20 bg-surface-dark/90 px-6 py-3 flex justify-between items-center text-[11px] font-mono text-slate-500 shrink-0">
+      <footer className="relative z-10 w-full border-t border-holo-cyan/20 bg-surface-dark/90 px-6 py-3 flex justify-between items-center text-[11px] font-mono text-slate-400 shrink-0">
         <div>VESSEL: ISV THRESHOLD // RECORDER-9 [VESPER]</div>
         <div>ASTRAL NOIR NARRATIVE ENGINE v1.0.0</div>
       </footer>

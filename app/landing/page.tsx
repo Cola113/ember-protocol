@@ -118,7 +118,7 @@ export default function LandingPage() {
 
         <nav aria-label="落地页主导航" className="flex items-center gap-3 md:gap-5 text-xs font-mono">
           <a
-            href="https://github.com/Hermes-AI/ember-protocol/blob/main/DESIGN.md"
+            href="https://github.com/Cola113/ember-protocol/blob/main/DESIGN.md"
             target="_blank"
             rel="noopener noreferrer"
             className="px-3 py-1.5 text-slate-300 hover:text-holo-cyan transition-colors flex items-center gap-1"
@@ -126,7 +126,7 @@ export default function LandingPage() {
             <FileText className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">设计白皮书</span>
             <span className="sm:hidden">DESIGN</span>
-            <ExternalLink className="w-3 h-3 text-slate-500" />
+            <ExternalLink className="w-3 h-3 text-slate-400" />
           </a>
 
           <Link
@@ -174,14 +174,14 @@ export default function LandingPage() {
             </Link>
 
             <a
-              href="https://github.com/Hermes-AI/ember-protocol/blob/main/DESIGN.md"
+              href="https://github.com/Cola113/ember-protocol/blob/main/DESIGN.md"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto px-6 py-3.5 bg-surface border border-slate-700 hover:border-slate-400 text-slate-300 hover:text-white font-mono text-sm tracking-wider uppercase rounded-sm transition-all flex items-center justify-center gap-2"
             >
               <BookOpen className="w-4 h-4 text-slate-400" />
               <span>查阅世界观与设计文档</span>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
             </a>
           </div>
         </section>
@@ -295,7 +295,7 @@ export default function LandingPage() {
             游戏主页
           </Link>
           <a
-            href="https://github.com/Hermes-AI/ember-protocol"
+            href="https://github.com/Cola113/ember-protocol"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-holo-cyan transition-colors"
