@@ -62,6 +62,18 @@ export default function ShipInteriorView({
   const [selectedSlotId, setSelectedSlotId] = useState<SlotId>("slot_1");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [showConfirmNewGame, setShowConfirmNewGame] = useState(false);
+  const statusTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const setTimedStatusMessage = (msg: string, durationMs = 3500) => {
+    if (statusTimerRef.current) {
+      clearTimeout(statusTimerRef.current);
+    }
+    setStatusMessage(msg);
+    statusTimerRef.current = setTimeout(() => {
+      setStatusMessage(null);
+      statusTimerRef.current = null;
+    }, durationMs);
+  };
 
   const refreshSlots = () => {
     setSaveSlots(getAllSaveSlots());
@@ -69,6 +81,11 @@ export default function ShipInteriorView({
 
   useEffect(() => {
     refreshSlots();
+    return () => {
+      if (statusTimerRef.current) {
+        clearTimeout(statusTimerRef.current);
+      }
+    };
   }, []);
 
   const handleSaveToSlot = (slotId: SlotId) => {
@@ -87,23 +104,20 @@ export default function ShipInteriorView({
     });
 
     refreshSlots();
-    setStatusMessage(`【${slotNames[slotId]}】已成功写入 ISV 晶体存储介质！`);
-    setTimeout(() => setStatusMessage(null), 3500);
+    setTimedStatusMessage(`【${slotNames[slotId]}】已成功写入 ISV 晶体存储介质！`, 3500);
   };
 
   const handleLoadSlot = (slotId: SlotId) => {
     const data = loadGame(slotId);
     if (!data) return;
     onLoadSave(data);
-    setStatusMessage(`【${data.name}】已成功载入！探针记忆与星图拓扑已同步。`);
-    setTimeout(() => setStatusMessage(null), 3500);
+    setTimedStatusMessage(`【${data.name}】已成功载入！探针记忆与星图拓扑已同步。`, 3500);
   };
 
   const handleDeleteSlot = (slotId: SlotId) => {
     deleteSaveGame(slotId);
     refreshSlots();
-    setStatusMessage(`槽位 ${slotId} 记录已抹除。`);
-    setTimeout(() => setStatusMessage(null), 3000);
+    setTimedStatusMessage(`槽位 ${slotId} 记录已抹除。`, 3000);
   };
 
   const selectedSlotData = saveSlots[selectedSlotId];

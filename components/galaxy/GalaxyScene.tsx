@@ -471,11 +471,11 @@ function CameraController({
   controlsRef: React.MutableRefObject<any>;
 }) {
   const { camera } = useThree();
-  const prevTargetRef = useRef<string | null>(null);
+  const prevTargetIdRef = useRef<string | null>(null);
   const isTransitioningRef = useRef(false);
 
-  const planetPos = useMemo(() => {
-    if (!targetPlanet) return null;
+  const desiredTarget = useMemo(() => {
+    if (!targetPlanet) return new THREE.Vector3(0, 0, 0);
     return new THREE.Vector3(
       targetPlanet.coordinates.x * 0.8,
       targetPlanet.coordinates.y * 0.8,
@@ -483,52 +483,48 @@ function CameraController({
     );
   }, [targetPlanet]);
 
+  const desiredCamPos = useMemo(() => {
+    if (!targetPlanet) return new THREE.Vector3(0, 60, 260);
+    return new THREE.Vector3(
+      desiredTarget.x + 28,
+      desiredTarget.y + 14,
+      desiredTarget.z + 38
+    );
+  }, [targetPlanet, desiredTarget]);
+
   useEffect(() => {
     const newId = targetPlanet?.id || null;
-    if (newId !== prevTargetRef.current) {
-      prevTargetRef.current = newId;
+    if (newId !== prevTargetIdRef.current) {
+      prevTargetIdRef.current = newId;
       isTransitioningRef.current = true;
+      if (controlsRef.current) {
+        controlsRef.current.enabled = false;
+      }
     }
-  }, [targetPlanet]);
+  }, [targetPlanet, controlsRef]);
 
   useFrame((_, delta) => {
     const controls = controlsRef.current;
-    const speed = Math.min(delta * 3.5, 0.25);
+    if (!controls) return;
 
-    if (targetPlanet && planetPos) {
-      // Planet focus mode: smoothly interpolate target & camera position
-      const desiredCamPos = new THREE.Vector3(
-        planetPos.x + 28,
-        planetPos.y + 14,
-        planetPos.z + 38
-      );
-
-      if (controls) {
-        controls.target.lerp(planetPos, speed);
-      }
+    if (isTransitioningRef.current) {
+      const speed = Math.min(delta * 4.5, 0.28);
+      controls.target.lerp(desiredTarget, speed);
       camera.position.lerp(desiredCamPos, speed);
 
-      if (camera.position.distanceTo(desiredCamPos) < 0.6) {
+      const targetDist = controls.target.distanceTo(desiredTarget);
+      const camDist = camera.position.distanceTo(desiredCamPos);
+
+      // Once arrived within proximity, snap to exact target, re-enable OrbitControls, and stop writing
+      if (targetDist < 0.25 && camDist < 0.6) {
+        controls.target.copy(desiredTarget);
+        camera.position.copy(desiredCamPos);
+        controls.enabled = true;
         isTransitioningRef.current = false;
-      }
-    } else {
-      // Reset back to galactic origin when deselected
-      if (isTransitioningRef.current) {
-        const defaultOrigin = new THREE.Vector3(0, 0, 0);
-        const defaultCamPos = new THREE.Vector3(0, 60, 260);
-
-        if (controls) {
-          controls.target.lerp(defaultOrigin, speed * 0.85);
-        }
-        camera.position.lerp(defaultCamPos, speed * 0.85);
-
-        if (camera.position.distanceTo(defaultCamPos) < 1.2) {
-          isTransitioningRef.current = false;
-        }
       }
     }
 
-    if (controls) {
+    if (controls.enabled) {
       controls.update();
     }
   });

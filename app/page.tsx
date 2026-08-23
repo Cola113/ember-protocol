@@ -51,18 +51,16 @@ export default function HomePage() {
     [believedTruths]
   );
 
-  // Auto-save progress whenever propositions or truths update
+  // Auto-save progress whenever propositions, truths or completed hotspots update
   useEffect(() => {
     if (collectedPropositions.length > 0 || believedTruths.length > 0) {
       saveGame("auto", {
         collectedPropositions,
         believedTruths,
         completedHotspotIds,
-        selectedPlanetId: selectedPlanet?.id,
-        currentView,
       });
     }
-  }, [collectedPropositions, believedTruths, completedHotspotIds, selectedPlanet, currentView]);
+  }, [collectedPropositions, believedTruths, completedHotspotIds]);
 
   const handleCompleteHotspot = (hotspotId: string) => {
     if (!completedHotspotIds.includes(hotspotId)) {
@@ -70,14 +68,16 @@ export default function HomePage() {
     }
   };
 
+  // Explicit Progress-Only Recovery Contract:
+  // Restores canonical progress (propositions, truths, completed hotspots)
+  // Resets all transient view routing back to galactic overview
   const handleLoadSave = (data: SaveSlotData) => {
     setCollectedPropositions(data.collectedPropositions || []);
     setBelievedTruths(data.believedTruths || []);
     setCompletedHotspotIds(data.completedHotspotIds || []);
-    if (data.selectedPlanetId) {
-      const found = CANON.planets.find((p) => p.id === data.selectedPlanetId);
-      if (found) setSelectedPlanet(found);
-    }
+    setSelectedPlanet(null);
+    setActiveSite(null);
+    setUnlockedTruthOverlay(null);
     setCurrentView("galaxy");
   };
 

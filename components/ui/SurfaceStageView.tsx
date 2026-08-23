@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PlanetDef, LandingSite } from "@/lib/canon";
 import { CANON_DIALOGUES, NPCDialogueTree } from "@/lib/dialogues";
@@ -95,12 +95,25 @@ export default function SurfaceStageView({
   const [dialogueStep, setDialogueStep] = useState(0);
   const [localCompletedHotspots, setLocalCompletedHotspots] = useState<string[]>([]);
   const [toastProp, setToastProp] = useState<{ code: string; text: string } | null>(null);
+  const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleCollectReward = (code: string, text: string) => {
     onCollectProposition(code, text);
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
     setToastProp({ code, text });
-    setTimeout(() => {
+    toastTimerRef.current = setTimeout(() => {
       setToastProp((curr) => (curr?.code === code ? null : curr));
+      toastTimerRef.current = null;
     }, 4500);
   };
 

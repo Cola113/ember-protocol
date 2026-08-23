@@ -51,7 +51,6 @@ export default function IndexDrawer({
   const [loading, setLoading] = useState(false);
   const [draggedProp, setDraggedProp] = useState<string | null>(null);
   const [pinnedFlashProp, setPinnedFlashProp] = useState<string | null>(null);
-  const [graphHoveredTruth, setGraphHoveredTruth] = useState<string | null>(null);
 
   // Derive truth state machine: unknown | encountered | suspected | believed
   const getTruthStatus = (truth: AnchorTruth): "unknown" | "encountered" | "suspected" | "believed" => {
@@ -436,7 +435,11 @@ export default function IndexDrawer({
                       : `前置命题未集齐：还需收集 ${missingProps.length} 个必要命题 (${missingProps.join(", ")}) 才能开启综合推演。`
                   }
                   disabled={!hasAllRequiredProps && !isAlreadyBelieved}
-                  className="w-full h-32 bg-surface-dark/90 border border-holo-cyan/20 focus:border-holo-amber disabled:opacity-40 p-3 text-xs font-mono text-holo-bright rounded-sm outline-none resize-none leading-relaxed transition-colors mb-2"
+                  className={`w-full h-32 bg-surface-dark/90 border disabled:opacity-40 p-3 text-xs font-mono text-holo-bright rounded-sm outline-none resize-none leading-relaxed transition-all mb-2 ${
+                    draggedProp
+                      ? "border-holo-cyan shadow-holo-cyan bg-holo-cyan/10"
+                      : "border-holo-cyan/20 focus:border-holo-amber"
+                  }`}
                 />
               </div>
 
@@ -540,8 +543,6 @@ export default function IndexDrawer({
                 return (
                   <div
                     key={t.id}
-                    onMouseEnter={() => setGraphHoveredTruth(t.id)}
-                    onMouseLeave={() => setGraphHoveredTruth(null)}
                     onClick={() => {
                       setSelectedTruth(t);
                       setTabMode("synthesis");
