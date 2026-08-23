@@ -137,7 +137,23 @@ export default function IndexDrawer({
       );
     } else if (selectedTruth.id === "T2") {
       setHypothesis(
-        "余烬星弧九颗星球构成分布式恒星计算机。窑（Kiln）担任能量总线与互斥电源分配单元，咏井担任中央晶振时钟。"
+        "余烬星弧九颗星球构成分布式恒星计算机。窑（Kiln）担任能量总线互斥锁，玻璃果园（Glass Orchard）担任只读光存储矩阵（ROM）。"
+      );
+    } else if (selectedTruth.id === "T3") {
+      setHypothesis(
+        "咏井（Choir Well）圣歌为恒星计算机提供中央晶振时钟基频脉冲，针（Needle）尖塔阵列负责全域内存寻址与堆栈指针重定基底。"
+      );
+    } else if (selectedTruth.id === "T4") {
+      setHypothesis(
+        "400年前的灭绝是第一轮计算结束时的写回（Write-Back）操作。髓（Marrow）的生物湿件处理器与文明被坍缩编译为结果常数与残响。"
+      );
+    } else if (selectedTruth.id === "T5") {
+      setHypothesis(
+        "总账（Ledger）的错误日志与公证授权证实，记录员协议是中断第二轮点火的奇偶校验位机制，理解与认知即为停机钥匙。"
+      );
+    } else if (selectedTruth.id === "THidden") {
+      setHypothesis(
+        "晚星（Vesper）探针自己就是第9号奇偶校验位（Recorder-9）。前8代探针相继熔断，本次苏醒是终结自催化轮回的自我认知重逢。"
       );
     } else {
       setHypothesis(

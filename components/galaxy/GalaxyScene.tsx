@@ -14,7 +14,7 @@ interface GalaxySceneProps {
 }
 
 // Background Starfield + Ember Spur Floating Dust
-function CosmicDust({ count = 1000 }) {
+function CosmicDust({ count = 1200 }) {
   const points = useMemo(() => {
     const coords = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
@@ -22,14 +22,24 @@ function CosmicDust({ count = 1000 }) {
     const amber = new THREE.Color("#f59e0b");
     const white = new THREE.Color("#e0f2fe");
     const purple = new THREE.Color("#c084fc");
+    const rose = new THREE.Color("#f43f5e");
 
     for (let i = 0; i < count; i++) {
-      coords[i * 3] = (Math.random() - 0.5) * 900;
-      coords[i * 3 + 1] = (Math.random() - 0.5) * 600;
-      coords[i * 3 + 2] = (Math.random() - 0.5) * 900;
+      coords[i * 3] = (Math.random() - 0.5) * 950;
+      coords[i * 3 + 1] = (Math.random() - 0.5) * 650;
+      coords[i * 3 + 2] = (Math.random() - 0.5) * 950;
 
       const rand = Math.random();
-      const col = rand > 0.75 ? cyan : rand > 0.55 ? amber : rand > 0.45 ? purple : white;
+      const col =
+        rand > 0.8
+          ? cyan
+          : rand > 0.6
+          ? amber
+          : rand > 0.45
+          ? purple
+          : rand > 0.35
+          ? rose
+          : white;
       colors[i * 3] = col.r;
       colors[i * 3 + 1] = col.g;
       colors[i * 3 + 2] = col.b;
@@ -83,7 +93,7 @@ function SpurCurve({ visiblePlanets }: { visiblePlanets: PlanetDef[] }) {
     );
 
     const curve = new THREE.CatmullRomCurve3(points);
-    const pts = curve.getPoints(120);
+    const pts = curve.getPoints(140);
     const geom = new THREE.BufferGeometry().setFromPoints(pts);
 
     const mat = new THREE.LineDashedMaterial({
@@ -96,11 +106,10 @@ function SpurCurve({ visiblePlanets }: { visiblePlanets: PlanetDef[] }) {
     });
 
     const line = new THREE.Line(geom, mat);
-    line.computeLineDistances(); // pi item 2 fix
+    line.computeLineDistances();
     return line;
   }, [visiblePlanets]);
 
-  // Clean up WebGL resources when unmounting or changing (pi item 3 fix)
   useEffect(() => {
     return () => {
       if (lineObj) {
@@ -118,7 +127,7 @@ function SpurCurve({ visiblePlanets }: { visiblePlanets: PlanetDef[] }) {
   return <primitive object={lineObj} />;
 }
 
-// Inference Lines between unlocked & visible planets only (pi item 4 fix)
+// Inference Lines between unlocked & visible planets only
 function InferenceLines({ visiblePlanets }: { visiblePlanets: PlanetDef[] }) {
   const visibleIds = useMemo(() => new Set(visiblePlanets.map((p) => p.id)), [visiblePlanets]);
 
@@ -128,8 +137,11 @@ function InferenceLines({ visiblePlanets }: { visiblePlanets: PlanetDef[] }) {
       ["kiln", "choir-well"],
       ["kiln", "glass-orchard"],
       ["choir-well", "ledger"],
+      ["ledger", "needle"],
       ["ledger", "marrow"],
+      ["marrow", "cinder-court"],
       ["marrow", "blind-sun"],
+      ["blind-sun", "black-interval"],
       ["ledger", "black-interval"],
     ],
     []
@@ -160,7 +172,6 @@ function InferenceLines({ visiblePlanets }: { visiblePlanets: PlanetDef[] }) {
       });
   }, [visibleIds, canonicalPairs]);
 
-  // Proper disposal
   useEffect(() => {
     return () => {
       activeLines.forEach((line) => {
@@ -183,7 +194,7 @@ function InferenceLines({ visiblePlanets }: { visiblePlanets: PlanetDef[] }) {
   );
 }
 
-// Visual Node for a Planet with distinct materials and orbital animations
+// Visual Node for a Planet with distinct materials, custom geometry, and tailored animations
 function PlanetNode({
   planet,
   isSelected,
@@ -195,6 +206,8 @@ function PlanetNode({
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const ringRef = useRef<THREE.Mesh>(null);
+  const secondaryRingRef = useRef<THREE.Mesh>(null);
+  const wireframeCageRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
 
   const pos: [number, number, number] = [
@@ -203,49 +216,125 @@ function PlanetNode({
     planet.coordinates.z * 0.8,
   ];
 
-  useFrame((_, delta) => {
+  // Specific Planet Identities
+  const isHelix = planet.id === "helix-7";
+  const isKiln = planet.id === "kiln";
+  const isOrchard = planet.id === "glass-orchard";
+  const isChoir = planet.id === "choir-well";
+  const isLedger = planet.id === "ledger";
+  const isNeedle = planet.id === "needle";
+  const isMarrow = planet.id === "marrow";
+  const isCinder = planet.id === "cinder-court";
+  const isBlindSun = planet.id === "blind-sun";
+  const isBlackInterval = planet.id === "black-interval";
+
+  const radius = isBlindSun ? 6.8 : isBlackInterval ? 6.2 : isKiln || isCinder ? 6.0 : 5.4;
+
+  useFrame(({ clock }, delta) => {
+    const t = clock.getElapsedTime();
+
     if (meshRef.current) {
       meshRef.current.rotation.y += delta * 0.4;
+      if (isBlackInterval) {
+        meshRef.current.rotation.x += delta * 0.25;
+        meshRef.current.rotation.z += delta * 0.15;
+      }
+
+      // Marrow heartbeat pulse
+      if (isMarrow) {
+        const bioPulse = 1.0 + Math.sin(t * 3.6) * 0.07;
+        const targetScale = (hovered || isSelected ? 1.3 : 1.0) * bioPulse;
+        meshRef.current.scale.set(targetScale, targetScale, targetScale);
+      }
     }
+
     if (ringRef.current) {
-      ringRef.current.rotation.z += delta * 0.2;
+      ringRef.current.rotation.z += delta * (isChoir ? 0.4 : 0.2);
+    }
+    if (secondaryRingRef.current) {
+      secondaryRingRef.current.rotation.z -= delta * 0.25;
+      secondaryRingRef.current.rotation.x += delta * 0.1;
+    }
+    if (wireframeCageRef.current) {
+      wireframeCageRef.current.rotation.y -= delta * 0.35;
+      wireframeCageRef.current.rotation.x -= delta * 0.2;
     }
   });
 
-  const radius = planet.category === "author" ? 5.5 : 7.5;
-
-  // Custom visual nuances per planet
-  const isMagma = planet.id === "kiln";
-  const isCrystal = planet.id === "glass-orchard" || planet.id === "helix-7";
-
   return (
     <group position={pos}>
-      {/* Interactive Orbit Ring */}
-      <mesh ref={ringRef} rotation={[Math.PI / 2.2, 0, 0]}>
-        <ringGeometry args={[radius * 1.6, radius * 1.68, 48]} />
+      {/* 1. Primary Orbit Ring */}
+      <mesh
+        ref={ringRef}
+        rotation={
+          isNeedle
+            ? [Math.PI / 1.4, Math.PI / 6, 0]
+            : isBlackInterval
+            ? [Math.PI / 4, Math.PI / 4, 0]
+            : [Math.PI / 2.2, 0, 0]
+        }
+      >
+        <ringGeometry
+          args={[
+            radius * 1.55,
+            radius * (isLedger || isCinder ? 1.72 : 1.64),
+            isLedger ? 16 : 48,
+          ]}
+        />
         <meshBasicMaterial
-          color={planet.color}
-          opacity={hovered || isSelected ? 0.75 : 0.22}
+          color={isBlackInterval ? "#ffffff" : planet.color}
+          opacity={hovered || isSelected ? 0.8 : isBlackInterval ? 0.5 : 0.25}
           transparent
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      {/* Secondary Inner Dash Ring */}
-      <mesh rotation={[Math.PI / 3, Math.PI / 4, 0]}>
-        <ringGeometry args={[radius * 1.35, radius * 1.38, 32]} />
-        <meshBasicMaterial
-          color={isSelected ? "#f59e0b" : "#38bdf8"}
-          opacity={isSelected ? 0.8 : hovered ? 0.4 : 0.1}
-          transparent
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+      {/* 2. Secondary Custom Rings (Harmonic waves, Magma halo, or Gear ring) */}
+      {(isChoir || isKiln || isOrchard || isLedger || isCinder || isNeedle) && (
+        <mesh
+          ref={secondaryRingRef}
+          rotation={
+            isNeedle
+              ? [Math.PI / 3, 0, Math.PI / 2]
+              : [Math.PI / 3, Math.PI / 4, 0]
+          }
+        >
+          <ringGeometry args={[radius * 1.32, radius * 1.36, isLedger ? 12 : 36]} />
+          <meshBasicMaterial
+            color={
+              isSelected
+                ? "#f59e0b"
+                : isChoir
+                ? "#0284c7"
+                : isKiln
+                ? "#ea580c"
+                : isOrchard
+                ? "#6ee7b7"
+                : isLedger
+                ? "#eab308"
+                : isCinder
+                ? "#e879f9"
+                : "#a5b4fc"
+            }
+            opacity={isSelected ? 0.85 : hovered ? 0.6 : 0.2}
+            transparent
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      )}
 
-      {/* Main Planet Sphere */}
+      {/* 3. Black Interval Inverted Wireframe Cage */}
+      {isBlackInterval && (
+        <mesh ref={wireframeCageRef} scale={1.35}>
+          <octahedronGeometry args={[radius, 1]} />
+          <meshBasicMaterial color="#ffffff" wireframe transparent opacity={0.4} />
+        </mesh>
+      )}
+
+      {/* 4. Main Planet Core Mesh */}
       <mesh
         ref={meshRef}
-        scale={hovered || isSelected ? 1.3 : 1.0}
+        scale={isMarrow ? 1.0 : hovered || isSelected ? 1.3 : 1.0}
         onClick={(e) => {
           e.stopPropagation();
           onSelect(planet);
@@ -256,28 +345,91 @@ function PlanetNode({
         }}
         onPointerOut={() => setHovered(false)}
       >
-        <sphereGeometry args={[radius, 36, 36]} />
+        {isBlackInterval ? (
+          <icosahedronGeometry args={[radius, 0]} />
+        ) : isOrchard ? (
+          <icosahedronGeometry args={[radius, 2]} />
+        ) : (
+          <sphereGeometry args={[radius, 36, 36]} />
+        )}
+
         <meshStandardMaterial
-          color={planet.color}
-          roughness={isCrystal ? 0.1 : isMagma ? 0.8 : 0.4}
-          metalness={isCrystal ? 0.9 : isMagma ? 0.2 : 0.6}
-          emissive={planet.color}
-          emissiveIntensity={hovered || isSelected ? 0.85 : isMagma ? 0.55 : 0.35}
+          color={
+            isBlindSun
+              ? "#1e293b"
+              : isBlackInterval
+              ? "#f8fafc"
+              : planet.color
+          }
+          roughness={
+            isOrchard
+              ? 0.05
+              : isKiln
+              ? 0.85
+              : isBlindSun
+              ? 0.95
+              : isBlackInterval
+              ? 0.1
+              : 0.35
+          }
+          metalness={
+            isOrchard
+              ? 0.95
+              : isNeedle || isLedger || isHelix
+              ? 0.85
+              : isKiln || isMarrow
+              ? 0.2
+              : isBlackInterval
+              ? 0.9
+              : 0.5
+          }
+          emissive={
+            isBlindSun
+              ? "#0f172a"
+              : isBlackInterval
+              ? "#ffffff"
+              : planet.color
+          }
+          emissiveIntensity={
+            hovered || isSelected
+              ? 0.9
+              : isKiln
+              ? 0.6
+              : isBlackInterval
+              ? 0.8
+              : isMarrow
+              ? 0.5
+              : 0.3
+          }
         />
       </mesh>
 
-      {/* Atmospheric Halo Glow */}
-      <mesh scale={1.45}>
+      {/* 5. Atmospheric Halo / Eclipse Corona Rim */}
+      <mesh scale={isBlindSun ? 1.6 : 1.45}>
         <sphereGeometry args={[radius, 24, 24]} />
         <meshBasicMaterial
-          color={planet.color}
+          color={
+            isBlindSun
+              ? "#94a3b8"
+              : isBlackInterval
+              ? "#ffffff"
+              : planet.color
+          }
           transparent
-          opacity={hovered || isSelected ? 0.35 : 0.12}
+          opacity={
+            isBlindSun
+              ? 0.45
+              : hovered || isSelected
+              ? 0.38
+              : isBlackInterval
+              ? 0.28
+              : 0.12
+          }
           side={THREE.BackSide}
         />
       </mesh>
 
-      {/* 2D HTML Tag */}
+      {/* 6. 2D HTML Name Tag */}
       <Html distanceFactor={220} position={[0, radius + 6, 0]} center>
         <div
           onClick={(e) => {
@@ -289,13 +441,18 @@ function PlanetNode({
               ? "bg-surface border-holo-amber text-holo-amber shadow-holo-amber scale-105"
               : hovered
               ? "bg-surface border-holo-cyan text-holo-cyan shadow-holo-cyan scale-105"
+              : isBlackInterval
+              ? "bg-surface border-white/60 text-white shadow-md hover:border-white"
               : "bg-surface/85 border-holo-border text-holo-bright hover:border-holo-cyan/50"
           }`}
         >
           <div className="flex items-center gap-1.5">
             <span
               className="w-2 h-2 rounded-full animate-pulse"
-              style={{ backgroundColor: planet.color }}
+              style={{
+                backgroundColor: isBlackInterval ? "#ffffff" : planet.color,
+                boxShadow: `0 0 6px ${isBlackInterval ? "#ffffff" : planet.color}`,
+              }}
             />
             <span className="font-bold">{planet.name}</span>
           </div>
@@ -348,7 +505,7 @@ export default function GalaxyScene({
         camera={{ position: [0, 60, 260], fov: 50, near: 1, far: 2500 }}
         style={{ background: "#050811" }}
       >
-        <ambientLight intensity={0.5} />
+        <ambientLight intensity={0.55} />
         <pointLight position={[120, 180, 120]} intensity={1.8} color="#e0f2fe" />
         <pointLight position={[-120, -60, -120]} intensity={1.0} color="#38bdf8" />
         <pointLight position={[0, -100, 100]} intensity={0.6} color="#f59e0b" />

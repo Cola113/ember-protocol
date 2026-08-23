@@ -35,6 +35,7 @@ export default function HomePage() {
   // Player state — starts empty so player explores Helix-7 first, collects propositions, and unlocks T1!
   const [collectedPropositions, setCollectedPropositions] = useState<string[]>([]);
   const [believedTruths, setBelievedTruths] = useState<string[]>([]);
+  const [completedHotspotIds, setCompletedHotspotIds] = useState<string[]>([]);
 
   // Newly unlocked truth for cinematic overlay
   const [unlockedTruthOverlay, setUnlockedTruthOverlay] = useState<AnchorTruth | null>(null);
@@ -47,6 +48,12 @@ export default function HomePage() {
         .flatMap((t) => t.unlocked_planets),
     [believedTruths]
   );
+
+  const handleCompleteHotspot = (hotspotId: string) => {
+    if (!completedHotspotIds.includes(hotspotId)) {
+      setCompletedHotspotIds((prev) => [...prev, hotspotId]);
+    }
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -157,6 +164,7 @@ export default function HomePage() {
           }}
           onLand={handleInitiateLanding}
           collectedPropositions={collectedPropositions}
+          completedHotspotIds={completedHotspotIds}
         />
       )}
 
@@ -179,6 +187,8 @@ export default function HomePage() {
           }}
           onCollectProposition={handleCollectProp}
           collectedPropositions={collectedPropositions}
+          completedHotspotIds={completedHotspotIds}
+          onCompleteHotspot={handleCompleteHotspot}
         />
       )}
 
