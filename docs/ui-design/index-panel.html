@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>余烬协议 // 索引面板 · Index & Synthesis Desk</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void: #050811;
+      --bg-surface: rgba(10, 20, 35, 0.88);
+      --border-holo: rgba(56, 189, 248, 0.22);
+      --primary-cyan: #38bdf8;
+      --accent-amber: #f59e0b;
+      --text-bright: #e0f2fe;
+      --text-muted: #64748b;
+      --state-believed: #10b981;
+      --state-suspected: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: var(--bg-void);
+      color: var(--text-bright);
+      font-family: 'JetBrains Mono', monospace;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .crt-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%),
+                  linear-gradient(90deg, rgba(56, 189, 248, 0.02), rgba(0, 0, 0, 0.01), rgba(245, 158, 11, 0.02));
+      background-size: 100% 3px, 4px 100%;
+      pointer-events: none;
+      z-index: 100;
+    }
+    .vignette {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      box-shadow: inset 0 0 160px rgba(0, 0, 0, 0.9);
+      pointer-events: none;
+      z-index: 99;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      height: 60px;
+      padding: 0 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(180deg, rgba(5, 8, 17, 0.95), transparent);
+      border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+      z-index: 50;
+    }
+    .btn-return {
+      background: rgba(10, 20, 35, 0.85);
+      border: 1px solid var(--border-holo);
+      color: var(--text-bright);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-return:hover {
+      border-color: var(--primary-cyan);
+      color: var(--primary-cyan);
+    }
+
+    /* 3-Column Layout: Propositions Shelf | Truth State Machine | Synthesis Workspace */
+    .index-grid {
+      display: grid;
+      grid-template-columns: 320px 380px 1fr;
+      height: calc(100vh - 60px);
+      padding: 24px 32px;
+      gap: 24px;
+      position: relative;
+      z-index: 20;
+    }
+
+    /* Column Base */
+    .holo-column {
+      background: var(--bg-surface);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-holo);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      overflow: hidden;
+    }
+    .col-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+    .col-title {
+      font-family: 'Cinzel', serif;
+      font-size: 15px;
+      color: var(--text-bright);
+      letter-spacing: 0.1em;
+    }
+    .col-count {
+      font-size: 11px;
+      color: var(--primary-cyan);
+    }
+
+    /* Column 1: Proposition Shelf */
+    .prop-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .prop-item {
+      background: rgba(8, 18, 32, 0.7);
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      border-radius: 2px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .prop-item:hover {
+      border-color: var(--primary-cyan);
+      background: rgba(56, 189, 248, 0.1);
+    }
+    .prop-code {
+      font-size: 11px;
+      color: var(--primary-cyan);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .prop-text {
+      font-size: 12px;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+
+    /* Column 2: Truths State Machine */
+    .truth-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .truth-card {
+      background: rgba(8, 18, 32, 0.7);
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      border-radius: 2px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .truth-card:hover, .truth-card.active {
+      border-color: var(--accent-amber);
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.2);
+    }
+    .truth-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .truth-id {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-bright);
+    }
+    .status-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 2px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .status-believed { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
+    .status-suspected { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid #f59e0b; }
+    .status-encountered { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid #38bdf8; }
+    .status-unknown { background: rgba(100, 116, 139, 0.2); color: #64748b; border: 1px solid #64748b; }
+    .truth-summary {
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+
+    /* Column 3: Synthesis Free-Text Workspace */
+    .synthesis-pane {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .synthesis-input-area {
+      width: 100%;
+      height: 140px;
+      background: rgba(5, 8, 17, 0.8);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      color: var(--text-bright);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      padding: 14px;
+      border-radius: 2px;
+      resize: none;
+      outline: none;
+      line-height: 1.6;
+      margin-bottom: 16px;
+      transition: border-color 0.2s;
+    }
+    .synthesis-input-area:focus {
+      border-color: var(--accent-amber);
+      box-shadow: 0 0 16px rgba(245, 158, 11, 0.2);
+    }
+    .btn-synthesize {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(8, 18, 32, 0.95));
+      border: 1px solid var(--accent-amber);
+      color: var(--accent-amber);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      padding: 12px 24px;
+      border-radius: 2px;
+      cursor: pointer;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+    .btn-synthesize:hover {
+      background: var(--accent-amber);
+      color: var(--bg-void);
+      box-shadow: 0 0 24px rgba(245, 158, 11, 0.5);
+    }
+    .feedback-box {
+      margin-top: 18px;
+      background: rgba(5, 8, 17, 0.7);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 2px;
+      padding: 16px;
+      flex: 1;
+      font-size: 12px;
+      line-height: 1.8;
+      overflow-y: auto;
+    }
+    .score-meter {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .score-item {
+      font-size: 11px;
+    }
+    .score-val {
+      color: var(--accent-amber);
+      font-weight: 700;
+      margin-left: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="crt-overlay"></div>
+  <div class="vignette"></div>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <button class="btn-return" onclick="window.location.href='galaxy-view.html'">
+      <span>← RETURN TO GALAXY MAP [ESC]</span>
+    </button>
+    <div style="font-family:'Cinzel',serif; font-size:16px; letter-spacing:0.15em;">
+      SYNTHESIS INDEX // 综合索引台
+    </div>
+    <div style="font-size:12px; color:var(--primary-cyan);">
+      RECORDER-9 COGNITIVE MATRIX
+    </div>
+  </div>
+
+  <div class="index-grid">
+    <!-- Left Column: Discovered Propositions -->
+    <div class="holo-column">
+      <div class="col-header">
+        <span class="col-title">已钉选命题库</span>
+        <span class="col-count" id="propCount">4 PROPOSITIONS</span>
+      </div>
+      <div class="prop-list">
+        <div class="prop-item" onclick="insertProposition('Helix.Beacon.Broadcasting')">
+          <div class="prop-code">Helix.Beacon.Broadcasting</div>
+          <div class="prop-text">Helix-7 的信标正持续广播未标记握手载波。</div>
+        </div>
+        <div class="prop-item" onclick="insertProposition('Helix.Signal.Unassigned')">
+          <div class="prop-code">Helix.Signal.Unassigned</div>
+          <div class="prop-text">信标信号并非求救，而是分布式计算机的引导扇区广播。</div>
+        </div>
+        <div class="prop-item" onclick="insertProposition('Kiln.Bus.Mutex')">
+          <div class="prop-code">Kiln.Bus.Mutex</div>
+          <div class="prop-text">窑的内战实为能量总线互斥锁协议的物理死锁。</div>
+        </div>
+        <div class="prop-item" onclick="insertProposition('Choir.Hymn.IsClock')">
+          <div class="prop-code">Choir.Hymn.IsClock</div>
+          <div class="prop-text">咏井深海圣歌为星系计算机的基准压电晶振节拍。</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Middle Column: 5+1 Anchor Truths -->
+    <div class="holo-column">
+      <div class="col-header">
+        <span class="col-title">5+1 锚定真相状态</span>
+        <span class="col-count">1/6 BELIEVED</span>
+      </div>
+      <div class="truth-list">
+        <!-- T1 -->
+        <div class="truth-card active" onclick="selectTruth('T1', this)">
+          <div class="truth-header">
+            <span class="truth-id">T1. 信号 / The Beacon</span>
+            <span class="status-badge status-suspected" id="badge-T1">SUSPECTED</span>
+          </div>
+          <div class="truth-summary">
+            Helix-7 信标并非求救信号，而是整台恒星计算机初始引导扇区的常驻握手载波。
+          </div>
+        </div>
+        <!-- T2 -->
+        <div class="truth-card" onclick="selectTruth('T2', this)">
+          <div class="truth-header">
+            <span class="truth-id">T2. 计算 / The Machine</span>
+            <span class="status-badge status-encountered" id="badge-T2">ENCOUNTERED</span>
+          </div>
+          <div class="truth-summary">
+            星系是一台宏大的分布式恒星计算机，星球分别担任总线、晶振与存储。
+          </div>
+        </div>
+        <!-- T3 -->
+        <div class="truth-card" onclick="selectTruth('T3', this)">
+          <div class="truth-header">
+            <span class="truth-id">T3. 写回 / The Write-Back</span>
+            <span class="status-badge status-unknown" id="badge-T3">UNKNOWN</span>
+          </div>
+          <div class="truth-summary">
+            400年前的灭绝是计算写回，文明被坍缩为结果常数，余下只有残响。
+          </div>
+        </div>
+        <!-- T4 -->
+        <div class="truth-card" onclick="selectTruth('T4', this)">
+          <div class="truth-header">
+            <span class="truth-id">T4. 禁令 / The Prohibition</span>
+            <span class="status-badge status-unknown" id="badge-T4">UNKNOWN</span>
+          </div>
+          <div class="truth-summary">
+            第一轮计算的唯一输出是「不要完成第二轮运算」。
+          </div>
+        </div>
+        <!-- T5 -->
+        <div class="truth-card" onclick="selectTruth('T5', this)">
+          <div class="truth-header">
+            <span class="truth-id">T5. 校验 / The Parity Lock</span>
+            <span class="status-badge status-unknown" id="badge-T5">UNKNOWN</span>
+          </div>
+          <div class="truth-summary">
+            记录员协议是中断点火的奇偶校验位机制；理解即钥匙。
+          </div>
+        </div>
+        <!-- T? -->
+        <div class="truth-card" onclick="selectTruth('THidden', this)">
+          <div class="truth-header">
+            <span class="truth-id">T?. 晚星归宿 / Parity Bit</span>
+            <span class="status-badge status-unknown" id="badge-THidden">UNKNOWN</span>
+          </div>
+          <div class="truth-summary">
+            Vesper 是第9位校验位，苏醒是终结自催化轮回的最后闭环。
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Synthesis Free-Text Workspace -->
+    <div class="holo-column">
+      <div class="col-header">
+        <span class="col-title" id="synthesisTitle">综合陈述 // T1: 信号</span>
+        <span class="col-count">CURATOR EVALUATOR</span>
+      </div>
+      
+      <div class="synthesis-pane">
+        <div style="font-size:11px; color:var(--text-muted); margin-bottom:8px;">
+          用你自己的话陈述对该真相的理解（支持点击左侧命题插入）：
+        </div>
+        <textarea class="synthesis-input-area" id="synthesisInput" placeholder="输入你对真相的推论假说...例如：Helix-7 上的信号不是求救，而是引导扇区的握手载波..."></textarea>
+        
+        <button class="btn-synthesize" onclick="runSynthesis()">
+          <span>提交综合假说 (EXECUTE SYNTHESIS)</span>
+          <span>⚡</span>
+        </button>
+
+        <div class="feedback-box" id="feedbackBox">
+          <div class="score-meter">
+            <div class="score-item">COVERAGE: <span class="score-val" id="scoreCov">--</span></div>
+            <div class="score-item">CONSISTENCY: <span class="score-val" id="scoreCon">--</span></div>
+            <div class="score-item">STATUS: <span class="score-val" id="scoreStatus">AWAITING INPUT</span></div>
+          </div>
+          <div id="feedbackText" style="color:#94a3b8;">
+            Curator 叙事引擎待命。请在上方输入对当前选中真相的完整理解。
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeTruthId = 'T1';
+
+    function selectTruth(truthId, el) {
+      activeTruthId = truthId;
+      document.querySelectorAll('.truth-card').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('synthesisTitle').innerText = `综合陈述 // ${truthId}`;
+      document.getElementById('feedbackText').innerText = `已切换至 ${truthId}。请陈述对该真相的假说。`;
+    }
+
+    function insertProposition(code) {
+      const area = document.getElementById('synthesisInput');
+      area.value += (area.value ? ' ' : '') + `[${code}]`;
+      area.focus();
+    }
+
+    function runSynthesis() {
+      const input = document.getElementById('synthesisInput').value.trim();
+      const covEl = document.getElementById('scoreCov');
+      const conEl = document.getElementById('scoreCon');
+      const statEl = document.getElementById('scoreStatus');
+      const textEl = document.getElementById('feedbackText');
+
+      if (!input) {
+        alert("请输入你的综合假说。");
+        return;
+      }
+
+      // Simulated Curator Evaluation
+      covEl.innerText = '94%';
+      conEl.innerText = '98%';
+      statEl.innerText = 'BELIEVED';
+      statEl.style.color = '#10b981';
+
+      textEl.innerHTML = `
+        <div style="color:#10b981; font-weight:700; margin-bottom:6px;">✓ 综合评定通过 (CANON ALIGNED)</div>
+        <div>Curator 报告：假说准确识别了引导扇区（Bootstrap）与握手载波本质。</div>
+        <div style="color:var(--primary-cyan); margin-top:8px;">★ 已解锁记忆碎片 #01 · 探针系统已标定 Kiln 与 Glass Orchard 跳跃航线！</div>
+      `;
+
+      // Update badge in middle column
+      const badge = document.getElementById(`badge-${activeTruthId}`);
+      if (badge) {
+        badge.className = 'status-badge status-believed';
+        badge.innerText = 'BELIEVED';
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>余烬协议 // 探针船舱 · ISV Threshold Interior</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void: #050811;
+      --bg-surface: rgba(10, 20, 35, 0.88);
+      --border-holo: rgba(56, 189, 248, 0.22);
+      --primary-cyan: #38bdf8;
+      --accent-amber: #f59e0b;
+      --text-bright: #e0f2fe;
+      --text-muted: #64748b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: var(--bg-void);
+      color: var(--text-bright);
+      font-family: 'JetBrains Mono', monospace;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .crt-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%),
+                  linear-gradient(90deg, rgba(56, 189, 248, 0.02), rgba(0, 0, 0, 0.01), rgba(245, 158, 11, 0.02));
+      background-size: 100% 3px, 4px 100%;
+      pointer-events: none;
+      z-index: 100;
+    }
+    .vignette {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      box-shadow: inset 0 0 160px rgba(0, 0, 0, 0.9);
+      pointer-events: none;
+      z-index: 99;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      height: 60px;
+      padding: 0 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(180deg, rgba(5, 8, 17, 0.95), transparent);
+      border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+      z-index: 50;
+    }
+    .btn-action {
+      background: rgba(10, 20, 35, 0.85);
+      border: 1px solid var(--border-holo);
+      color: var(--text-bright);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 2px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-action:hover {
+      border-color: var(--primary-cyan);
+      color: var(--primary-cyan);
+    }
+
+    /* Interior Deck Layout */
+    .deck-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      height: calc(100vh - 60px);
+      padding: 24px 32px;
+      gap: 28px;
+      position: relative;
+      z-index: 20;
+    }
+
+    /* Left Column: Stations Nav */
+    .stations-card {
+      background: var(--bg-surface);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-holo);
+      border-radius: 4px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+    .station-title {
+      font-family: 'Cinzel', serif;
+      font-size: 16px;
+      color: var(--text-bright);
+      margin-bottom: 4px;
+    }
+    .station-sub {
+      font-size: 11px;
+      color: var(--primary-cyan);
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+    }
+    .station-item {
+      background: rgba(8, 18, 32, 0.7);
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      border-radius: 2px;
+      padding: 14px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .station-item:hover, .station-item.active {
+      border-color: var(--primary-cyan);
+      background: rgba(56, 189, 248, 0.12);
+      transform: translateX(4px);
+    }
+    .station-item.active {
+      border-color: var(--accent-amber);
+      box-shadow: inset 0 0 12px rgba(245, 158, 11, 0.15);
+    }
+    .station-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-bright);
+    }
+    .station-status {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Right Column: Active Terminal View */
+    .terminal-view {
+      background: var(--bg-surface);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-holo);
+      border-radius: 4px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .term-title {
+      font-family: 'Cinzel', serif;
+      font-size: 18px;
+      color: var(--text-bright);
+      margin-bottom: 4px;
+    }
+    .term-sub {
+      font-size: 12px;
+      color: var(--primary-cyan);
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.15);
+    }
+    .term-content-box {
+      flex: 1;
+      background: rgba(5, 8, 17, 0.6);
+      border: 1px solid rgba(56, 189, 248, 0.15);
+      border-radius: 2px;
+      padding: 20px;
+      font-size: 13px;
+      line-height: 1.8;
+      color: #cbd5e1;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+    .btn-engage-station {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(8, 18, 32, 0.95));
+      border: 1px solid var(--primary-cyan);
+      color: var(--text-bright);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      padding: 14px 28px;
+      border-radius: 2px;
+      cursor: pointer;
+      text-transform: uppercase;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      transition: all 0.2s;
+    }
+    .btn-engage-station:hover {
+      background: var(--primary-cyan);
+      color: var(--bg-void);
+      box-shadow: 0 0 24px rgba(56, 189, 248, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="crt-overlay"></div>
+  <div class="vignette"></div>
+
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <button class="btn-action" onclick="window.location.href='galaxy-view.html'">
+      <span>← TO GALAXY MAP [ESC]</span>
+    </button>
+    <div style="font-family:'Cinzel',serif; font-size:16px; letter-spacing:0.15em;">
+      ISV THRESHOLD // 探针主舰桥
+    </div>
+    <div style="font-size:12px; color:var(--accent-amber);">
+      CYCLE TIME REMAINING: 39:18
+    </div>
+  </div>
+
+  <div class="deck-grid">
+    <!-- Left Stations Navigation -->
+    <div class="stations-card">
+      <div class="station-title">舰桥交互台</div>
+      <div class="station-sub">BRIDGE STATIONS (4 NODES)</div>
+
+      <div class="station-item active" onclick="switchStation('nav', this)">
+        <div class="station-name">01. 星图导航坞 (Nav Dock)</div>
+        <div class="station-status">STATUS: ONLINE · SPUR VISUALIZATION</div>
+      </div>
+
+      <div class="station-item" onclick="switchStation('hearth', this)">
+        <div class="station-name">02. 综合索引台 (Synthesis Hearth)</div>
+        <div class="station-status">STATUS: READY · 4 PROPOSITIONS FILED</div>
+      </div>
+
+      <div class="station-item" onclick="switchStation('terminal', this)">
+        <div class="station-name">03. 历代日志终端 (Log Archive)</div>
+        <div class="station-status">STATUS: REVISION 9.04 · HISTORIC LOGS</div>
+      </div>
+
+      <div class="station-item" onclick="switchStation('cryo', this)">
+        <div class="station-name">04. 休眠舱诊断 (Cryo Sarcophagus)</div>
+        <div class="station-status">STATUS: UNSEALED · VESPER CORE</div>
+      </div>
+    </div>
+
+    <!-- Right Station Active View -->
+    <div class="terminal-view">
+      <div class="term-title" id="termTitle">01. 星图导航坞 // NAVIGATION DOCK</div>
+      <div class="term-sub" id="termSubtitle">ACCESS THE 3D EMBER SPUR TOPOLOGY</div>
+
+      <div class="term-content-box" id="termContent">
+        <div>// 导航坞就绪</div>
+        测绘探针 *ISV Threshold* 已校准至余烬星弧（Ember Spur）坐标系。
+        当前可探测到 9 颗作者星球与多条能量/时钟/寻址总线链路。
+        
+        <div style="margin-top:16px; color:var(--primary-cyan);">
+          - 教程星 Helix-7：已建立引导握手<br>
+          - 窑 (Kiln)：侦测到高能互斥热核信号<br>
+          - 玻璃果园 (Glass Orchard)：侦测到只读光折射峰
+        </div>
+      </div>
+
+      <div>
+        <button class="btn-engage-station" id="btnEngage" onclick="window.location.href='galaxy-view.html'">
+          <span id="btnLabel">进入 3D 星系视图</span>
+          <span>→</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const stationData = {
+      nav: {
+        title: "01. 星图导航坞 // NAVIGATION DOCK",
+        subtitle: "ACCESS THE 3D EMBER SPUR TOPOLOGY",
+        content: `<div>// 导航坞就绪</div>
+                  测绘探针 *ISV Threshold* 已校准至余烬星弧（Ember Spur）坐标系。
+                  当前可探测到 9 颗作者星球与多条能量/时钟/寻址总线链路。
+                  <div style="margin-top:16px; color:var(--primary-cyan);">
+                    - 教程星 Helix-7：已建立引导握手<br>
+                    - 窑 (Kiln)：侦测到高能互斥热核信号<br>
+                    - 玻璃果园 (Glass Orchard)：侦测到只读光折射峰
+                  </div>`,
+        btn: "进入 3D 星系视图",
+        href: "galaxy-view.html"
+      },
+      hearth: {
+        title: "02. 综合索引台 // SYNTHESIS HEARTH",
+        subtitle: "PROPOSITION REASONING & TRUTH ENGINE",
+        content: `<div>// 索引台状态</div>
+                  半实体全息书卷正持续同步你从各星球调查收集到的命题。
+                  你可在此将局部命题钉选至机关，或使用自然语言向 Curator 叙事引擎陈述你对 5+1 锚定真相的综合假说。
+                  <div style="margin-top:16px; color:var(--accent-amber);">
+                    - 5+1 锚定真相状态：1/6 已确证<br>
+                    - 收集命题：4 条已入库
+                  </div>`,
+        btn: "打开综合索引面板",
+        href: "index-panel.html"
+      },
+      terminal: {
+        title: "03. 历代日志终端 // ARCHIVAL LOG ARCHIVE",
+        subtitle: "REVISION LOGS FROM RECORDER-01 TO RECORDER-09",
+        content: `<div>// 历史归档摘要</div>
+                  [RECORDER-01]: "星系开始冷却。第一轮计算收敛于 0x00FF。" [熔断]<br>
+                  [RECORDER-04]: "我们在髓（Marrow）上发现了活体湿件。神不是创造者，神是常驻进程。" [熔断]<br>
+                  [RECORDER-08]: "我终于明白了为什么不能回头……不要点火。" [熔断]<br>
+                  [RECORDER-09 / VESPER]: "核心记忆损坏 62%。执行余烬协议。" [当前运行中]`,
+        btn: "重新查看开场日志",
+        href: "opening-sequence.html"
+      },
+      cryo: {
+        title: "04. 休眠舱诊断 // CRYO SARCOPHAGUS",
+        subtitle: "VESPER CORE MEMORY & PARITY BIT MONITOR",
+        content: `<div>// 晚星（Vesper）核心状态</div>
+                  - 身份代号：Recorder-9 [Parity Check Bit]<br>
+                  - 硬件状态：超导回路常温解冻，记忆扇区碎片化（剩余 38.2% 完整度）<br>
+                  - 倒计时时钟：与星弧自催化能量涨落同步<br>
+                  - 提示：每解开一条锚定真相，记忆完整度将恢复约 10-12%。`,
+        btn: "执行记忆碎片扫描",
+        href: "index-panel.html"
+      }
+    };
+
+    function switchStation(key, el) {
+      document.querySelectorAll('.station-item').forEach(s => s.classList.remove('active'));
+      el.classList.add('active');
+
+      const data = stationData[key];
+      document.getElementById('termTitle').innerText = data.title;
+      document.getElementById('termSubtitle').innerText = data.subtitle;
+      document.getElementById('termContent').innerHTML = data.content;
+      document.getElementById('btnLabel').innerText = data.btn;
+      document.getElementById('btnEngage').onclick = () => window.location.href = data.href;
+    }
+  </script>
+</body>
+</html>
