@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { CANON, PlanetDef, LandingSite } from "@/lib/canon";
 import HudHeader from "@/components/ui/HudHeader";
@@ -30,12 +30,22 @@ export default function HomePage() {
   const [activeSite, setActiveSite] = useState<LandingSite | null>(null);
   const [showInferenceLines, setShowInferenceLines] = useState(true);
 
-  // Player state
+  // Player state — propositions start empty; the player collects them
+  // from hotspots (e.g. Helix.Signal.Unassigned from the Dipole Antenna
+  // Arrays operate hotspot, NOT pre-granted).
   const [collectedPropositions, setCollectedPropositions] = useState<string[]>([
     "Helix.Beacon.Broadcasting",
-    "Helix.Signal.Unassigned",
   ]);
   const [believedTruths, setBelievedTruths] = useState<string[]>(["T1"]);
+
+  // Derive unlocked planets from believed truths' unlocked_planets fields
+  const unlockedPlanetIds = useMemo(
+    () =>
+      CANON.anchorTruths
+        .filter((t) => believedTruths.includes(t.id))
+        .flatMap((t) => t.unlocked_planets),
+    [believedTruths]
+  );
 
   // Keyboard shortcut for Index (TAB or ESC)
   useEffect(() => {
@@ -100,6 +110,7 @@ export default function HomePage() {
           onSelectPlanet={handleSelectPlanet}
           selectedPlanet={selectedPlanet}
           showInferenceLines={showInferenceLines}
+          unlockedPlanetIds={unlockedPlanetIds}
         />
       </div>
 

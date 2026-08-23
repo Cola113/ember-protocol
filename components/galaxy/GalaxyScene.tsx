@@ -10,6 +10,7 @@ interface GalaxySceneProps {
   onSelectPlanet: (planet: PlanetDef) => void;
   selectedPlanet: PlanetDef | null;
   showInferenceLines: boolean;
+  unlockedPlanetIds: string[];
 }
 
 function Starfield({ count = 800 }) {
@@ -69,12 +70,12 @@ function Starfield({ count = 800 }) {
   );
 }
 
-function SpurCurve() {
+function SpurCurve({ visiblePlanets }: { visiblePlanets: PlanetDef[] }) {
   const points = useMemo(() => {
-    return CANON.planets.map(
+    return visiblePlanets.map(
       (p) => new THREE.Vector3(p.coordinates.x * 0.8, p.coordinates.y * 0.8, p.coordinates.z * 0.8)
     );
-  }, []);
+  }, [visiblePlanets]);
 
   const curve = useMemo(() => {
     return new THREE.CatmullRomCurve3(points);
@@ -260,7 +261,19 @@ export default function GalaxyScene({
   onSelectPlanet,
   selectedPlanet,
   showInferenceLines,
+  unlockedPlanetIds,
 }: GalaxySceneProps) {
+  // Only render planets that are mapped or explicitly unlocked;
+  // hidden planets (e.g. black-interval) are invisible until unlocked.
+  const visiblePlanets = useMemo(
+    () =>
+      CANON.planets.filter(
+        (p) =>
+          p.initial_state === "mapped" || unlockedPlanetIds.includes(p.id)
+      ),
+    [unlockedPlanetIds]
+  );
+
   return (
     <div className="w-full h-full relative cursor-grab active:cursor-grabbing">
       <Canvas
@@ -272,10 +285,10 @@ export default function GalaxyScene({
         <pointLight position={[-100, -50, -100]} intensity={0.8} color="#38bdf8" />
 
         <Starfield />
-        <SpurCurve />
+        <SpurCurve visiblePlanets={visiblePlanets} />
         {showInferenceLines && <InferenceLines />}
 
-        {CANON.planets.map((planet) => (
+        {visiblePlanets.map((planet) => (
           <PlanetNode
             key={planet.id}
             planet={planet}
