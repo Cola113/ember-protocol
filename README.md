@@ -34,3 +34,9 @@ You are a memory-wiped archival AI, sent to execute the "Ember Protocol" — ver
 ## License
 
 MIT
+
+## For AI Agents
+
+AI agents working on this repo: read [`AGENTS.md`](./AGENTS.md) and the shared skill `~/.agents/skills/ember-protocol/SKILL.md` **before touching the code**. After changes, maintain that skill and follow the PR approval loop (see AGENTS.md).
+
+参与本项目的 AI agent：动手前先读 [`AGENTS.md`](./AGENTS.md) 与通用 skill `~/.agents/skills/ember-protocol/SKILL.md`；改库后维护该 skill 并走 PR 闭环。
