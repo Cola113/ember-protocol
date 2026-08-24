@@ -2,7 +2,8 @@
 
 > 依据：`STORY.md` v1.0.0-Canon、`docs/canon-ledger.json` v1.0.0。  
 > 门控对照：当前前端从 ledger 推导解锁（T1–T5 + THidden 全 `believed` 才能进结局；Overwrite 另需余烬周期剩余 ≤ 25%）。  
-> 本文只给调优建议，不改 `app/` / `components/` / `lib/`。
+> 本文只给调优建议，不改 `app/` / `components/` / `lib/`。  
+> 2026-08-24 圆桌修正：初版 S2-A 与现行「T5 解锁盲日」互锁，已改为「T4 先解锁盲日，T5 再取禁令命题」。S7 视差门不再锁 T3 必选。
 
 ---
 
@@ -67,6 +68,15 @@ T4 与 T5 谁先做都可以。黑间隔在 T5 之后立刻可见，**不必先�
 | T5 | 校验 · 总账 | 校验 · 总账（解锁盲日+黑间隔） |
 
 盲日从「禁令载体」变成「T5 的可选项」。下文把这当成**现行正典的节奏债**，而不是前端 bug。
+
+`STORY.md` **自身也有编号冲突**，改门控前不要混用：
+
+| 位置 | 把 `BlindSun.Prohibition.CycleTwo` 标成 | 同文件 §3 表 / ledger |
+|------|------------------------------------------|------------------------|
+| §2 盲日「本星谜题」（约第 288 行） | **T4** | T4 = 髓写回；该命题是孤儿，不进任何真相 |
+| §3 mermaid / 表 | T5 解锁盲日，T4 解锁烬廷 | 与 ledger 一致；禁令命题仍不进 T5 |
+
+第 288 行残留的是 DESIGN 旧编号（T4 = 盲日禁令）。P4 改链时以 §3 表 + ledger 为准，并删掉 §2 谜题里的 `（T4）`。
 
 ---
 
@@ -229,26 +239,50 @@ P4 若只加命题、不加场景，瘦感不会消失。优先把**失踪点里
 
 ### P0 — 门控与高潮顺序
 
-**S1. 黑间隔改为 T4 ∧ T5 才显形**  
-- **做什么**：`T5.unlocked_planets` 只留 `blind-sun`；`black-interval` 改为 T4 与 T5 都 believed 才加入可见集合（或新增一条合成门，而不是把 BI 只挂在某一个真相的 `unlocked_planets` 上）。  
-- **为什么**：身份高潮必须发生在「写回 + 校验」之后。  
-- **影响面**：`docs/canon-ledger.json`；`STORY.md` §3 mermaid；前端从 ledger 推导解锁的那一层（今日是 `believedTruths → unlocked_planets` 扁平并集，**做不到 AND**，要补一条「隐藏星」规则）。  
-- **风险**：T4/T5 仍并行，只是终局房间等两把钥匙，不把髓和总账重新串成直线。
+**门控不变量（改任何 `required_propositions` 前先检查）**  
+命题出在星球 P 上、且该命题是 Tk 的必选 ⇒ P 必须在 Tk **之前**就已可见（某 `j < k` 的 `unlocked_planets`，或开局 `mapped`）。  
+**禁止**：Tk 既解锁 P，又把 P 上的命题列为 Tk 必选。前端用「已 believed 的 `unlocked_planets` 并集」，做不到「先为了取证而登陆、再相信同一条真相」。
 
-**S2. 把盲日禁令收进必选链**  
-- **做什么**（三选一，推荐 A）：  
-  - **A.** T5 必选命题改为 `Ledger.Protocol.RecorderKey` + `BlindSun.Prohibition.CycleTwo`（总账仍给「理解即钥匙」，盲日给「不要第二轮」）。`Ledger.Error.IsChecksum` 降为旁证。  
-  - **B.** 恢复 DESIGN 的 T4=禁令（盲日）、T5=校验（总账），髓写回并回 T3 或独立为 T3b。改动面大，不建议在 P4 微调里做。  
-  - **C.** THidden 增加第三条必选 `BlindSun.Prohibition.CycleTwo`（身份 = 校验位 + 禁令知情）。  
-- **为什么**：最小路径不能绕过「不要完成第二轮」。  
-- **影响面**：ledger `required_propositions` / `unlocked_planets`；STORY §3 表；Synthesis 草稿文案；playtest 最小路径。  
-- **推荐**：A + S1。盲日从「可跳过」变成 T5 的右脚，和 T2/T3 的双星对称。
+**S1. 黑间隔改为 T4 ∧ T5 才显形**  
+- **做什么**：从所有真相的 `unlocked_planets` 拿掉 `black-interval`。隐藏星改为独立规则：T4 **与** T5 都 believed 才加入可见集合（今日扁平并集做不到 AND，要在解锁推导里单开一条）。盲日**不要**作为 T5 的「留下的那个解锁」——盲日归 S2。  
+- **为什么**：身份高潮必须发生在「写回 + 校验」之后。  
+- **影响面**：`docs/canon-ledger.json`；`STORY.md` §3 mermaid；前端 `believedTruths → unlocked_planets` 并集。  
+- **风险**：T4/T5 收集仍可并行；只是终局房间等两把钥匙。不把髓和总账重新串成「必须先综合 T4 才能进总账」。  
+- **不循环**：黑间隔只产出 THidden 命题，THidden 不再解锁任何星。
+
+**S2. 把盲日禁令收进必选链（必须先改解锁，再改必选）**  
+初版 S2-A 只改 T5 必选、不改 `unlocked_planets`：T5 believed 才进盲日，进盲日才能取 T5 命题 → **不可达，已撤回**。
+
+- **S2-A（推荐，无循环）**：两步，顺序固定。  
+  1. **先**把 `blind-sun` 从 T5.`unlocked_planets` 挪到 **T4**（T4 believed → 盲日可见）。与 S3 一起时，T4 不再解锁烬廷。  
+  2. **再**把 T5 必选改为 `Ledger.Protocol.RecorderKey` + `BlindSun.Prohibition.CycleTwo`。`Ledger.Error.IsChecksum` 降为旁证，总账场景保留。  
+  3. T5.`unlocked_planets` 清空（黑间隔走 S1 的 AND，不挂在 T5 上）。  
+
+  可达顺序：T3 → 髓 → T4 → **盲日可登陆** → 取禁令命题；T3 → 总账可随时取 `RecorderKey`；两命题齐后才 T5 believed →（S1）T4∧T5 → 黑间隔。T5 在综合顺序上排在 T4 之后，这是有意的线性化，不是环。
+
+- **S2-alt（弱方案，无循环）**：不把盲日命题设为任何真相的必选。禁令保持旁证 /「附加洞察」：可写进索引、可改 NPC 口吻或 Overwrite 文案，**不卡结局**。最小路径仍可跳过盲日。仅在产品决定「九作者星允许漏一颗」时用。  
+
+- **S2-legacy（不建议 P4）**：恢复 DESIGN 编号（T4=盲日禁令，T5=总账校验）。改动面大；若做，必须同步重写全部 `unlocked_planets`，不能只改标题。  
+
+- **不要做（看似对称、终局手感差）**：把 `BlindSun.Prohibition.CycleTwo` 加成 THidden 第三条必选。在「盲日由 T4/T5 解锁、THidden 不解锁盲日」下**不循环**，但终局房还要先绕去盲日，且把禁令混进身份综合。更不要把 `blind-sun` 写入 THidden.`unlocked_planets`（那才会和 THidden 必选互锁）。
+
+- **为什么要 S2-A**：最小路径不能绕过「不要完成第二轮」。盲日成为 T5 的右脚，对称于 T2/T3 双星，但**右脚星球由上一真相解锁**，避免自锁。  
+- **影响面**：ledger `required_propositions` **和** `unlocked_planets`（缺一不可）；STORY §3 表与 §2 盲日谜题的错误 `（T4）` 标注；Synthesis 草稿；playtest 最小路径（XR-01 改为必须访盲日）。  
+- **与 S1 合用后的解锁表**：
+
+| 真相 | `unlocked_planets`（S1+S2-A+S3） |
+|------|----------------------------------|
+| T4 | `blind-sun` |
+| T5 | （空） |
+| T4 ∧ T5（新规则） | `black-interval` |
+| T1 或 T2 | `cinder-court`（见 S3） |
 
 **S3. 烬廷解锁前移到 T1 或 T2**  
-- **做什么**：从 T4 的 `unlocked_planets` 拿掉 `cinder-court`，挂到 T1（开局后即可去）或 T2（已经听说「这是一台计算机」之后，宫廷戏才构成干扰）。T4 改为不再解锁任何星，或只解锁一个写回后的回访热区。  
+- **做什么**：从 T4 的 `unlocked_planets` 拿掉 `cinder-court`，挂到 T1（开局后即可去）或 T2（已经听说「这是一台计算机」之后，宫廷戏才构成干扰）。采用 S2-A 时，T4 的解锁位留给 `blind-sun`，不要把 T4.`unlocked_planets` 清空。  
 - **为什么**：红鲱鱼必须出现在玩家**还可能信**的时候。T4 之后再去烬廷，是确认不是误导。  
 - **影响面**：ledger；STORY 解锁表；星系推理连线（烬廷会更早出现在弧上）。  
-- **不要做**：给烬廷加必选命题。它的职责是浪费时间，不是再开一扇门。
+- **不要做**：给烬廷加必选命题。它的职责是浪费时间，不是再开一扇门。  
+- **不循环**：烬廷命题保持孤儿；T1/T2 不依赖烬廷上的任何必选。
 
 **S4. 回写 STORY 结局条件，与实现对齐**  
 - **做什么**：三条结局都写明「T1–T5 + THidden 全 believed」；Overwrite 额外「余烬周期剩余 ≤ 25%」。  
@@ -271,8 +305,10 @@ P4 若只加命题、不加场景，瘦感不会消失。优先把**失踪点里
 - **影响面**：`lib/dialogues.ts` 与 ledger 热点；教程脚本。命题数量不变。
 
 **S7. 恢复 1–2 个跨星钉选门（P4 节奏的核心手感）**  
-- **做什么**：咏井潮汐门要 `Kiln.Bus.Mutex` 钉选；针的视差激光在盲日解锁前显示「有信号，无法锁定」（DESIGN §5 已有这句话）。  
-- **为什么**：现在是「解锁即搜刮」，没有回流。Outer Wilds 式的啊哈来自带着命题回到旧地方。  
+- **做什么**：  
+  - 咏井潮汐门要先钉选 `Kiln.Bus.Mutex` 才能弹圣歌、拿到 `Choir.Hymn.IsClock`。窑在 T1 后已可见，咏井在 T2 后才可见 → **无循环**。  
+  - 针的视差激光：**不要**把 `Needle.Pointer.Rebased`（T3 必选）锁在「盲日已解锁」上。盲日在现行链（及 S2-A 之后）都晚于 T3；那样会变成 T3 要针命题 → T3 才开总账 → T5/T4 才开盲日 → 激光才能发针命题。激光在 T3 阶段仍应给出寻址命题；盲日显形后允许**回访**同一激光，多一段视差文案或旁证，不改 T3 必选。  
+- **为什么**：现在是「解锁即搜刮」，没有回流。啊哈来自带着命题回到旧地方，而不是把必选命题挂到尚未可见的星上。  
 - **影响面**：地表操作逻辑（今日热点不读钉选状态）；索引钉选必须从「插入假说文本」升级为「对机关生效」。这是玩法，不只是文案。
 
 **S8. 总账 / 髓保持 2 必选命题**  
@@ -291,8 +327,8 @@ P4 若只加命题、不加场景，瘦感不会消失。优先把**失踪点里
 - **不要做**：把门槛改成 50% 来迁就速通；那会让 Overwrite 在叙事上过早。
 
 **S11. 倒计时数字三处对齐**  
-- **做什么**：开局剩余、周期全长、STORY 开场脚本统一。建议全长 2400 s，开局即 2400 或 2399，文案写 `40:00`。Overwrite 文案继续写「&lt; 10:00 / 最后 25%」。  
-- **影响面**：`STORY.md` §6；开局剩余初始值；结局锁定说明（已写 10:00，需与全长一致）。
+- **做什么**：开局剩余、周期全长、STORY 开场脚本统一。建议全长 2400 s，开局即 2400 或 2399，文案写 `40:00`。Overwrite 门槛与代码一致：剩余 **≤ 10:00**（≤ 600 s / 25%），不要写成「&lt; 10:00」（恰好 10:00 已解锁）。  
+- **影响面**：`STORY.md` §6；开局剩余初始值；结局锁定说明。
 
 **S12. 窄屏也要能读倒计时**  
 - **做什么**：不要用 `hidden sm:block` 把余烬周期整块藏掉；至少留 `mm:ss`。否则移动端玩家无法规划 Overwrite。  
@@ -315,11 +351,12 @@ P4 若只加命题、不加场景，瘦感不会消失。优先把**失踪点里
 开局 Helix-7（2 命题，双点教学）
   T1 → Kiln + Orchard +（可选）Cinder Court 早号红鲱鱼
   T2 → Choir（可能要回流钉选窑）+ Needle
-  T3 → Ledger ∥ Marrow（仍并行）
-  T4 ∧ T5 → Blind Sun 已在 T5 路径上（若 S2-A）
-           → Black Interval（两把钥匙）
+  T3 → Ledger ∥ Marrow（登陆仍并行）
+  T4 believed → Blind Sun 可见（S2-A 第 1 步）
+  总账 RecorderKey + 盲日禁令 → T5 believed
+  T4 ∧ T5 → Black Interval
   THidden → 三结局
-  Overwrite：墙钟进入最后 10 分钟，或在舰桥明示跳时
+  Overwrite：剩余 ≤ 10:00，或在舰桥明示跳时
 ```
 
 | 指标 | 现在 | 建议后 |
@@ -338,7 +375,9 @@ P4 若只加命题、不加场景，瘦感不会消失。优先把**失踪点里
 - 为了填表给烬廷加必选命题。红鲱鱼一旦开门，就不再是红鲱鱼。  
 - 第四结局或第七真相（`CONTRIBUTING.md` 已锁）。  
 - 倒计时归零强制 Overwrite。与 DESIGN 写死的「不是硬失败计时器」冲突。  
-- 用 AI 填隙星补节奏。P4 要先修作者星的门和密度。
+- 用 AI 填隙星补节奏。P4 要先修作者星的门和密度。  
+- **Tk 解锁星球 P，同时又把 P 的命题列为 Tk 必选**（初版 S2-A）。  
+- 把 T3 必选的针命题锁在「盲日已可见」上（初版 S7 视差写法）。
 
 ---
 
@@ -346,9 +385,9 @@ P4 若只加命题、不加场景，瘦感不会消失。优先把**失踪点里
 
 改 ledger 之前请同时打开：
 
-1. `STORY.md` §3 表 + mermaid  
-2. `docs/canon-ledger.json` → `anchor_truths[].required_propositions` / `unlocked_planets`  
+1. `STORY.md` §3 表 + mermaid（不要用 §2 盲日谜题里的 `（T4）`）  
+2. `docs/canon-ledger.json` → 每条 Tk 的 `required_propositions` 所在星球，是否已被某 `j < k` 解锁  
 3. 前端「believed → 并集解锁」是否仍无法表达 AND（黑间隔）  
-4. `docs/playtest-checklist.md` 结局与星系模块（隐藏星、Overwrite 边界、THidden 过早）
+4. `docs/playtest-checklist.md` 结局与星系模块（隐藏星、Overwrite 边界 **≤ 10:00**、THidden 过早）
 
 本分析不修改上述实现。
