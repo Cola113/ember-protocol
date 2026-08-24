@@ -97,11 +97,21 @@ export default function LandingPage() {
 
   return (
     <div className="relative min-h-screen w-full bg-void text-holo-bright font-mono overflow-x-hidden selection:bg-holo-cyan selection:text-void flex flex-col justify-between">
-      {/* Background Animated Starlight & Nebula Canvas Glow */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-tr from-sky-900/15 via-amber-900/10 to-transparent rounded-full blur-3xl animate-pulse" />
+      {/* Background Hero Artwork & Starlight Atmosphere */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+        {/* Hero Background Image */}
+        <div
+          className="absolute inset-0 bg-cover bg-right md:bg-center opacity-40 mix-blend-screen transition-opacity duration-1000 scale-105"
+          style={{
+            backgroundImage: "url('/hero-bg.png')",
+          }}
+        />
+        {/* Subtle Radial & Linear Darkening Overlays for Max Typography Contrast */}
+        <div className="absolute inset-0 bg-gradient-to-b from-void/80 via-void/50 to-void" />
+        <div className="absolute inset-0 bg-gradient-to-r from-void via-void/40 to-transparent" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-tr from-sky-900/20 via-amber-900/10 to-transparent rounded-full blur-3xl animate-pulse" />
         <div className="absolute top-3/4 left-1/3 w-[500px] h-[500px] bg-gradient-to-br from-emerald-900/10 via-sky-900/15 to-transparent rounded-full blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:40px_40px] opacity-15" />
+        <div className="absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:40px_40px] opacity-10" />
       </div>
 
       {/* Navigation Header */}

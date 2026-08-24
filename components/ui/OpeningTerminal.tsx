@@ -47,8 +47,13 @@ export default function OpeningTerminal({ onComplete }: OpeningTerminalProps) {
 
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center p-6 bg-void/90 backdrop-blur-md overflow-hidden pointer-events-auto animate-fadeIn">
-      {/* Background Star Ember Dust */}
-      <div className="absolute inset-0 pointer-events-none opacity-40">
+      {/* Background Star Ember Dust & Cockpit Viewport Artwork */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-screen scale-105"
+          style={{ backgroundImage: "url('/opening-bg.png')" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-void via-void/80 to-void/60" />
         <div className="absolute top-1/4 left-1/3 w-96 h-96 rounded-full bg-holo-cyan/10 blur-3xl animate-pulse" />
         <div className="absolute bottom-1/3 right-1/4 w-80 h-80 rounded-full bg-holo-amber/10 blur-3xl animate-pulse" style={{ animationDelay: "1s" }} />
       </div>
@@ -139,23 +144,30 @@ export default function OpeningTerminal({ onComplete }: OpeningTerminalProps) {
             <span className="text-holo-amber">RECORDER-9 ONLINE</span>
           </div>
 
-          <div className="relative h-64 md:h-72 w-full bg-surface-dark border border-holo-cyan/30 rounded-sm overflow-hidden flex flex-col items-center justify-center p-6 text-center">
-            {/* Viewport HUD Crosshairs */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-30">
-              <div className="w-48 h-48 rounded-full border border-dashed border-holo-cyan animate-spin" style={{ animationDuration: "60s" }} />
-              <div className="absolute w-full h-[1px] bg-holo-cyan/20" />
-              <div className="absolute h-full w-[1px] bg-holo-cyan/20" />
+          <div className="relative h-72 md:h-80 w-full bg-surface-dark border border-holo-cyan/30 rounded-sm overflow-hidden flex flex-col items-center justify-center p-6 text-center">
+            {/* Observation Viewport Window Image Background */}
+            <div
+              className="absolute inset-0 bg-cover bg-center opacity-75"
+              style={{ backgroundImage: "url('/opening-bg.png')" }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-void/90 via-void/50 to-void/70" />
+
+            {/* Viewport HUD Crosshairs & telemetry */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
+              <div className="w-56 h-56 rounded-full border border-dashed border-holo-cyan animate-spin" style={{ animationDuration: "60s" }} />
+              <div className="absolute w-full h-[1px] bg-holo-cyan/30" />
+              <div className="absolute h-full w-[1px] bg-holo-cyan/30" />
             </div>
 
-            <div className="relative z-10 max-w-xl space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-holo-amber/10 border border-holo-amber/30 text-holo-amber font-mono text-xs rounded-full">
+            <div className="relative z-10 max-w-xl space-y-3 bg-surface-dark/80 p-5 rounded-sm border border-holo-cyan/20 backdrop-blur-sm shadow-xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-holo-amber/15 border border-holo-amber/30 text-holo-amber font-mono text-xs rounded-full">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>THE EMBER SPUR (余烬星弧) 首次显现</span>
               </div>
-              <h1 className="font-display font-bold text-2xl md:text-3xl text-holo-bright tracking-widest">
+              <h1 className="font-display font-bold text-2xl md:text-3xl text-holo-bright tracking-widest drop-shadow">
                 余烬协议 // EMBER PROTOCOL
               </h1>
-              <p className="text-xs font-mono text-slate-300 leading-relaxed">
+              <p className="text-xs font-mono text-slate-200 leading-relaxed drop-shadow">
                 四百年的冷却之后，九颗恒星节点之间再次涌现自催化电流。
                 你是最后的第 9 号奇偶校验位。在恒星熔炉被二次点火前，查明全部 5+1 锚定真相。
               </p>
