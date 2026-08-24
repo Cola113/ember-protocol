@@ -1457,7 +1457,7 @@ export default function SurfaceStageView({
       {/* Bottom Telemetry Bar */}
       <div className="flex justify-between items-center text-xs font-mono text-holo-muted border-t border-holo-cyan/15 pt-3">
         <span>SENSOR STATUS: ACTIVE // 1420.405 MHz CARRIER SYNCED</span>
-        <span>PRESS [TAB] TO OPEN SYNTHESIS INDEX DESK</span>
+        <span>OPEN [INDEX] DESK FROM HUD TO SYNTHESIZE</span>
       </div>
     </div>
   );
