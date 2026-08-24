@@ -433,27 +433,32 @@ function PlanetNode({
       haloRef.current.scale.set(targetHaloScale, targetHaloScale, targetHaloScale);
     }
 
-    // 5. Star Chart Rewrite Shockwave Pulse Ring
-    if (shockwaveTimerRef.current > 0 && shockwaveRef.current) {
-      shockwaveTimerRef.current = Math.max(0, shockwaveTimerRef.current - delta);
-      const ratio = 1.0 - shockwaveTimerRef.current / 1.3; // 0 -> 1
-      const waveScale = 1.2 + ratio * 2.8;
-      shockwaveRef.current.scale.set(waveScale, waveScale, waveScale);
-      const shockMat = shockwaveRef.current.material as THREE.MeshBasicMaterial;
-      if (shockMat) {
-        shockMat.opacity = (1.0 - ratio) * 0.85;
+    // 5. Star Chart Rewrite Shockwave Pulse Ring (Driven directly by useFrame without relying on React render cycles)
+    if (shockwaveRef.current) {
+      const isPlaying = shockwaveTimerRef.current > 0;
+      shockwaveRef.current.visible = isPlaying;
+
+      if (isPlaying) {
+        shockwaveTimerRef.current = Math.max(0, shockwaveTimerRef.current - delta);
+        const ratio = 1.0 - shockwaveTimerRef.current / 1.3; // 0 -> 1
+        const waveScale = 1.2 + ratio * 2.8;
+        shockwaveRef.current.scale.set(waveScale, waveScale, waveScale);
+        const shockMat = shockwaveRef.current.material as THREE.MeshBasicMaterial;
+        if (shockMat) {
+          shockMat.opacity = (1.0 - ratio) * 0.85;
+        }
       }
     }
   });
 
   return (
     <group position={pos}>
-      {/* 0. Rewrite Shockwave Burst Ring (Only visible during ~1.3s rewrite animation) */}
+      {/* 0. Rewrite Shockwave Burst Ring (Visibility and scale driven directly in useFrame) */}
       <mesh
         ref={shockwaveRef}
         rotation={[Math.PI / 2, 0, 0]}
         scale={1.2}
-        visible={shockwaveTimerRef.current > 0}
+        visible={false}
       >
         <ringGeometry args={[radius * 1.2, radius * 1.35, 48]} />
         <meshBasicMaterial
