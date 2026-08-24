@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { PlanetDef, LandingSite } from "@/lib/canon";
-import { X, ArrowDown, Radio, Activity, Cpu, User, MapPin, CheckCircle2 } from "lucide-react";
+import { X, ArrowDown, Radio, Activity, Cpu, User, MapPin, CheckCircle2, Sparkles, Compass, AlertTriangle } from "lucide-react";
+import { clientScribeGenerate, ClientScribeResult } from "@/lib/api-client";
 
 interface PlanetSurveyModalProps {
   planet: PlanetDef;
@@ -25,6 +26,9 @@ export default function PlanetSurveyModal({
   const [selectedSite, setSelectedSite] = useState<LandingSite>(
     planet.landing_sites[0] || { id: "default", name: "Orbital Beacon", hotspots: [] }
   );
+  const [dossierResult, setDossierResult] = useState<ClientScribeResult | null>(null);
+  const [isDossierLoading, setIsDossierLoading] = useState(false);
+
   const modalRef = useRef<HTMLDivElement>(null);
   const previousActiveElement = useRef<HTMLElement | null>(null);
 
@@ -35,6 +39,33 @@ export default function PlanetSurveyModal({
       previousActiveElement.current?.focus();
     };
   }, []);
+
+  // Fetch Scribe dossier whenever planet or selectedSite changes
+  useEffect(() => {
+    let isCancelled = false;
+    if (!selectedSite || !selectedSite.id) return;
+
+    setIsDossierLoading(true);
+    clientScribeGenerate({
+      planetId: planet.id,
+      landingSiteId: selectedSite.id,
+    })
+      .then((res) => {
+        if (!isCancelled) {
+          setDossierResult(res);
+          setIsDossierLoading(false);
+        }
+      })
+      .catch(() => {
+        if (!isCancelled) {
+          setIsDossierLoading(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [planet.id, selectedSite.id]);
 
   useEffect(() => {
     const handleTab = (e: KeyboardEvent) => {
@@ -114,6 +145,75 @@ export default function PlanetSurveyModal({
 
       {/* Dossier Content Stream */}
       <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-xs font-mono text-slate-300 leading-relaxed mb-3 sm:mb-4">
+        {/* Scribe Generated Dossier Section */}
+        {isDossierLoading ? (
+          <div className="p-3 bg-surface-dark/90 border border-holo-cyan/30 rounded-sm flex items-center gap-2 text-holo-cyan text-xs font-mono animate-pulse">
+            <span className="w-2.5 h-2.5 rounded-full border border-holo-cyan border-t-transparent animate-spin" />
+            <span>SCRIBE // 正在扫描并重构【{selectedSite.name}】地方志档案...</span>
+          </div>
+        ) : dossierResult && dossierResult.dossier ? (
+          <div className="p-3 bg-surface-dark/85 border border-holo-cyan/30 rounded-sm space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="text-holo-cyan font-bold flex items-center gap-1.5 text-[11px] tracking-wide">
+                <Compass className="w-3.5 h-3.5 text-holo-cyan" />
+                <span>{dossierResult.dossier.title || "地方志档案"}</span>
+              </div>
+              {dossierResult.status === "generated" && (
+                <span className="text-[9px] px-1.5 py-0.2 bg-holo-cyan/20 border border-holo-cyan/50 text-holo-cyan rounded-sm">
+                  SCRIBE GENERATED
+                </span>
+              )}
+              {dossierResult.status === "cache_hit" && (
+                <span className="text-[9px] px-1.5 py-0.2 bg-holo-green/20 border border-holo-green/50 text-holo-green rounded-sm">
+                  CACHE HIT
+                </span>
+              )}
+              {dossierResult.degraded && (
+                <span className="text-[9px] px-1.5 py-0.2 bg-holo-amber/20 border border-holo-amber/50 text-holo-amber rounded-sm">
+                  DEGRADED TEMPLATE
+                </span>
+              )}
+            </div>
+            <p className="text-slate-300 text-[11px]">{dossierResult.dossier.summary}</p>
+
+            {/* Today's Event */}
+            {dossierResult.dossier.today_event && (
+              <div className="p-2 bg-void/50 border border-holo-cyan/15 rounded text-[11px]">
+                <div className="text-holo-amber font-semibold flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-holo-amber" />
+                  <span>今日事件：{dossierResult.dossier.today_event.title}</span>
+                </div>
+                <p className="text-slate-400 mt-0.5">{dossierResult.dossier.today_event.description}</p>
+              </div>
+            )}
+
+            {/* Environment Phenomena & Hazards */}
+            {dossierResult.dossier.environment && (
+              <div className="space-y-1 text-[10px]">
+                <div className="text-slate-400">{dossierResult.dossier.environment.description}</div>
+                {dossierResult.dossier.environment.hazards && dossierResult.dossier.environment.hazards.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {dossierResult.dossier.environment.hazards.map((h, i) => (
+                      <span key={i} className="px-1.5 py-0.5 bg-red-950/40 text-red-300 border border-red-500/30 rounded">
+                        ⚠ {h}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {dossierResult.dossier.environment.phenomena && dossierResult.dossier.environment.phenomena.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {dossierResult.dossier.environment.phenomena.map((ph, i) => (
+                      <span key={i} className="px-1.5 py-0.5 bg-cyan-950/40 text-holo-cyan border border-holo-cyan/30 rounded">
+                        ✦ {ph}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : null}
+
         {/* Apparent Civilization */}
         <div className="p-3 bg-surface-dark/70 border border-holo-cyan/15 rounded-sm">
           <div className="text-holo-amber font-bold flex items-center gap-1.5 mb-1 text-[11px] tracking-wide">
