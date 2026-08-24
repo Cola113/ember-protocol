@@ -77,14 +77,24 @@ export default function TruthUnlockOverlay({
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 1.05 }}
-      transition={{ duration: 0.4 }}
       role="dialog"
       aria-modal="true"
       aria-labelledby="truth-unlock-title"
       className="fixed inset-0 z-50 bg-void/90 backdrop-blur-xl flex flex-col items-center justify-center p-6 overflow-hidden pointer-events-auto"
     >
+      {/* Quantum Resonance Abstract Backdrop Layer */}
+      <div
+        className="absolute inset-0 bg-cover bg-center pointer-events-none select-none z-0"
+        style={{
+          backgroundImage: "url('/truth-unlock.webp')",
+          opacity: 0.26,
+          filter: "brightness(0.85) contrast(1.15)",
+        }}
+      />
+      <div className="absolute inset-0 bg-void/70 pointer-events-none z-0" />
+
       {/* Holographic Radial Burst Effect */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
         <div className="w-[800px] h-[800px] rounded-full bg-gradient-to-r from-holo-amber/20 via-holo-cyan/10 to-transparent blur-3xl animate-pulse" />
         <div
           className="absolute w-[500px] h-[500px] rounded-full border border-holo-amber/40 animate-ping"

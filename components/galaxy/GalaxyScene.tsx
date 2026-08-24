@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useRef, useState, useMemo, useEffect } from "react";
+import React, { useRef, useState, useMemo, useEffect, Suspense } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Html } from "@react-three/drei";
+import { OrbitControls, Html, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { CANON, PlanetDef } from "@/lib/canon";
 
@@ -194,15 +194,24 @@ function InferenceLines({ visiblePlanets }: { visiblePlanets: PlanetDef[] }) {
   );
 }
 
+// Textures Set
+interface TexturesSet {
+  gasGiant: THREE.Texture;
+  lavaCrust: THREE.Texture;
+  iceRock: THREE.Texture;
+}
+
 // Visual Node for a Planet with distinct materials, custom geometry, and tailored animations
 function PlanetNode({
   planet,
   isSelected,
   onSelect,
+  textures,
 }: {
   planet: PlanetDef;
   isSelected: boolean;
   onSelect: (p: PlanetDef) => void;
+  textures?: TexturesSet;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const ringRef = useRef<THREE.Mesh>(null);
@@ -229,6 +238,16 @@ function PlanetNode({
   const isBlackInterval = planet.id === "black-interval";
 
   const radius = isBlindSun ? 6.8 : isBlackInterval ? 6.2 : isKiln || isCinder ? 6.0 : 5.4;
+
+  const textureMap = textures
+    ? isKiln || isBlindSun
+      ? textures.lavaCrust
+      : isChoir || isCinder
+      ? textures.gasGiant
+      : isBlackInterval
+      ? undefined
+      : textures.iceRock
+    : undefined;
 
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime();
@@ -354,6 +373,7 @@ function PlanetNode({
         )}
 
         <meshStandardMaterial
+          map={textureMap}
           color={
             isBlindSun
               ? "#1e293b"
@@ -401,6 +421,7 @@ function PlanetNode({
               ? 0.5
               : 0.3
           }
+          emissiveMap={isKiln && textures ? textures.lavaCrust : undefined}
         />
       </mesh>
 
@@ -532,6 +553,59 @@ function CameraController({
   return null;
 }
 
+// Galaxy Elements with Preloaded Astral Noir Textures
+function GalaxyElements({
+  visiblePlanets,
+  selectedPlanet,
+  onSelectPlanet,
+  showInferenceLines,
+  controlsRef,
+}: {
+  visiblePlanets: PlanetDef[];
+  selectedPlanet: PlanetDef | null;
+  onSelectPlanet: (planet: PlanetDef) => void;
+  showInferenceLines: boolean;
+  controlsRef: React.MutableRefObject<any>;
+}) {
+  const [gasGiant, lavaCrust, iceRock] = useTexture([
+    "/planet-gas-giant.webp",
+    "/planet-lava-crust.webp",
+    "/planet-ice-rock.webp",
+  ]);
+
+  const textures = useMemo<TexturesSet>(
+    () => ({
+      gasGiant,
+      lavaCrust,
+      iceRock,
+    }),
+    [gasGiant, lavaCrust, iceRock]
+  );
+
+  return (
+    <>
+      <CosmicDust />
+      <SpurCurve visiblePlanets={visiblePlanets} />
+      {showInferenceLines && <InferenceLines visiblePlanets={visiblePlanets} />}
+
+      {visiblePlanets.map((planet) => (
+        <PlanetNode
+          key={planet.id}
+          planet={planet}
+          isSelected={selectedPlanet?.id === planet.id}
+          onSelect={onSelectPlanet}
+          textures={textures}
+        />
+      ))}
+
+      <CameraController
+        targetPlanet={selectedPlanet}
+        controlsRef={controlsRef}
+      />
+    </>
+  );
+}
+
 export default function GalaxyScene({
   onSelectPlanet,
   selectedPlanet,
@@ -551,33 +625,59 @@ export default function GalaxyScene({
   );
 
   return (
-    <div className="w-full h-full relative cursor-grab active:cursor-grabbing">
+    <div className="w-full h-full relative cursor-grab active:cursor-grabbing overflow-hidden bg-[#050811]">
+      {/* Astral Noir Deep Space Backdrop Layer */}
+      <div
+        className="absolute inset-0 bg-cover bg-center pointer-events-none transition-opacity duration-1000 z-0 select-none"
+        style={{
+          backgroundImage: "url('/galaxy-bg.webp')",
+          opacity: 0.45,
+          filter: "brightness(0.9) contrast(1.15)",
+        }}
+      />
+      {/* Subtle cosmic depth vignette */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#050811] via-transparent to-[#050811]/75 pointer-events-none z-0" />
+
       <Canvas
         camera={{ position: [0, 60, 260], fov: 50, near: 1, far: 2500 }}
-        style={{ background: "#050811" }}
+        style={{ background: "transparent" }}
+        className="relative z-10"
       >
-        <ambientLight intensity={0.55} />
-        <pointLight position={[120, 180, 120]} intensity={1.8} color="#e0f2fe" />
-        <pointLight position={[-120, -60, -120]} intensity={1.0} color="#38bdf8" />
-        <pointLight position={[0, -100, 100]} intensity={0.6} color="#f59e0b" />
+        <ambientLight intensity={0.65} />
+        <pointLight position={[120, 180, 120]} intensity={2.0} color="#e0f2fe" />
+        <pointLight position={[-120, -60, -120]} intensity={1.2} color="#38bdf8" />
+        <pointLight position={[0, -100, 100]} intensity={0.7} color="#f59e0b" />
 
-        <CosmicDust />
-        <SpurCurve visiblePlanets={visiblePlanets} />
-        {showInferenceLines && <InferenceLines visiblePlanets={visiblePlanets} />}
-
-        {visiblePlanets.map((planet) => (
-          <PlanetNode
-            key={planet.id}
-            planet={planet}
-            isSelected={selectedPlanet?.id === planet.id}
-            onSelect={onSelectPlanet}
+        <Suspense
+          fallback={
+            <>
+              <CosmicDust />
+              <SpurCurve visiblePlanets={visiblePlanets} />
+              {showInferenceLines && <InferenceLines visiblePlanets={visiblePlanets} />}
+              {visiblePlanets.map((planet) => (
+                <PlanetNode
+                  key={planet.id}
+                  planet={planet}
+                  isSelected={selectedPlanet?.id === planet.id}
+                  onSelect={onSelectPlanet}
+                />
+              ))}
+              <CameraController
+                targetPlanet={selectedPlanet}
+                controlsRef={controlsRef}
+              />
+            </>
+          }
+        >
+          <GalaxyElements
+            visiblePlanets={visiblePlanets}
+            selectedPlanet={selectedPlanet}
+            onSelectPlanet={onSelectPlanet}
+            showInferenceLines={showInferenceLines}
+            controlsRef={controlsRef}
           />
-        ))}
+        </Suspense>
 
-        <CameraController
-          targetPlanet={selectedPlanet}
-          controlsRef={controlsRef}
-        />
         <OrbitControls
           ref={controlsRef}
           enableDamping
