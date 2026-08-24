@@ -349,6 +349,23 @@ export async function runT7FullChain(): Promise<{ ok: true; checks: string[] }> 
   }
   checks.push("T5 边界：非法模型输出（verdict/范围/缺字段）→ 降级 partial + validation_error，不推进 believed，attempt 标 degraded");
 
+  // 3d. 未登记 pinned proposition 硬门（codex 审查补：合法 truthId + FAKE.PROPOSITION）
+  {
+    const store = createMemoryDataStore();
+    const spy = curatorSpy(synthesisFixtures.passed);
+    const r = await runCuratorSynthesis(
+      { ...completeCuratorInput, pinnedPropositions: ["Helix.Beacon.Broadcasting", "FAKE.PROPOSITION"] },
+      { store, slotId: "auto", generate: spy.fn }
+    );
+    const rej = asCuratorRejected(r);
+    assert(rej.error.error === "canon_violation", "未登记命题: canon_violation");
+    assert(!spy.called(), "未登记命题: 不调用模型");
+    const st = await store.playerState.load("auto");
+    assert(st === null || (st.collectedPropositions.length === 0 && st.believedTruths.length === 0), "未登记命题: 不写 player state");
+    record("curator 未登记命题硬门", rej);
+  }
+  checks.push("T5 边界：未登记 pinned proposition → canon_violation，不调用模型，不写 player state");
+
   // 3c. believed 状态 spy 断言不调用模型
   {
     const store = createMemoryDataStore();
