@@ -496,7 +496,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
     role: "帝国宰相残响",
     personality: "玩世不恭、优雅颓废、热衷于讲述家族阴谋",
     speechRegister: "aristocratic-cynical",
-    taboos: ["程序", "虚拟", "红鲱鱼"],
+    taboos: ["程序", "虚拟", "红鲱鱼", "沙盒", "代码"],
     steps: [
       {
         speaker: "Chancellor 尤利安",

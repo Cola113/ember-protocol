@@ -75,12 +75,26 @@ for (const planetId of expectedPlanetIds) {
     }
   }
 
-  // 5. Check anchor NPC alignment
+  // 5. Check anchor NPC alignment & deep field consistency
   const planetDef = canonLedger.planets.find((p: any) => p.id === planetId);
   if (planetDef && planetDef.anchor_npc) {
     const anchorInRoster = constitution.npc_roster.find((npc: any) => npc.npc_id === planetDef.anchor_npc.id);
     if (!anchorInRoster) {
       console.error(`FAIL: Anchor NPC '${planetDef.anchor_npc.id}' not found in npc_roster for '${planetId}'`);
+      process.exit(1);
+    }
+
+    // Check taboos consistency between planets[].anchor_npc and constitution.npc_roster
+    const canonTaboos = JSON.stringify([...planetDef.anchor_npc.taboos].sort());
+    const rosterTaboos = JSON.stringify([...anchorInRoster.taboos].sort());
+    if (canonTaboos !== rosterTaboos) {
+      console.error(`FAIL: Taboos mismatch for '${planetDef.anchor_npc.id}' in '${planetId}': canon=${canonTaboos} vs roster=${rosterTaboos}`);
+      process.exit(1);
+    }
+
+    // Check speech_register consistency
+    if (planetDef.anchor_npc.speech_register !== anchorInRoster.speech_register) {
+      console.error(`FAIL: Speech register mismatch for '${planetDef.anchor_npc.id}' in '${planetId}': canon=${planetDef.anchor_npc.speech_register} vs roster=${anchorInRoster.speech_register}`);
       process.exit(1);
     }
   }
