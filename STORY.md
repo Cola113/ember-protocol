@@ -319,7 +319,7 @@ graph TD
 | **T3** | **时钟与寻址** (Clock & Pointer) | `Choir.Hymn.IsClock` + `Needle.Pointer.Rebased` | 咏井深海圣歌为计算机中央晶振时钟，针的尖塔阵列负责全域内存寻址与堆栈指针重定基底。 | `晶振时钟`, `时钟`, `寻址`, `堆栈指针`, `基频`, `指针` | 总账 (Ledger), 髓 (Marrow) |
 | **T4** | **写回** (The Write-Back) | `Marrow.God.IsProcess` + `Marrow.Bio.WriteBack` | 400年前的灭绝不是毁灭，而是运算完成时的“写回内存”，文明湿件被坍缩为结果常数。 | `写回`, `非毁灭`, `坍缩`, `残响`, `常数化`, `生物湿件` | 烬廷 (Cinder Court) |
 | **T5** | **校验** (The Parity Lock) | `Ledger.Error.IsChecksum` + `Ledger.Protocol.RecorderKey` | 记录员协议不是调查工具，而是中断第二轮点火的奇偶校验机制；钥匙不是物品，而是认知。 | `奇偶校验`, `中断点火`, `理解即钥匙`, `非物理实体`, `校验和` | 盲日 (Blind Sun), 黑间隔 (Black Interval) |
-| **T?** | **晚星归宿** (The Parity Bit) | `Interval.Core.Recorder9` + `Interval.Memory.Vesper` | 玩家自己 Vesper 就是第9号校验位，前8代均已在上一周期熔断，本次苏醒是最后的闭环。 | `Recorder-9`, `前代熔断`, `最后一位校验码`, `重逢`, `Vesper` | 无 (触发终局) |
+| **T?** | **晚星归宿** (The Parity Bit) *(仅在终局黑间隔揭示 · 严禁在NPC/地表对白中泄露)* | `Interval.Core.Recorder9` + `Interval.Memory.Vesper` | 玩家自己 Vesper 就是第9号校验位，前8代均已在上一周期熔断，本次苏醒是最后的闭环。 | `Recorder-9`, `前代熔断`, `最后一位校验码`, `重逢`, `Vesper` | 无 (触发终局) |
 
 ---
 

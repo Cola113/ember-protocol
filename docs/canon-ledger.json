@@ -581,7 +581,9 @@
           "taboos": [
             "程序",
             "虚拟",
-            "红鲱鱼"
+            "红鲱鱼",
+            "沙盒",
+            "代码"
           ],
           "speech_register": "aristocratic-cynical",
           "registered_insight_ids": [
