@@ -1,0 +1,45 @@
+{
+  "scribe": {
+    "contract_version": "v1.1",
+    "status": "degraded",
+    "degraded": true,
+    "cacheable": false,
+    "error": {
+      "error": "model_unavailable",
+      "message": "Scribe 模型不可用，已使用模板档案。",
+      "retryable": true,
+      "degraded": true,
+      "fallback": "该地点的档案尚未完成对齐。"
+    },
+    "dossier": {
+      "planet_id": "helix-7",
+      "landing_site_id": "site-helix-coldboot",
+      "title": "档案暂缺",
+      "summary": "该地点的档案尚未完成对齐。",
+      "today_event": { "title": "无可靠事件记录", "description": "请返回探针后重试。" },
+      "environment": { "description": "环境读数不可用。", "hazards": [], "phenomena": [] },
+      "local_npcs": [],
+      "archive_fill_notes": "模板降级，不得写入 dossier_cache。"
+    }
+  },
+  "curator": {
+    "contract_version": "v1.1",
+    "status": "degraded",
+    "degraded": true,
+    "truth_id": "T1",
+    "error": {
+      "error": "model_unavailable",
+      "message": "Curator 模型不可用，已使用确定性降级评分。",
+      "retryable": true,
+      "degraded": true,
+      "fallback": "请补齐命题后重试。"
+    },
+    "result": {
+      "verdict": "partial",
+      "coverage": 0,
+      "correctness": 0,
+      "coherence": 0,
+      "feedback": "模型不可用，保留为 suspected。"
+    }
+  }
+}

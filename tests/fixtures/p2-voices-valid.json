@@ -1,0 +1,7 @@
+{
+  "say": "信标没有在呼救。它在重复发送一段握手载波，像是在等一台永远不会抵达的机器。",
+  "mood": "protocol-formal",
+  "offer_insight_id": "INSIGHT_T1_BOOTSTRAP_DISCOVERED",
+  "relationship_delta": 1,
+  "lie": true
+}
