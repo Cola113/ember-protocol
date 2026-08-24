@@ -13,6 +13,12 @@ export interface KvBackend {
   delete(key: string): Promise<void>;
   keys(prefix?: string): Promise<string[]>;
   clear(): Promise<void>;
+  /**
+   * Atomically store `value` only if `key` is absent.
+   * Returns true if this call wrote the value; false if the key already existed
+   * (existing value is left unchanged). Store layers must not emulate this with get+set.
+   */
+  putIfAbsent(key: string, value: string): Promise<boolean>;
 }
 
 export class MemoryKv implements KvBackend {
@@ -38,6 +44,12 @@ export class MemoryKv implements KvBackend {
 
   async clear(): Promise<void> {
     this.map.clear();
+  }
+
+  async putIfAbsent(key: string, value: string): Promise<boolean> {
+    if (this.map.has(key)) return false;
+    this.map.set(key, value);
+    return true;
   }
 }
 
@@ -101,6 +113,17 @@ export class LocalStorageKv implements KvBackend {
   async clear(): Promise<void> {
     const owned = await this.keys();
     await Promise.all(owned.map((key) => this.delete(key)));
+  }
+
+  async putIfAbsent(key: string, value: string): Promise<boolean> {
+    const storage = browserStorage();
+    if (!storage) {
+      throw new Error("localStorage is not available in this runtime.");
+    }
+    const namespaced = this.namespaced(key);
+    if (storage.getItem(namespaced) !== null) return false;
+    storage.setItem(namespaced, value);
+    return true;
   }
 }
 

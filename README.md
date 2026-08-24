@@ -130,10 +130,10 @@ Local-first so a Vercel deploy without Postgres still boots.
 
 | Store | Key | What is stored | What is refused |
 | --- | --- | --- | --- |
-| `dossier_cache` | `planetId:landingSiteId` | `status: "generated"` dossiers | `cacheable: false` / `degraded` / template |
-| `npc_cache` | `npcId` | dialogue turns, mood, relationship | — |
-| `player_state` | save slot id | Curator truth machine + write-through to `save-system` | downgrading `believed` |
-| `synthesis_attempts` | ring buffer (20) | recent Synthesis records | — |
+| `dossier_cache` | `planetId:landingSiteId` (global generated cache) | `status: "generated"` envelope only | bare dossier / `cacheable: false` / `degraded` / template |
+| `npc_cache` | `slotId:npcId` | per-slot dialogue turns, mood, relationship | unknown slot |
+| `player_state` | save slot id | Curator truth machine + write-through to `save-system` | downgrading or deleting `believed` |
+| `synthesis_attempts` | `slotId` ring buffer (20) | per-slot Synthesis records | unknown slot |
 
 `player_state` does **not** replace `lib/save-system.ts`. The playable UI keeps using `saveGame` / `loadGame` (`ember_protocol_save_*`). Datastore sidecars use `ember_protocol_ds_*`. No auth, no cross-device sync.
 

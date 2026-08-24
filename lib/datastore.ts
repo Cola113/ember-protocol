@@ -40,6 +40,7 @@ export {
   dossierCacheKey,
   npcCacheKey,
   playerStateKey,
+  synthesisAttemptsKey,
   deriveTruthStates,
   isGeneratedDossierCacheable,
   isGeneratedDossierCacheable as isDossierCacheable,
@@ -48,11 +49,13 @@ export {
   SYNTHESIS_ATTEMPT_LIMIT,
   DOSSIER_CACHE_KEY_PREFIX,
   NPC_CACHE_KEY_PREFIX,
-  PLAYER_STATE_KEY_PREFIX
+  PLAYER_STATE_KEY_PREFIX,
+  SYNTHESIS_ATTEMPTS_KEY_PREFIX
 } from "@/lib/storage/stores";
 export type {
   DossierCacheStore,
   DossierPutResult,
+  GeneratedDossierEnvelope,
   NpcCacheStore,
   NpcMemory,
   NpcTurn,

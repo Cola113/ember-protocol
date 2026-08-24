@@ -7,7 +7,16 @@
  * - Ping: GET /api/ai/ping
  */
 
-import { generateObject, streamText, APICallError, type LanguageModelV1 } from "ai";
+import {
+  generateObject,
+  streamText,
+  APICallError,
+  JSONParseError,
+  NoObjectGeneratedError,
+  TypeValidationError,
+  InvalidResponseDataError,
+  type LanguageModelV1
+} from "ai";
 import { z } from "zod";
 import {
   modelUnavailable,
@@ -87,20 +96,45 @@ function inferProvider(env: NodeJS.ProcessEnv): AiProviderId {
   return order.find((provider) => keyForProvider(env, provider)) ?? "google";
 }
 
+function modelIdForProvider(env: NodeJS.ProcessEnv, provider: AiProviderId): string {
+  const generic = readEnv(env, ["AI_SDK_MODEL"]);
+  if (generic) return generic;
+  switch (provider) {
+    case "google":
+      return readEnv(env, ["GEMINI_MODEL"]) ?? DEFAULT_MODELS.google;
+    case "openai":
+      return readEnv(env, ["OPENAI_MODEL"]) ?? DEFAULT_MODELS.openai;
+    case "xai":
+      return readEnv(env, ["XAI_MODEL"]) ?? DEFAULT_MODELS.xai;
+    case "anthropic":
+      return readEnv(env, ["ANTHROPIC_MODEL"]) ?? DEFAULT_MODELS.anthropic;
+  }
+}
+
+function baseUrlForProvider(env: NodeJS.ProcessEnv, provider: AiProviderId): string {
+  const generic = readEnv(env, ["AI_SDK_BASE_URL"]);
+  if (generic) return generic;
+  switch (provider) {
+    case "google":
+      return readEnv(env, ["GEMINI_API_BASE"]) ?? DEFAULT_BASE_URLS.google;
+    case "openai":
+      return readEnv(env, ["OPENAI_BASE_URL"]) ?? DEFAULT_BASE_URLS.openai;
+    case "xai":
+      return readEnv(env, ["XAI_BASE_URL"]) ?? DEFAULT_BASE_URLS.xai;
+    case "anthropic":
+      return readEnv(env, ["ANTHROPIC_BASE_URL"]) ?? DEFAULT_BASE_URLS.anthropic;
+  }
+}
+
 export function readAiConfig(env: NodeJS.ProcessEnv = process.env): AiRuntimeConfig {
   const provider = inferProvider(env);
   const apiKey = keyForProvider(env, provider);
-  const modelId =
-    readEnv(env, ["AI_SDK_MODEL", "GEMINI_MODEL", "OPENAI_MODEL"]) ?? DEFAULT_MODELS[provider];
-  const baseUrl =
-    readEnv(env, ["AI_SDK_BASE_URL", "GEMINI_API_BASE", "OPENAI_BASE_URL", "XAI_BASE_URL"]) ??
-    DEFAULT_BASE_URLS[provider];
   return {
     provider,
-    modelId,
+    modelId: modelIdForProvider(env, provider),
     apiKey,
     configured: Boolean(apiKey),
-    baseUrl
+    baseUrl: baseUrlForProvider(env, provider)
   };
 }
 
@@ -113,7 +147,35 @@ export function redactSecrets(text: string): string {
 
 const UNAVAILABLE_FALLBACK = "模型不可用，已按合同降级。";
 
-export function mapAiSdkError(error: unknown): DegradedContractError {
+const SCHEMA_ERROR_NAMES = new Set([
+  "AI_NoObjectGeneratedError",
+  "NoObjectGeneratedError",
+  "AI_JSONParseError",
+  "JSONParseError",
+  "AI_TypeValidationError",
+  "TypeValidationError",
+  "AI_InvalidResponseDataError",
+  "InvalidResponseDataError"
+]);
+
+function isObjectGenerationError(error: unknown): boolean {
+  if (NoObjectGeneratedError.isInstance(error)) return true;
+  if (JSONParseError.isInstance(error)) return true;
+  if (TypeValidationError.isInstance(error)) return true;
+  if (InvalidResponseDataError.isInstance(error)) return true;
+  if (error instanceof Error && SCHEMA_ERROR_NAMES.has(error.name)) return true;
+  if (error instanceof Error && error.cause) return isObjectGenerationError(error.cause);
+  return false;
+}
+
+/** Schema / JSON / Zod failures are validation_error; transport/key/timeout are model_unavailable. */
+export function mapAiSdkError(error: unknown): ContractError {
+  if (isObjectGenerationError(error)) {
+    const message = error instanceof Error && error.message.trim().length > 0
+      ? error.message
+      : "模型输出未通过 schema 校验，已丢弃。";
+    return validationError(redactSecrets(message));
+  }
   if (error instanceof Error && (error.name === "AbortError" || error.name === "TimeoutError")) {
     return modelUnavailable("模型调用超时。", UNAVAILABLE_FALLBACK);
   }

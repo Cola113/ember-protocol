@@ -15,7 +15,9 @@ import type { KvBackend } from "./backend";
 export const DOSSIER_CACHE_KEY_PREFIX = "dossier:";
 export const NPC_CACHE_KEY_PREFIX = "npc:";
 export const PLAYER_STATE_KEY_PREFIX = "player_state:";
-export const SYNTHESIS_ATTEMPTS_KEY = "synthesis_attempts";
+export const SYNTHESIS_ATTEMPTS_KEY_PREFIX = "synthesis_attempts:";
+/** @deprecated Use synthesisAttemptsKey(slotId). Kept as the key prefix name. */
+export const SYNTHESIS_ATTEMPTS_KEY = SYNTHESIS_ATTEMPTS_KEY_PREFIX;
 
 export const NPC_MEMORY_TURN_LIMIT = 40;
 export const SYNTHESIS_ATTEMPT_LIMIT = 20;
@@ -36,44 +38,43 @@ export function dossierCacheKey(planetId: string, landingSiteId: string): string
   return `${DOSSIER_CACHE_KEY_PREFIX}${planetId}:${landingSiteId}`;
 }
 
-export function npcCacheKey(npcId: string): string {
-  return `${NPC_CACHE_KEY_PREFIX}${npcId}`;
+export function npcCacheKey(slotId: SlotId, npcId: string): string {
+  return `${NPC_CACHE_KEY_PREFIX}${slotId}:${npcId}`;
 }
 
 export function playerStateKey(slotId: SlotId): string {
   return `${PLAYER_STATE_KEY_PREFIX}${slotId}`;
 }
 
+export function synthesisAttemptsKey(slotId: SlotId): string {
+  return `${SYNTHESIS_ATTEMPTS_KEY_PREFIX}${slotId}`;
+}
+
+export type GeneratedDossierEnvelope = Extract<ScribeGenerateResponse, { status: "generated" }>;
+
 /**
- * Contract gate: only `status: "generated"` dossiers may enter dossier_cache.
- * Degraded / template responses (`cacheable: false`, `degraded: true`, `status: "degraded"`)
- * are display-only and must never be persisted.
+ * Contract gate: only a `status: "generated"` envelope may enter dossier_cache.
+ * Bare dossiers, `cache_hit`, and degraded / template responses are refused.
  */
-export function isGeneratedDossierCacheable(value: unknown): value is { dossier: Dossier } {
+export function isGeneratedDossierCacheable(value: unknown): value is GeneratedDossierEnvelope {
   if (!value || typeof value !== "object") return false;
   const record = value as {
     status?: unknown;
     cacheable?: unknown;
     degraded?: unknown;
+    cached?: unknown;
     dossier?: unknown;
+    contract_version?: unknown;
   };
+  if (record.status !== "generated") return false;
   if (record.cacheable === false) return false;
   if (record.degraded === true) return false;
-  if (record.status === "degraded") return false;
-  if (record.status === "cache_hit") return false;
-  if (record.status !== undefined && record.status !== "generated") return false;
+  if (record.cached === true) return false;
   return parseDossier(record.dossier) !== null;
 }
 
 export function isRawDossierCacheable(value: unknown): value is Dossier {
   return parseDossier(value) !== null;
-}
-
-function readDossierFromCandidate(value: unknown): Dossier | null {
-  if (isGeneratedDossierCacheable(value)) {
-    return parseDossier(value.dossier);
-  }
-  return parseDossier(value);
 }
 
 async function readJson<T>(backend: KvBackend, key: string): Promise<T | null> {
@@ -106,13 +107,13 @@ export interface DossierPutResult {
 export interface DossierCacheStore {
   get(planetId: string, landingSiteId: string): Promise<Dossier | null>;
   /**
-   * Persist a generated dossier. Rejects degraded / template payloads.
-   * Write-once: an existing key is left untouched and reported as alreadyPresent.
+   * Persist a `status: "generated"` envelope only. Bare dossiers and degraded
+   * templates are refused. Write-once via backend putIfAbsent (not get+set).
    */
   putGenerated(
     planetId: string,
     landingSiteId: string,
-    candidate: Dossier | ScribeGenerateResponse
+    envelope: ScribeGenerateResponse
   ): Promise<StoreResult<DossierPutResult>>;
   delete(planetId: string, landingSiteId: string): Promise<void>;
   has(planetId: string, landingSiteId: string): Promise<boolean>;
@@ -131,22 +132,18 @@ export function createDossierCacheStore(backend: KvBackend): DossierCacheStore {
       return dossier;
     },
 
-    async putGenerated(planetId, landingSiteId, candidate) {
+    async putGenerated(planetId, landingSiteId, envelope) {
       if (!planetId || !landingSiteId) {
         return { ok: false, error: validationError("dossier_cache 需要 planetId 与 landingSiteId。") };
       }
-
-      const asResponse = candidate as ScribeGenerateResponse;
-      if (asResponse && typeof asResponse === "object" && "status" in asResponse) {
-        if (!isGeneratedDossierCacheable(asResponse)) {
-          return {
-            ok: false,
-            error: validationError("降级或模板 dossier（cacheable:false）禁止写入 dossier_cache。")
-          };
-        }
+      if (!isGeneratedDossierCacheable(envelope)) {
+        return {
+          ok: false,
+          error: validationError("dossier_cache 只接受 status:\"generated\" 信封；裸 dossier / 降级 / 模板禁止写入。")
+        };
       }
 
-      const dossier = readDossierFromCandidate(candidate);
+      const dossier = parseDossier(envelope.dossier);
       if (!dossier) {
         return { ok: false, error: validationError("dossier 未通过 schema，拒绝写入缓存。") };
       }
@@ -158,17 +155,23 @@ export function createDossierCacheStore(backend: KvBackend): DossierCacheStore {
       }
 
       const key = dossierCacheKey(planetId, landingSiteId);
-      const existing = await readJson<unknown>(backend, key);
-      const existingDossier = parseDossier(existing);
-      if (existingDossier) {
+      let inserted = false;
+      try {
+        inserted = await backend.putIfAbsent(key, JSON.stringify(dossier));
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "存储写入失败。";
+        return { ok: false, error: validationError(`存储写入失败：${message}`) };
+      }
+      if (!inserted) {
+        const existingDossier = parseDossier(await readJson<unknown>(backend, key));
+        if (!existingDossier) {
+          return { ok: false, error: validationError("dossier_cache 已有损坏条目，拒绝覆盖。") };
+        }
         return {
           ok: true,
           data: { stored: false, alreadyPresent: true, dossier: existingDossier }
         };
       }
-
-      const written = await writeJson(backend, key, dossier);
-      if (!written.ok) return written;
       return { ok: true, data: { stored: true, alreadyPresent: false, dossier } };
     },
 
@@ -190,6 +193,7 @@ export interface NpcTurn {
 }
 
 export interface NpcMemory {
+  slot_id: SlotId;
   npc_id: string;
   planet_id?: string;
   relationship: number;
@@ -200,19 +204,21 @@ export interface NpcMemory {
 }
 
 export interface NpcCacheStore {
-  get(npcId: string): Promise<NpcMemory | null>;
-  save(memory: NpcMemory): Promise<StoreResult<NpcMemory>>;
+  get(slotId: SlotId, npcId: string): Promise<NpcMemory | null>;
+  save(slotId: SlotId, memory: NpcMemory): Promise<StoreResult<NpcMemory>>;
   appendTurn(
+    slotId: SlotId,
     npcId: string,
     turn: NpcTurn,
     extras?: Partial<Pick<NpcMemory, "planet_id" | "relationship" | "last_mood" | "notes">>
   ): Promise<StoreResult<NpcMemory>>;
-  delete(npcId: string): Promise<void>;
+  delete(slotId: SlotId, npcId: string): Promise<void>;
 }
 
-function normalizeNpcMemory(memory: NpcMemory): NpcMemory {
+function normalizeNpcMemory(slotId: SlotId, memory: NpcMemory): NpcMemory {
   const turns = memory.turns.slice(-NPC_MEMORY_TURN_LIMIT);
   return {
+    slot_id: slotId,
     npc_id: memory.npc_id,
     planet_id: memory.planet_id,
     relationship: clampInt(memory.relationship, -100, 100),
@@ -230,32 +236,36 @@ function clampInt(value: number, min: number, max: number): number {
 
 export function createNpcCacheStore(backend: KvBackend): NpcCacheStore {
   return {
-    async get(npcId) {
-      if (!npcId) return null;
-      const stored = await readJson<NpcMemory>(backend, npcCacheKey(npcId));
+    async get(slotId, npcId) {
+      if (!SLOT_IDS.includes(slotId) || !npcId) return null;
+      const stored = await readJson<NpcMemory>(backend, npcCacheKey(slotId, npcId));
       if (!stored || stored.npc_id !== npcId || !Array.isArray(stored.turns)) return null;
-      return normalizeNpcMemory(stored);
+      return normalizeNpcMemory(slotId, stored);
     },
 
-    async save(memory) {
+    async save(slotId, memory) {
+      if (!SLOT_IDS.includes(slotId)) {
+        return { ok: false, error: validationError(`未知存档槽：${slotId}`) };
+      }
       if (!memory.npc_id) {
         return { ok: false, error: validationError("npc_cache 需要 npc_id。") };
       }
-      const normalized = normalizeNpcMemory({ ...memory, updated_at: Date.now() });
-      const written = await writeJson(backend, npcCacheKey(normalized.npc_id), normalized);
+      const normalized = normalizeNpcMemory(slotId, { ...memory, updated_at: Date.now() });
+      const written = await writeJson(backend, npcCacheKey(slotId, normalized.npc_id), normalized);
       if (!written.ok) return written;
       return { ok: true, data: normalized };
     },
 
-    async appendTurn(npcId, turn, extras) {
-      const current = (await this.get(npcId)) ?? {
+    async appendTurn(slotId, npcId, turn, extras) {
+      const current = (await this.get(slotId, npcId)) ?? {
+        slot_id: slotId,
         npc_id: npcId,
         relationship: 0,
         turns: [],
         notes: [],
         updated_at: Date.now()
       };
-      return this.save({
+      return this.save(slotId, {
         ...current,
         ...extras,
         notes: extras?.notes ?? current.notes,
@@ -263,8 +273,8 @@ export function createNpcCacheStore(backend: KvBackend): NpcCacheStore {
       });
     },
 
-    async delete(npcId) {
-      await backend.delete(npcCacheKey(npcId));
+    async delete(slotId, npcId) {
+      await backend.delete(npcCacheKey(slotId, npcId));
     }
   };
 }
@@ -366,7 +376,10 @@ function mergeTruthStates(
   if (sidecar) {
     for (const [truthId, status] of Object.entries(sidecar)) {
       if (!(status in TRUTH_STATUS_RANK)) continue;
+      // believedTruths is the only source of "believed"; sidecar cannot resurrect it.
+      if (status === "believed") continue;
       const current = merged[truthId] ?? "unknown";
+      if (current === "believed") continue;
       if (TRUTH_STATUS_RANK[status] >= TRUTH_STATUS_RANK[current]) {
         merged[truthId] = status;
       }
@@ -487,6 +500,15 @@ export function createPlayerStateStore(backend: KvBackend): PlayerStateStore {
         patch.collectedPropositions ?? current.collectedPropositions
       );
       const believedTruths = uniqueStrings(patch.believedTruths ?? current.believedTruths);
+      if (patch.believedTruths) {
+        const removed = current.believedTruths.filter((id) => !believedTruths.includes(id));
+        if (removed.length > 0) {
+          return {
+            ok: false,
+            error: validationError(`不得删除已 believed 的真相：${removed.join(", ")}。`)
+          };
+        }
+      }
       const next: PlayerState = {
         ...current,
         ...patch,
@@ -560,54 +582,62 @@ function uniqueStrings(values: string[]): string[] {
 
 export interface SynthesisAttemptRecord {
   id: string;
+  slotId: SlotId;
   truthId: string;
   hypothesisText: string;
   pinnedPropositions: string[];
   result: SynthesisResult;
   createdAt: number;
   degraded: boolean;
-  slotId?: SlotId;
 }
 
 export interface SynthesisAttemptsStore {
-  list(limit?: number): Promise<SynthesisAttemptRecord[]>;
+  list(slotId: SlotId, limit?: number): Promise<SynthesisAttemptRecord[]>;
   record(
     attempt: Omit<SynthesisAttemptRecord, "id" | "createdAt"> & { id?: string; createdAt?: number }
   ): Promise<StoreResult<SynthesisAttemptRecord>>;
-  clear(): Promise<void>;
+  clear(slotId: SlotId): Promise<void>;
 }
 
 export function createSynthesisAttemptsStore(backend: KvBackend): SynthesisAttemptsStore {
   return {
-    async list(limit = SYNTHESIS_ATTEMPT_LIMIT) {
-      const records = (await readJson<SynthesisAttemptRecord[]>(backend, SYNTHESIS_ATTEMPTS_KEY)) ?? [];
+    async list(slotId, limit = SYNTHESIS_ATTEMPT_LIMIT) {
+      if (!SLOT_IDS.includes(slotId)) return [];
+      const records = (await readJson<SynthesisAttemptRecord[]>(backend, synthesisAttemptsKey(slotId))) ?? [];
       if (!Array.isArray(records)) return [];
-      return records.slice(-Math.max(1, Math.min(limit, SYNTHESIS_ATTEMPT_LIMIT))).reverse();
+      return records
+        .filter((record) => record.slotId === slotId)
+        .slice(-Math.max(1, Math.min(limit, SYNTHESIS_ATTEMPT_LIMIT)))
+        .reverse();
     },
 
     async record(attempt) {
+      if (!SLOT_IDS.includes(attempt.slotId)) {
+        return { ok: false, error: validationError(`未知存档槽：${attempt.slotId}`) };
+      }
       if (!attempt.truthId || !attempt.hypothesisText) {
         return { ok: false, error: validationError("synthesis_attempts 需要 truthId 与 hypothesisText。") };
       }
       const record: SynthesisAttemptRecord = {
         id: attempt.id ?? `syn_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+        slotId: attempt.slotId,
         truthId: attempt.truthId,
         hypothesisText: attempt.hypothesisText,
         pinnedPropositions: attempt.pinnedPropositions ?? [],
         result: attempt.result,
         createdAt: attempt.createdAt ?? Date.now(),
-        degraded: attempt.degraded === true,
-        slotId: attempt.slotId
+        degraded: attempt.degraded === true
       };
-      const existing = (await readJson<SynthesisAttemptRecord[]>(backend, SYNTHESIS_ATTEMPTS_KEY)) ?? [];
+      const key = synthesisAttemptsKey(attempt.slotId);
+      const existing = (await readJson<SynthesisAttemptRecord[]>(backend, key)) ?? [];
       const next = [...(Array.isArray(existing) ? existing : []), record].slice(-SYNTHESIS_ATTEMPT_LIMIT);
-      const written = await writeJson(backend, SYNTHESIS_ATTEMPTS_KEY, next);
+      const written = await writeJson(backend, key, next);
       if (!written.ok) return written;
       return { ok: true, data: record };
     },
 
-    async clear() {
-      await backend.delete(SYNTHESIS_ATTEMPTS_KEY);
+    async clear(slotId) {
+      await backend.delete(synthesisAttemptsKey(slotId));
     }
   };
 }
