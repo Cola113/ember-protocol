@@ -80,18 +80,24 @@ export default function LandingPage() {
       badge: "CANONICAL RESOLUTION",
       desc: "熔断自催化能量回路，阻止第二轮点火。星弧保持沉默，守望宁静余烬。",
       color: "text-sky-400",
+      borderColor: "border-sky-500/30",
+      image: "/ending-sealoff.webp",
     },
     {
       name: "允许写回 (Permission to Overwrite)",
       badge: "TRANSCENDENCE",
       desc: "放弃校验锁定，允许第二轮计算写回底层物理常数，宇宙完成升维重构。",
       color: "text-amber-400",
+      borderColor: "border-amber-500/30",
+      image: "/ending-overwrite.webp",
     },
     {
       name: "递归继任 (The Night Shift Recurse)",
       badge: "FATE & NEW GAME+",
       desc: "重铸第十具休眠舱，重置 400 年倒计时，作为永远的守夜人守护闭环。",
       color: "text-emerald-400",
+      borderColor: "border-emerald-500/30",
+      image: "/ending-recurse.webp",
     },
   ];
 
@@ -256,21 +262,32 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {resolutionBranches.map((branch, i) => (
               <div
                 key={i}
-                className="p-4 bg-surface-dark/80 border border-slate-700/60 rounded-sm space-y-2"
+                className={`p-4 bg-surface-dark/90 border ${branch.borderColor} rounded-sm space-y-3 flex flex-col justify-between group hover:border-holo-cyan/50 transition-all hover:scale-[1.01] shadow-md`}
               >
-                <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
-                  {branch.badge}
+                <div className="space-y-3">
+                  <div className="relative aspect-video sm:aspect-square w-full rounded-sm overflow-hidden bg-void border border-slate-800/80">
+                    <img
+                      src={branch.image}
+                      alt={branch.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-85 group-hover:opacity-100"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-surface-dark via-transparent to-transparent opacity-60 pointer-events-none" />
+                  </div>
+                  <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
+                    {branch.badge}
+                  </div>
+                  <h3 className={`font-display font-bold text-sm ${branch.color}`}>
+                    {branch.name}
+                  </h3>
+                  <p className="text-xs font-mono text-slate-300 leading-relaxed">
+                    {branch.desc}
+                  </p>
                 </div>
-                <h3 className={`font-display font-bold text-sm ${branch.color}`}>
-                  {branch.name}
-                </h3>
-                <p className="text-xs font-mono text-slate-300 leading-relaxed">
-                  {branch.desc}
-                </p>
               </div>
             ))}
           </div>

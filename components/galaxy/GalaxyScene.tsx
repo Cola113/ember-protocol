@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useRef, useState, useMemo, useEffect } from "react";
+import React, { useRef, useState, useMemo, useEffect, Suspense } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Html } from "@react-three/drei";
+import { OrbitControls, Html, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { CANON, PlanetDef } from "@/lib/canon";
 
@@ -194,15 +194,24 @@ function InferenceLines({ visiblePlanets }: { visiblePlanets: PlanetDef[] }) {
   );
 }
 
+// Textures Set
+interface TexturesSet {
+  gasGiant: THREE.Texture;
+  lavaCrust: THREE.Texture;
+  iceRock: THREE.Texture;
+}
+
 // Visual Node for a Planet with distinct materials, custom geometry, and tailored animations
 function PlanetNode({
   planet,
   isSelected,
   onSelect,
+  textures,
 }: {
   planet: PlanetDef;
   isSelected: boolean;
   onSelect: (p: PlanetDef) => void;
+  textures?: TexturesSet;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const ringRef = useRef<THREE.Mesh>(null);
@@ -229,6 +238,16 @@ function PlanetNode({
   const isBlackInterval = planet.id === "black-interval";
 
   const radius = isBlindSun ? 6.8 : isBlackInterval ? 6.2 : isKiln || isCinder ? 6.0 : 5.4;
+
+  const textureMap = textures
+    ? isKiln || isBlindSun
+      ? textures.lavaCrust
+      : isChoir || isCinder
+      ? textures.gasGiant
+      : isBlackInterval
+      ? undefined
+      : textures.iceRock
+    : undefined;
 
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime();
@@ -354,9 +373,18 @@ function PlanetNode({
         )}
 
         <meshStandardMaterial
+          map={textureMap}
           color={
             isBlindSun
-              ? "#1e293b"
+              ? "#94a3b8"
+              : isMarrow
+              ? "#fda4af"
+              : isKiln
+              ? "#fdba74"
+              : isChoir
+              ? "#7dd3fc"
+              : isCinder
+              ? "#f472b6"
               : isBlackInterval
               ? "#f8fafc"
               : planet.color
@@ -365,9 +393,9 @@ function PlanetNode({
             isOrchard
               ? 0.05
               : isKiln
-              ? 0.85
+              ? 0.75
               : isBlindSun
-              ? 0.95
+              ? 0.92
               : isBlackInterval
               ? 0.1
               : 0.35
@@ -378,29 +406,34 @@ function PlanetNode({
               : isNeedle || isLedger || isHelix
               ? 0.85
               : isKiln || isMarrow
-              ? 0.2
+              ? 0.25
               : isBlackInterval
               ? 0.9
-              : 0.5
+              : 0.45
           }
           emissive={
             isBlindSun
-              ? "#0f172a"
+              ? "#b45309"
               : isBlackInterval
               ? "#ffffff"
+              : isKiln
+              ? "#ea580c"
               : planet.color
           }
           emissiveIntensity={
             hovered || isSelected
               ? 0.9
               : isKiln
-              ? 0.6
+              ? 0.7
+              : isBlindSun
+              ? 0.4
               : isBlackInterval
               ? 0.8
               : isMarrow
-              ? 0.5
+              ? 0.45
               : 0.3
           }
+          emissiveMap={isKiln && textures ? textures.lavaCrust : undefined}
         />
       </mesh>
 
@@ -532,6 +565,58 @@ function CameraController({
   return null;
 }
 
+// Textured Planets Group with Astral Noir Textures & Isolated Suspense
+function TexturedPlanets({
+  visiblePlanets,
+  selectedPlanet,
+  onSelectPlanet,
+}: {
+  visiblePlanets: PlanetDef[];
+  selectedPlanet: PlanetDef | null;
+  onSelectPlanet: (planet: PlanetDef) => void;
+}) {
+  const [gasGiant, lavaCrust, iceRock] = useTexture([
+    "/planet-gas-giant.webp",
+    "/planet-lava-crust.webp",
+    "/planet-ice-rock.webp",
+  ]);
+
+  // Configure color space & wrapping for smooth sphere sampling and accurate sRGB gamma
+  useEffect(() => {
+    [gasGiant, lavaCrust, iceRock].forEach((tex) => {
+      if (tex) {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.ClampToEdgeWrapping;
+        tex.needsUpdate = true;
+      }
+    });
+  }, [gasGiant, lavaCrust, iceRock]);
+
+  const textures = useMemo<TexturesSet>(
+    () => ({
+      gasGiant,
+      lavaCrust,
+      iceRock,
+    }),
+    [gasGiant, lavaCrust, iceRock]
+  );
+
+  return (
+    <>
+      {visiblePlanets.map((planet) => (
+        <PlanetNode
+          key={planet.id}
+          planet={planet}
+          isSelected={selectedPlanet?.id === planet.id}
+          onSelect={onSelectPlanet}
+          textures={textures}
+        />
+      ))}
+    </>
+  );
+}
+
 export default function GalaxyScene({
   onSelectPlanet,
   selectedPlanet,
@@ -551,28 +636,55 @@ export default function GalaxyScene({
   );
 
   return (
-    <div className="w-full h-full relative cursor-grab active:cursor-grabbing">
+    <div className="w-full h-full relative cursor-grab active:cursor-grabbing overflow-hidden bg-[#050811]">
+      {/* Astral Noir Deep Space Backdrop Layer */}
+      <div
+        className="absolute inset-0 bg-cover bg-center pointer-events-none transition-opacity duration-1000 z-0 select-none"
+        style={{
+          backgroundImage: "url('/galaxy-bg.webp')",
+          opacity: 0.45,
+          filter: "brightness(0.9) contrast(1.15)",
+        }}
+      />
+      {/* Subtle cosmic depth vignette */}
+      <div className="absolute inset-0 bg-gradient-to-t from-[#050811] via-transparent to-[#050811]/75 pointer-events-none z-0" />
+
       <Canvas
         camera={{ position: [0, 60, 260], fov: 50, near: 1, far: 2500 }}
-        style={{ background: "#050811" }}
+        style={{ background: "transparent" }}
+        className="relative z-10"
       >
-        <ambientLight intensity={0.55} />
-        <pointLight position={[120, 180, 120]} intensity={1.8} color="#e0f2fe" />
-        <pointLight position={[-120, -60, -120]} intensity={1.0} color="#38bdf8" />
-        <pointLight position={[0, -100, 100]} intensity={0.6} color="#f59e0b" />
+        <ambientLight intensity={0.65} />
+        <pointLight position={[120, 180, 120]} intensity={2.0} color="#e0f2fe" />
+        <pointLight position={[-120, -60, -120]} intensity={1.2} color="#38bdf8" />
+        <pointLight position={[0, -100, 100]} intensity={0.7} color="#f59e0b" />
 
+        {/* Stable Non-Suspended Core 3D Elements */}
         <CosmicDust />
         <SpurCurve visiblePlanets={visiblePlanets} />
         {showInferenceLines && <InferenceLines visiblePlanets={visiblePlanets} />}
 
-        {visiblePlanets.map((planet) => (
-          <PlanetNode
-            key={planet.id}
-            planet={planet}
-            isSelected={selectedPlanet?.id === planet.id}
-            onSelect={onSelectPlanet}
+        {/* Isolated Texture Loading Suspense Boundary */}
+        <Suspense
+          fallback={
+            <>
+              {visiblePlanets.map((planet) => (
+                <PlanetNode
+                  key={planet.id}
+                  planet={planet}
+                  isSelected={selectedPlanet?.id === planet.id}
+                  onSelect={onSelectPlanet}
+                />
+              ))}
+            </>
+          }
+        >
+          <TexturedPlanets
+            visiblePlanets={visiblePlanets}
+            selectedPlanet={selectedPlanet}
+            onSelectPlanet={onSelectPlanet}
           />
-        ))}
+        </Suspense>
 
         <CameraController
           targetPlanet={selectedPlanet}

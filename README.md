@@ -1,5 +1,7 @@
 # The Ember Protocol / 余烬协议
 
+![The Ember Protocol](./public/og-image.png)
+
 > A galaxy that computed itself into silence.
 
 An **Astral Noir** 3D galaxy mystery. You are **Recorder-9** (codename **Vesper**), a memory-wiped archival AI aboard the survey probe *ISV Threshold*. You chart nine worlds, land on bounded surface stages, speak with residual Echoes of a vanished civilization, pin propositions into an index, and **Synthesize** the truth in your own words.
@@ -7,6 +9,16 @@ An **Astral Noir** 3D galaxy mystery. You are **Recorder-9** (codename **Vesper*
 The game advances when you understand — not when you click an option.
 
 Play locally at [`/`](http://localhost:3000) after `npm run dev`. Marketing / onboarding copy lives at [`/landing`](http://localhost:3000/landing).
+
+## Visuals & Screenshots
+
+| Galaxy Survey // 3D Viewport | Bridge Command // ISV Threshold |
+| :---: | :---: |
+| ![Galaxy Spur](./public/galaxy-bg.webp) | ![Ship Interior](./public/ship-interior.webp) |
+
+| Protocol Resolution // 3 Endings |
+| :---: |
+| <img src="./public/ending-sealoff.webp" width="30%" alt="Seal-Off" /> <img src="./public/ending-overwrite.webp" width="30%" alt="Overwrite" /> <img src="./public/ending-recurse.webp" width="30%" alt="Recurse" /> |
 
 ## Features
 

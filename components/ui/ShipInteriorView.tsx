@@ -137,10 +137,21 @@ export default function ShipInteriorView({
     <div
       role="region"
       aria-label="ISV Threshold 探针舰桥总控室"
-      className="relative w-full h-full flex flex-col justify-between p-6 md:p-8 z-30 pointer-events-auto overflow-y-auto"
+      className="relative w-full h-full flex flex-col justify-between p-6 md:p-8 z-30 pointer-events-auto overflow-y-auto bg-void/90"
     >
+      {/* Ship Interior Astral Noir Viewport Backdrop Layer */}
+      <div
+        className="absolute inset-0 bg-cover bg-center pointer-events-none z-0 select-none"
+        style={{
+          backgroundImage: "url('/ship-interior.webp')",
+          opacity: 0.25,
+          filter: "brightness(0.8) contrast(1.15)",
+        }}
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-void/85 via-void/65 to-void/90 pointer-events-none z-0" />
+
       {/* Top Banner */}
-      <div className="flex justify-between items-center">
+      <div className="relative z-10 flex justify-between items-center">
         <div className="font-display font-bold text-base text-holo-bright">
           ISV THRESHOLD // 探针舰桥主甲板
         </div>
@@ -151,7 +162,7 @@ export default function ShipInteriorView({
       </div>
 
       {/* Main Grid: Stations List & Terminal Output */}
-      <div className="my-auto max-w-5xl mx-auto w-full grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
+      <div className="relative z-10 my-auto max-w-5xl mx-auto w-full grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
         {/* Left Stations */}
         <div className="holo-panel p-4 md:p-5 rounded-sm flex flex-col gap-2.5">
           <div className="text-xs font-mono font-bold text-holo-cyan border-b border-holo-cyan/15 pb-2 mb-1 flex justify-between items-center">
@@ -504,7 +515,7 @@ export default function ShipInteriorView({
         </div>
       )}
 
-      <div className="text-center text-xs font-mono text-holo-muted">
+      <div className="relative z-10 text-center text-xs font-mono text-holo-muted">
         VESSEL SYSTEMS: ALL ONLINE // USE TOP HUD OR STATIONS TO JUMP
       </div>
     </div>

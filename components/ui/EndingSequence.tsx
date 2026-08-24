@@ -332,8 +332,16 @@ export default function EndingSequence({
       aria-label="终局决议协议与结局演出"
       className="fixed inset-0 z-50 bg-void/95 backdrop-blur-2xl text-holo-bright flex flex-col justify-between overflow-y-auto outline-none select-none"
     >
-      {/* Background Ambient Cosmic Shaders / Glow */}
+      {/* Background Ambient Cosmic Shaders / Glow & Ending Backdrop */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div
+          className="absolute inset-0 bg-cover bg-center transition-all duration-1000"
+          style={{
+            backgroundImage: "url('/ending-bg.webp')",
+            opacity: 0.35,
+            filter: "brightness(0.85) contrast(1.15)",
+          }}
+        />
         <div
           className="absolute inset-0 transition-opacity duration-1000"
           style={{
@@ -342,7 +350,7 @@ export default function EndingSequence({
               : "radial-gradient(circle at 50% 30%, rgba(56,189,248,0.15) 0%, transparent 70%)",
           }}
         />
-        <div className="absolute w-full h-full bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:32px_32px] opacity-15" />
+        <div className="absolute inset-0 bg-gradient-to-b from-void/85 via-void/65 to-void/90 pointer-events-none" />
       </div>
 
       {/* Top Protocol Header */}
