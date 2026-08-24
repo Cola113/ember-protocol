@@ -1119,21 +1119,21 @@ export default function SurfaceStageView({
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-purple-300 font-bold flex items-center gap-1.5">
                       <Terminal className="w-3.5 h-3.5" />
-                      UI SHELL // DUMMY SANDBOX TERMINAL
+                      AUXILIARY INTERFACE // ANCIENT MONITOR CONSOLE
                     </span>
                     <button
                       onClick={() => setSandboxRevealed(true)}
                       className="px-2.5 py-1 bg-purple-900/40 hover:bg-purple-800 text-purple-200 border border-purple-500/40 rounded text-[10px]"
                     >
-                      {sandboxRevealed ? "[终端已解锁]" : "[拨开壁画输入 EXIT]"}
+                      {sandboxRevealed ? "[终端已解锁]" : "[拨开壁画解析接口数据]"}
                     </button>
                   </div>
 
                   <div className="bg-void/80 p-3 rounded font-mono text-[11px] text-slate-300 border border-purple-500/20 space-y-1">
-                    <div>SHELL_ENV: BAROQUE_ROYALTY_SIMULATION_SANDBOX</div>
-                    <div>PURPOSE: EXTERNAL_OBSERVER_INTERACTION_STUB</div>
+                    <div>INTERFACE_ID: CONSOLE_STUB_7A</div>
+                    <div>LOG_ENTRY: ISOLATED_LOCAL_NARRATIVE_FITTING</div>
                     <div className="text-purple-300">
-                      CONCLUSION: &quot;七曜宫廷谋杀案是无意义噪音渲染出的红鲱鱼伪装&quot;
+                      STATUS: &quot;检测到高度严密却与主线总线解耦的局部拟合数据流&quot;
                     </div>
                   </div>
                 </div>
@@ -1147,7 +1147,7 @@ export default function SurfaceStageView({
                     Cinder.Court.IsSandbox
                   </div>
                   <div className="text-[11px] text-slate-300 mt-1">
-                    （烬廷宫廷自毁与权谋全为 UI Shell 编译的沙盒红鲱鱼）
+                    （烬廷宫廷自毁与权谋全为系统编译的局部拟合假象）
                   </div>
                 </div>
 
@@ -1156,7 +1156,7 @@ export default function SurfaceStageView({
                     onClick={() => {
                       handleCollectReward(
                         "Cinder.Court.IsSandbox",
-                        "Cinder Court 宫廷悲剧实为 UI 沙盒红鲱鱼"
+                        "Cinder Court 宫廷悲剧实为局部拟合生成的虚构假象"
                       );
                       markHotspotComplete(activeModal.id);
                       setActiveModal(null);
