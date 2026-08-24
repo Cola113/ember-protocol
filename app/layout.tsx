@@ -4,6 +4,34 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "余烬协议 // The Ember Protocol",
   description: "A galaxy that computed itself into silence. Outer Wilds style 3D space investigation.",
+  metadataBase: new URL("https://ember-protocol-zeta.vercel.app"),
+  openGraph: {
+    title: "余烬协议 // The Ember Protocol",
+    description: "九颗恒星。一台机器。四百年前的熄灭不是毁灭，而是写回。Astral Noir 硬科幻演绎推理游戏。",
+    url: "/",
+    siteName: "The Ember Protocol",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "The Ember Protocol // 余烬星弧 Astral Noir 全景",
+      },
+    ],
+    locale: "zh_CN",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "余烬协议 // The Ember Protocol",
+    description: "九颗恒星。一台机器。四百年前的熄灭不是毁灭，而是写回。",
+    images: ["/og-image.png"],
+  },
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
 };
 
 export default function RootLayout({
