@@ -515,7 +515,7 @@ export default function ShipInteriorView({
         </div>
       )}
 
-      <div className="text-center text-xs font-mono text-holo-muted">
+      <div className="relative z-10 text-center text-xs font-mono text-holo-muted">
         VESSEL SYSTEMS: ALL ONLINE // USE TOP HUD OR STATIONS TO JUMP
       </div>
     </div>

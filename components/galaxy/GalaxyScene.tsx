@@ -376,7 +376,15 @@ function PlanetNode({
           map={textureMap}
           color={
             isBlindSun
-              ? "#1e293b"
+              ? "#94a3b8"
+              : isMarrow
+              ? "#fda4af"
+              : isKiln
+              ? "#fdba74"
+              : isChoir
+              ? "#7dd3fc"
+              : isCinder
+              ? "#f472b6"
               : isBlackInterval
               ? "#f8fafc"
               : planet.color
@@ -385,9 +393,9 @@ function PlanetNode({
             isOrchard
               ? 0.05
               : isKiln
-              ? 0.85
+              ? 0.75
               : isBlindSun
-              ? 0.95
+              ? 0.92
               : isBlackInterval
               ? 0.1
               : 0.35
@@ -398,27 +406,31 @@ function PlanetNode({
               : isNeedle || isLedger || isHelix
               ? 0.85
               : isKiln || isMarrow
-              ? 0.2
+              ? 0.25
               : isBlackInterval
               ? 0.9
-              : 0.5
+              : 0.45
           }
           emissive={
             isBlindSun
-              ? "#0f172a"
+              ? "#b45309"
               : isBlackInterval
               ? "#ffffff"
+              : isKiln
+              ? "#ea580c"
               : planet.color
           }
           emissiveIntensity={
             hovered || isSelected
               ? 0.9
               : isKiln
-              ? 0.6
+              ? 0.7
+              : isBlindSun
+              ? 0.4
               : isBlackInterval
               ? 0.8
               : isMarrow
-              ? 0.5
+              ? 0.45
               : 0.3
           }
           emissiveMap={isKiln && textures ? textures.lavaCrust : undefined}
@@ -553,25 +565,33 @@ function CameraController({
   return null;
 }
 
-// Galaxy Elements with Preloaded Astral Noir Textures
-function GalaxyElements({
+// Textured Planets Group with Astral Noir Textures & Isolated Suspense
+function TexturedPlanets({
   visiblePlanets,
   selectedPlanet,
   onSelectPlanet,
-  showInferenceLines,
-  controlsRef,
 }: {
   visiblePlanets: PlanetDef[];
   selectedPlanet: PlanetDef | null;
   onSelectPlanet: (planet: PlanetDef) => void;
-  showInferenceLines: boolean;
-  controlsRef: React.MutableRefObject<any>;
 }) {
   const [gasGiant, lavaCrust, iceRock] = useTexture([
     "/planet-gas-giant.webp",
     "/planet-lava-crust.webp",
     "/planet-ice-rock.webp",
   ]);
+
+  // Configure color space & wrapping for smooth sphere sampling and accurate sRGB gamma
+  useEffect(() => {
+    [gasGiant, lavaCrust, iceRock].forEach((tex) => {
+      if (tex) {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.ClampToEdgeWrapping;
+        tex.needsUpdate = true;
+      }
+    });
+  }, [gasGiant, lavaCrust, iceRock]);
 
   const textures = useMemo<TexturesSet>(
     () => ({
@@ -584,10 +604,6 @@ function GalaxyElements({
 
   return (
     <>
-      <CosmicDust />
-      <SpurCurve visiblePlanets={visiblePlanets} />
-      {showInferenceLines && <InferenceLines visiblePlanets={visiblePlanets} />}
-
       {visiblePlanets.map((planet) => (
         <PlanetNode
           key={planet.id}
@@ -597,11 +613,6 @@ function GalaxyElements({
           textures={textures}
         />
       ))}
-
-      <CameraController
-        targetPlanet={selectedPlanet}
-        controlsRef={controlsRef}
-      />
     </>
   );
 }
@@ -648,12 +659,15 @@ export default function GalaxyScene({
         <pointLight position={[-120, -60, -120]} intensity={1.2} color="#38bdf8" />
         <pointLight position={[0, -100, 100]} intensity={0.7} color="#f59e0b" />
 
+        {/* Stable Non-Suspended Core 3D Elements */}
+        <CosmicDust />
+        <SpurCurve visiblePlanets={visiblePlanets} />
+        {showInferenceLines && <InferenceLines visiblePlanets={visiblePlanets} />}
+
+        {/* Isolated Texture Loading Suspense Boundary */}
         <Suspense
           fallback={
             <>
-              <CosmicDust />
-              <SpurCurve visiblePlanets={visiblePlanets} />
-              {showInferenceLines && <InferenceLines visiblePlanets={visiblePlanets} />}
               {visiblePlanets.map((planet) => (
                 <PlanetNode
                   key={planet.id}
@@ -662,22 +676,20 @@ export default function GalaxyScene({
                   onSelect={onSelectPlanet}
                 />
               ))}
-              <CameraController
-                targetPlanet={selectedPlanet}
-                controlsRef={controlsRef}
-              />
             </>
           }
         >
-          <GalaxyElements
+          <TexturedPlanets
             visiblePlanets={visiblePlanets}
             selectedPlanet={selectedPlanet}
             onSelectPlanet={onSelectPlanet}
-            showInferenceLines={showInferenceLines}
-            controlsRef={controlsRef}
           />
         </Suspense>
 
+        <CameraController
+          targetPlanet={selectedPlanet}
+          controlsRef={controlsRef}
+        />
         <OrbitControls
           ref={controlsRef}
           enableDamping
