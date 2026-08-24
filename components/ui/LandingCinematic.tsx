@@ -72,7 +72,7 @@ export default function LandingCinematic({
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 1.02 }}
       transition={{ duration: 0.4 }}
-      className="fixed inset-0 z-50 bg-void flex flex-col justify-between p-8 overflow-hidden pointer-events-auto"
+      className="fixed inset-0 z-50 bg-void flex flex-col justify-between p-4 sm:p-8 overflow-y-auto pointer-events-auto"
     >
       {/* Background Plasma Shimmer & Holographic Grid */}
       <div
@@ -100,14 +100,14 @@ export default function LandingCinematic({
       </div>
 
       {/* Top Telemetry Header */}
-      <div className="relative z-10 flex justify-between items-center border-b border-holo-cyan/20 pb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-surface-dark border border-holo-cyan/40 rounded-sm text-holo-cyan animate-pulse">
-            <Radio className="w-5 h-5" />
+      <div className="relative z-10 flex flex-wrap justify-between items-center border-b border-holo-cyan/20 pb-3 sm:pb-4 gap-2">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div className="p-1.5 sm:p-2 bg-surface-dark border border-holo-cyan/40 rounded-sm text-holo-cyan animate-pulse shrink-0">
+            <Radio className="w-4 sm:w-5 h-4 sm:h-5" />
           </div>
-          <div>
-            <div className="text-xs font-mono text-holo-muted">DESCENT VECTOR INITIATED</div>
-            <div className="font-display font-bold text-lg tracking-wider text-holo-bright">
+          <div className="min-w-0">
+            <div className="text-[10px] sm:text-xs font-mono text-holo-muted truncate">DESCENT VECTOR INITIATED</div>
+            <div className="font-display font-bold text-base sm:text-lg tracking-wider text-holo-bright truncate">
               {planet.name} // {site.name}
             </div>
           </div>
@@ -115,76 +115,76 @@ export default function LandingCinematic({
 
         <button
           onClick={onComplete}
-          className="px-4 py-2 bg-surface border border-holo-border hover:border-holo-cyan text-holo-muted hover:text-holo-bright font-mono text-xs flex items-center gap-2 rounded-sm transition-all"
+          className="min-h-[44px] px-3 sm:px-4 py-2 bg-surface border border-holo-border hover:border-holo-cyan text-holo-muted hover:text-holo-bright font-mono text-xs flex items-center gap-1.5 sm:gap-2 rounded-sm transition-all shrink-0"
         >
           <FastForward className="w-3.5 h-3.5" />
-          <span>SKIP SEQUENCE [SPACE]</span>
+          <span>SKIP [SPACE]</span>
         </button>
       </div>
 
       {/* Center Flight Computer Radar */}
-      <div className="relative z-10 my-auto max-w-2xl mx-auto w-full holo-panel p-8 rounded-sm">
-        <div className="flex justify-between items-center text-xs font-mono border-b border-holo-cyan/15 pb-3 mb-6">
-          <span className="text-holo-cyan font-bold flex items-center gap-2">
+      <div className="relative z-10 my-auto max-w-2xl mx-auto w-full holo-panel p-4 sm:p-8 rounded-sm">
+        <div className="flex flex-wrap justify-between items-center text-xs font-mono border-b border-holo-cyan/15 pb-2.5 sm:pb-3 mb-4 sm:mb-6 gap-2">
+          <span className="text-holo-cyan font-bold flex items-center gap-1.5 sm:gap-2">
             <Zap className="w-3.5 h-3.5" />
-            TELEMETRY FLIGHT COMPUTER
+            TELEMETRY COMPUTER
           </span>
-          <span className="text-holo-amber">STATUS: {phase === 0 ? "DE-ORBIT BURN" : phase === 1 ? "IONIZATION ENTRY" : phase === 2 ? "TERRAIN PULL-UP" : "TOUCHDOWN CONFIRMED"}</span>
+          <span className="text-holo-amber text-[11px] sm:text-xs">STATUS: {phase === 0 ? "DE-ORBIT BURN" : phase === 1 ? "IONIZATION ENTRY" : phase === 2 ? "TERRAIN PULL-UP" : "TOUCHDOWN CONFIRMED"}</span>
         </div>
 
         {/* Dynamic Telemetry Stats Grid */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="p-3 bg-surface-dark/80 border border-holo-cyan/15 rounded-sm">
-            <div className="text-[10px] text-holo-muted font-mono">ALTITUDE (km)</div>
-            <div className="text-2xl font-mono font-bold text-holo-bright mt-1">
-              {altitude.toFixed(1)} <span className="text-xs font-normal text-holo-cyan">km</span>
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
+          <div className="p-2 sm:p-3 bg-surface-dark/80 border border-holo-cyan/15 rounded-sm">
+            <div className="text-[9px] sm:text-[10px] text-holo-muted font-mono truncate">ALTITUDE (km)</div>
+            <div className="text-base sm:text-2xl font-mono font-bold text-holo-bright mt-0.5 sm:mt-1">
+              {altitude.toFixed(1)} <span className="text-[10px] sm:text-xs font-normal text-holo-cyan">km</span>
             </div>
           </div>
 
-          <div className="p-3 bg-surface-dark/80 border border-holo-cyan/15 rounded-sm">
-            <div className="text-[10px] text-holo-muted font-mono">HEAT SHIELD (°C)</div>
-            <div className={`text-2xl font-mono font-bold mt-1 ${heat > 1000 ? "text-holo-amber animate-pulse" : "text-holo-bright"}`}>
-              {heat} <span className="text-xs font-normal text-holo-muted">°C</span>
+          <div className="p-2 sm:p-3 bg-surface-dark/80 border border-holo-cyan/15 rounded-sm">
+            <div className="text-[9px] sm:text-[10px] text-holo-muted font-mono truncate">HEAT SHIELD (°C)</div>
+            <div className={`text-base sm:text-2xl font-mono font-bold mt-0.5 sm:mt-1 ${heat > 1000 ? "text-holo-amber animate-pulse" : "text-holo-bright"}`}>
+              {heat} <span className="text-[10px] sm:text-xs font-normal text-holo-muted">°C</span>
             </div>
           </div>
 
-          <div className="p-3 bg-surface-dark/80 border border-holo-cyan/15 rounded-sm">
-            <div className="text-[10px] text-holo-muted font-mono">ATMOSPHERE DENSITY</div>
-            <div className="text-2xl font-mono font-bold text-holo-cyan mt-1">
-              {phase === 0 ? "0.02" : phase === 1 ? "1.45" : "1.82"} <span className="text-xs font-normal text-holo-muted">bar</span>
+          <div className="p-2 sm:p-3 bg-surface-dark/80 border border-holo-cyan/15 rounded-sm">
+            <div className="text-[9px] sm:text-[10px] text-holo-muted font-mono truncate">DENSITY</div>
+            <div className="text-base sm:text-2xl font-mono font-bold text-holo-cyan mt-0.5 sm:mt-1">
+              {phase === 0 ? "0.02" : phase === 1 ? "1.45" : "1.82"} <span className="text-[10px] sm:text-xs font-normal text-holo-muted">bar</span>
             </div>
           </div>
         </div>
 
         {/* Phase Log Terminal */}
-        <div className="space-y-2 font-mono text-xs bg-surface-dark/95 p-4 rounded-sm border border-holo-cyan/20">
+        <div className="space-y-1.5 sm:space-y-2 font-mono text-[11px] sm:text-xs bg-surface-dark/95 p-3 sm:p-4 rounded-sm border border-holo-cyan/20">
           <div className="text-holo-cyan flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-holo-cyan animate-ping" />
-            [T-{altitude > 0 ? (altitude * 0.1).toFixed(1) : "0.0"}s] ISV THRESHOLD 测绘探针进入亚轨道切入角...
+            <span className="w-2 h-2 rounded-full bg-holo-cyan animate-ping shrink-0" />
+            <span>[T-{altitude > 0 ? (altitude * 0.1).toFixed(1) : "0.0"}s] ISV THRESHOLD 测绘探针进入亚轨道切入角...</span>
           </div>
           {phase >= 1 && (
             <div className="text-holo-amber flex items-center gap-2">
-              <ShieldAlert className="w-3.5 h-3.5 text-holo-amber" />
-              大气等离子体电离层摩擦：偏转护盾已张开，吸收热通量 98.4%
+              <ShieldAlert className="w-3.5 h-3.5 text-holo-amber shrink-0" />
+              <span>大气等离子体电离层摩擦：偏转护盾已张开，吸收热通量 98.4%</span>
             </div>
           )}
           {phase >= 2 && (
             <div className="text-holo-bright flex items-center gap-2">
-              <Radio className="w-3.5 h-3.5 text-holo-cyan" />
-              地形多普勒雷达锁定目标着陆场：【{site.name}】—— 反推制动矢量喷管点火
+              <Radio className="w-3.5 h-3.5 text-holo-cyan shrink-0" />
+              <span>地形多普勒雷达锁定目标着陆场：【{site.name}】—— 反推制动点火</span>
             </div>
           )}
           {phase >= 3 && (
             <div className="text-holo-green flex items-center gap-2 font-bold">
-              <CheckCircle2 className="w-3.5 h-3.5 text-holo-green" />
-              着陆架接触地表岩层。探针气闸泄压，展开 40×40m 地表虚拟戏台。
+              <CheckCircle2 className="w-3.5 h-3.5 text-holo-green shrink-0" />
+              <span>着陆架接触地表岩层。探针展开 40×40m 地表虚拟戏台。</span>
             </div>
           )}
         </div>
 
         {/* Altitude Progress Bar */}
-        <div className="mt-6">
-          <div className="flex justify-between text-[10px] font-mono text-holo-muted mb-1">
+        <div className="mt-4 sm:mt-6">
+          <div className="flex justify-between text-[9px] sm:text-[10px] font-mono text-holo-muted mb-1">
             <span>ORBIT (180 km)</span>
             <span>ENTRY (60 km)</span>
             <span>SURFACE (0 km)</span>
@@ -199,8 +199,8 @@ export default function LandingCinematic({
       </div>
 
       {/* Bottom Status */}
-      <div className="relative z-10 flex justify-between items-center text-xs font-mono text-holo-muted border-t border-holo-cyan/15 pt-4">
-        <span>VESPER AUTONOMOUS DESCENT ENGINE v9.4</span>
+      <div className="relative z-10 flex flex-col sm:flex-row justify-between items-center text-[10px] sm:text-xs font-mono text-holo-muted border-t border-holo-cyan/15 pt-3 sm:pt-4 gap-1">
+        <span>VESPER DESCENT ENGINE v9.4</span>
         <span className="text-holo-cyan">TARGET GRAVITY: {planet.category === "author" ? "0.88g" : "1.12g"}</span>
       </div>
     </motion.div>

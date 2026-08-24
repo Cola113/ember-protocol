@@ -71,17 +71,17 @@ export default function PlanetSurveyModal({
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 50, scale: 0.98 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute top-20 right-8 bottom-16 w-full max-w-md holo-panel p-6 rounded-sm z-40 flex flex-col pointer-events-auto border-holo-cyan/40 shadow-2xl outline-none"
+      className="absolute top-16 inset-x-3 bottom-4 sm:top-20 sm:bottom-16 sm:inset-x-auto sm:right-8 sm:w-full sm:max-w-md holo-panel p-4 sm:p-6 rounded-sm z-40 flex flex-col pointer-events-auto border-holo-cyan/40 shadow-2xl outline-none"
     >
       {/* Header */}
-      <div className="flex justify-between items-start border-b border-holo-cyan/15 pb-3 mb-4">
+      <div className="flex justify-between items-start border-b border-holo-cyan/15 pb-3 mb-3 sm:mb-4">
         <div>
           <div className="flex items-center gap-2">
             <span
               className="w-3 h-3 rounded-full animate-pulse"
               style={{ backgroundColor: planet.color, boxShadow: `0 0 8px ${planet.color}` }}
             />
-            <h2 id="planet-survey-title" className="font-display font-bold text-lg text-holo-bright">
+            <h2 id="planet-survey-title" className="font-display font-bold text-base sm:text-lg text-holo-bright">
               {planet.name}
             </h2>
           </div>
@@ -93,14 +93,14 @@ export default function PlanetSurveyModal({
         <button
           onClick={onClose}
           aria-label="关闭星球遥测检视窗口"
-          className="p-1 hover:text-holo-cyan text-holo-muted transition-colors rounded hover:bg-surface-dark"
+          className="p-1.5 hover:text-holo-cyan text-holo-muted transition-colors rounded hover:bg-surface-dark min-h-[44px] min-w-[44px] flex items-center justify-center"
         >
           <X className="w-5 h-5" />
         </button>
       </div>
 
       {/* Dossier Content Stream */}
-      <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 text-xs font-mono text-slate-300 leading-relaxed mb-4">
+      <div className="flex-1 overflow-y-auto space-y-3 pr-1 text-xs font-mono text-slate-300 leading-relaxed mb-3 sm:mb-4">
         {/* Apparent Civilization */}
         <div className="p-3 bg-surface-dark/70 border border-holo-cyan/15 rounded-sm">
           <div className="text-holo-amber font-bold flex items-center gap-1.5 mb-1 text-[11px] tracking-wide">
@@ -189,7 +189,7 @@ export default function PlanetSurveyModal({
       {/* Landing Action Button */}
       <button
         onClick={() => onLand(planet, selectedSite)}
-        className="w-full py-3 bg-gradient-to-r from-holo-amber/30 via-holo-amber/20 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void text-holo-amber font-mono text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2 rounded-sm shadow-holo-amber transition-all duration-200"
+        className="w-full min-h-[44px] py-3 bg-gradient-to-r from-holo-amber/30 via-holo-amber/20 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void text-holo-amber font-mono text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2 rounded-sm shadow-holo-amber transition-all duration-200"
       >
         <ArrowDown className="w-4 h-4" />
         <span>执行大气层俯冲降落 (INITIATE DESCENT)</span>

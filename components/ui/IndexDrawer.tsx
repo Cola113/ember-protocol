@@ -233,55 +233,58 @@ export default function IndexDrawer({
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.98, y: 10 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed inset-0 z-50 bg-void/95 backdrop-blur-xl flex flex-col p-5 md:p-8 pointer-events-auto outline-none"
+      className="fixed inset-0 z-50 bg-void/95 backdrop-blur-xl flex flex-col p-3 sm:p-5 md:p-8 pointer-events-auto outline-none"
     >
       {/* Top Bar */}
-      <div className="flex justify-between items-center border-b border-holo-cyan/20 pb-4 mb-5">
+      <div className="flex flex-wrap sm:flex-nowrap justify-between items-center border-b border-holo-cyan/20 pb-3 sm:pb-4 mb-3 sm:mb-5 gap-2 shrink-0">
         <button
           onClick={onClose}
-          className="px-4 py-2 bg-surface border border-holo-border hover:border-holo-cyan text-holo-bright text-xs font-mono flex items-center gap-2 rounded-sm transition-all shadow-md"
+          className="min-h-[44px] px-3 sm:px-4 py-2 bg-surface border border-holo-border hover:border-holo-cyan text-holo-bright text-xs font-mono flex items-center gap-1.5 sm:gap-2 rounded-sm transition-all shadow-md shrink-0"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span>RETURN TO VIEW [ESC]</span>
+          <span className="hidden sm:inline">RETURN [ESC]</span>
+          <span className="sm:hidden">[ESC]</span>
         </button>
 
         {/* Center View Mode Switcher */}
-        <div className="flex items-center gap-2 p-1 bg-surface-dark border border-holo-cyan/30 rounded-sm">
+        <div className="flex items-center gap-1 sm:gap-2 p-1 bg-surface-dark border border-holo-cyan/30 rounded-sm">
           <button
             onClick={() => setTabMode("synthesis")}
-            className={`px-3.5 py-1.5 rounded-sm text-xs font-mono flex items-center gap-2 transition-all ${
+            className={`min-h-[44px] px-2.5 sm:px-3.5 py-1.5 rounded-sm text-[11px] sm:text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all ${
               tabMode === "synthesis"
                 ? "bg-holo-amber/20 border border-holo-amber text-holo-amber shadow-holo-amber font-bold"
                 : "text-slate-400 hover:text-holo-bright"
             }`}
           >
-            <FileText className="w-3.5 h-3.5" />
-            <span>命题综合台 (SYNTHESIS)</span>
+            <FileText className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden sm:inline">命题综合台 (SYNTHESIS)</span>
+            <span className="sm:hidden">SYNTHESIS</span>
           </button>
           <button
             onClick={() => setTabMode("graph")}
-            className={`px-3.5 py-1.5 rounded-sm text-xs font-mono flex items-center gap-2 transition-all ${
+            className={`min-h-[44px] px-2.5 sm:px-3.5 py-1.5 rounded-sm text-[11px] sm:text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all ${
               tabMode === "graph"
                 ? "bg-holo-cyan/20 border border-holo-cyan text-holo-cyan shadow-holo-cyan font-bold"
                 : "text-slate-400 hover:text-holo-bright"
             }`}
           >
-            <Network className="w-3.5 h-3.5" />
-            <span>推理图谱拓扑 (GRAPH MATRIX)</span>
+            <Network className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden sm:inline">推理图谱拓扑 (GRAPH)</span>
+            <span className="sm:hidden">GRAPH</span>
           </button>
         </div>
 
-        <div className="px-3.5 py-1.5 bg-surface border border-holo-border text-xs font-mono text-holo-amber flex items-center gap-2 rounded-sm shadow-sm">
-          <ShieldCheck className="w-3.5 h-3.5 text-holo-amber" />
+        <div className="px-2.5 sm:px-3.5 py-1.5 bg-surface border border-holo-border text-[11px] sm:text-xs font-mono text-holo-amber flex items-center gap-1.5 sm:gap-2 rounded-sm shadow-sm shrink-0">
+          <ShieldCheck className="w-3.5 h-3.5 text-holo-amber shrink-0" />
           <span>BELIEVED: {believedTruths.length} / 6</span>
         </div>
       </div>
 
       {/* Mode 1: Synthesis 3-Column Workspace */}
       {tabMode === "synthesis" ? (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 flex-1 overflow-hidden">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 flex-1 overflow-y-auto md:overflow-hidden pb-4 md:pb-0">
           {/* Col 1: Proposition Shelf (Draggable & Clickable) */}
-          <div className="holo-panel p-5 rounded-sm flex flex-col overflow-hidden border-holo-cyan/25">
+          <div className="holo-panel p-4 sm:p-5 rounded-sm flex flex-col min-h-[260px] md:min-h-0 md:overflow-hidden border-holo-cyan/25">
             <div className="flex justify-between items-center border-b border-holo-cyan/15 pb-2.5 mb-3 text-xs font-mono font-bold text-holo-cyan">
               <span className="flex items-center gap-1.5">
                 <Pin className="w-3.5 h-3.5" />
@@ -343,7 +346,7 @@ export default function IndexDrawer({
           </div>
 
           {/* Col 2: 5+1 Anchor Truths State Machine */}
-          <div className="holo-panel p-5 rounded-sm flex flex-col overflow-hidden border-holo-cyan/25">
+          <div className="holo-panel p-4 sm:p-5 rounded-sm flex flex-col min-h-[260px] md:min-h-0 md:overflow-hidden border-holo-cyan/25">
             <div className="flex justify-between items-center border-b border-holo-cyan/15 pb-2.5 mb-3 text-xs font-mono font-bold text-holo-amber">
               <span>5+1 锚定真相认知状态机</span>
               <span className="text-holo-bright font-normal">{believedTruths.length} / 6 BELIEVED</span>
@@ -439,10 +442,10 @@ export default function IndexDrawer({
           </div>
 
           {/* Col 3: Synthesis Input & AI Evaluator */}
-          <div className="holo-panel p-5 rounded-sm flex flex-col overflow-hidden border-holo-cyan/25">
+          <div className="holo-panel p-4 sm:p-5 rounded-sm flex flex-col min-h-[300px] md:min-h-0 md:overflow-hidden border-holo-cyan/25">
             <div className="flex justify-between items-center border-b border-holo-cyan/15 pb-2.5 mb-3 text-xs font-mono font-bold text-holo-bright">
               <span>综合假说陈述 // {selectedTruth.id}</span>
-              <span className="text-holo-cyan text-[10px]">CURATOR HYPOTHESIS ENGINE</span>
+              <span className="text-holo-cyan text-[10px]">CURATOR ENGINE</span>
             </div>
 
             <div className="flex-1 flex flex-col overflow-hidden">
@@ -451,7 +454,7 @@ export default function IndexDrawer({
                 <button
                   onClick={loadDraftHypothesis}
                   disabled={!hasAllRequiredProps}
-                  className="text-[10px] text-holo-cyan hover:text-holo-amber disabled:opacity-30 disabled:hover:text-holo-cyan flex items-center gap-1 underline transition-colors"
+                  className="min-h-[36px] text-[10px] text-holo-cyan hover:text-holo-amber disabled:opacity-30 disabled:hover:text-holo-cyan flex items-center gap-1 underline transition-colors px-1"
                 >
                   <Lightbulb className="w-3 h-3" />
                   <span>快速载入推论范例</span>
@@ -479,7 +482,7 @@ export default function IndexDrawer({
                       : `前置命题未集齐：还需收集 ${missingProps.length} 个必要命题 (${missingProps.join(", ")}) 才能开启综合推演。`
                   }
                   disabled={!hasAllRequiredProps && !isAlreadyBelieved}
-                  className={`w-full h-32 bg-surface-dark/90 border disabled:opacity-40 p-3 text-xs font-mono text-holo-bright rounded-sm outline-none resize-none leading-relaxed transition-all mb-2 ${
+                  className={`w-full h-28 sm:h-32 bg-surface-dark/90 border disabled:opacity-40 p-3 text-xs font-mono text-holo-bright rounded-sm outline-none resize-none leading-relaxed transition-all mb-2 ${
                     draggedProp
                       ? "border-holo-cyan shadow-holo-cyan bg-holo-cyan/10"
                       : "border-holo-cyan/20 focus:border-holo-amber"
@@ -500,7 +503,7 @@ export default function IndexDrawer({
               <button
                 onClick={handleSynthesize}
                 disabled={loading || !hypothesis.trim() || !hasAllRequiredProps}
-                className="w-full py-2.5 bg-gradient-to-r from-holo-amber/30 via-holo-amber/20 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-holo-amber text-holo-amber text-xs font-mono uppercase tracking-wider rounded-sm shadow-holo-amber flex items-center justify-center gap-2 transition-all mb-3 font-bold"
+                className="w-full min-h-[44px] py-2.5 bg-gradient-to-r from-holo-amber/30 via-holo-amber/20 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-holo-amber text-holo-amber text-xs font-mono uppercase tracking-wider rounded-sm shadow-holo-amber flex items-center justify-center gap-2 transition-all mb-3 font-bold"
               >
                 {loading ? (
                   <div className="flex items-center gap-2">
@@ -521,7 +524,7 @@ export default function IndexDrawer({
               </button>
 
               {/* Evaluator Output Display with Astral Noir animations */}
-              <div className="flex-1 p-3.5 bg-surface-dark/95 border border-holo-cyan/20 rounded-sm overflow-y-auto text-xs font-mono leading-relaxed relative">
+              <div className="flex-1 min-h-[100px] p-3.5 bg-surface-dark/95 border border-holo-cyan/20 rounded-sm overflow-y-auto text-xs font-mono leading-relaxed relative">
                 {loading && (
                   <div className="absolute inset-0 bg-void/80 flex flex-col items-center justify-center gap-2 p-4 text-center">
                     <div className="w-16 h-16 rounded-full border border-holo-cyan/40 border-t-holo-cyan animate-spin" />
@@ -565,13 +568,13 @@ export default function IndexDrawer({
         </div>
       ) : (
         /* Mode 2: Interactive Inference Graph Topology */
-        <div className="holo-panel p-6 rounded-sm flex-1 flex flex-col overflow-hidden border-holo-cyan/30">
-          <div className="flex justify-between items-center border-b border-holo-cyan/20 pb-3 mb-4">
+        <div className="holo-panel p-4 sm:p-6 rounded-sm flex-1 flex flex-col overflow-y-auto md:overflow-hidden border-holo-cyan/30">
+          <div className="flex flex-wrap sm:flex-nowrap justify-between items-center border-b border-holo-cyan/20 pb-3 mb-4 gap-2 shrink-0">
             <div className="flex items-center gap-2 text-xs font-mono text-holo-cyan font-bold">
-              <Network className="w-4 h-4" />
+              <Network className="w-4 h-4 shrink-0" />
               <span>5+1 ANCHOR TRUTHS INFERENCE TOPOLOGY // 推理图谱拓扑连线</span>
             </div>
-            <div className="text-xs font-mono text-holo-muted">
+            <div className="text-[10px] sm:text-xs font-mono text-holo-muted">
               金色 = 已确证真相 · 天青 = 已收集命题 · 虚线 = 待推演因果
             </div>
           </div>

@@ -475,7 +475,7 @@ export default function EndingSequence({
                         <button
                           type="button"
                           disabled={isLocked}
-                          className={`w-full py-2.5 px-3 rounded-sm border font-mono text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2 transition-all shadow-md ${
+                          className={`w-full min-h-[44px] py-2.5 px-3 rounded-sm border font-mono text-xs font-bold tracking-widest uppercase flex items-center justify-center gap-2 transition-all shadow-md ${
                             isLocked
                               ? "bg-surface-dark text-slate-400 border-slate-700 cursor-not-allowed"
                               : "group-hover:brightness-110"
@@ -804,16 +804,16 @@ export default function EndingSequence({
               <div className="pt-4 border-t border-holo-cyan/20 flex flex-col sm:flex-row justify-between items-center gap-3">
                 <button
                   onClick={() => setStep("select")}
-                  className="w-full sm:w-auto px-5 py-2.5 bg-surface border border-holo-border hover:border-holo-cyan text-holo-bright text-xs font-mono uppercase tracking-wider rounded-sm transition-all flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 bg-surface border border-holo-border hover:border-holo-cyan text-holo-bright text-xs font-mono uppercase tracking-wider rounded-sm transition-all flex items-center justify-center gap-2"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>重温其他决议 (SELECT ANOTHER)</span>
                 </button>
 
-                <div className="w-full sm:w-auto flex items-center gap-3">
+                <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3">
                   <button
                     onClick={onReturnTitle}
-                    className="flex-1 sm:flex-initial px-5 py-2.5 bg-surface-dark border border-slate-600 hover:border-holo-cyan text-slate-200 text-xs font-mono uppercase tracking-wider rounded-sm transition-all flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto min-h-[44px] px-5 py-2.5 bg-surface-dark border border-slate-600 hover:border-holo-cyan text-slate-200 text-xs font-mono uppercase tracking-wider rounded-sm transition-all flex items-center justify-center gap-2"
                   >
                     <Home className="w-3.5 h-3.5" />
                     <span>返回标题 (RETURN TITLE)</span>
@@ -821,7 +821,7 @@ export default function EndingSequence({
 
                   <button
                     onClick={onNewGame}
-                    className="flex-1 sm:flex-initial px-6 py-2.5 bg-holo-cyan/20 border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright text-xs font-mono font-bold uppercase tracking-wider rounded-sm shadow-holo-cyan transition-all flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 bg-holo-cyan/20 border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright text-xs font-mono font-bold uppercase tracking-wider rounded-sm shadow-holo-cyan transition-all flex items-center justify-center gap-2"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                     <span>开启新周期 (NEW GAME+)</span>
@@ -834,7 +834,7 @@ export default function EndingSequence({
       </main>
 
       {/* Bottom Telemetry Bar */}
-      <footer className="relative z-10 w-full border-t border-holo-cyan/20 bg-surface-dark/90 px-6 py-3 flex justify-between items-center text-[11px] font-mono text-slate-400 shrink-0">
+      <footer className="relative z-10 w-full border-t border-holo-cyan/20 bg-surface-dark/90 px-4 sm:px-6 py-2.5 sm:py-3 flex flex-col sm:flex-row justify-between items-center text-[10px] sm:text-[11px] font-mono text-slate-400 gap-1 text-center sm:text-left shrink-0">
         <div>VESSEL: ISV THRESHOLD // RECORDER-9 [VESPER]</div>
         <div>ASTRAL NOIR NARRATIVE ENGINE v1.0.0</div>
       </footer>

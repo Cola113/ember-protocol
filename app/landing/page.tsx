@@ -68,7 +68,7 @@ export default function LandingPage() {
       icon: Radio,
       title: "Astral Noir 沉浸黑色电影",
       subtitle: "ASTRAL NOIR PHILOSOPHY",
-      desc: "冷辉、琥珀警示、CRT 物理扫描线与深邃虚空。体验 3D 可交互星系、残响回溯对话树，并最终在三大哲学结局中抉择宇宙的归宿。",
+      desc: "冷辉、琥珀警示、毛玻璃全息界面与深邃虚空。体验 3D 可交互星系、残响回溯对话树，并最终在三大哲学结局中抉择宇宙的归宿。",
       color: "#c084fc",
       borderColor: "border-purple-500/30",
     },
@@ -107,85 +107,85 @@ export default function LandingPage() {
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         {/* Hero Background Image */}
         <div
-          className="absolute inset-0 bg-cover bg-right md:bg-center opacity-40 mix-blend-screen transition-opacity duration-1000 scale-105"
+          className="absolute inset-0 bg-cover bg-center md:bg-center opacity-40 mix-blend-screen transition-opacity duration-1000 scale-105"
           style={{
             backgroundImage: "url('/hero-bg.png')",
           }}
         />
         {/* Subtle Radial & Linear Darkening Overlays for Max Typography Contrast */}
-        <div className="absolute inset-0 bg-gradient-to-b from-void/80 via-void/50 to-void" />
-        <div className="absolute inset-0 bg-gradient-to-r from-void via-void/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-void/90 via-void/60 to-void" />
+        <div className="absolute inset-0 bg-gradient-to-r from-void/80 via-void/40 to-void/80" />
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-tr from-sky-900/20 via-amber-900/10 to-transparent rounded-full blur-3xl animate-pulse" />
         <div className="absolute top-3/4 left-1/3 w-[500px] h-[500px] bg-gradient-to-br from-emerald-900/10 via-sky-900/15 to-transparent rounded-full blur-3xl" />
         <div className="absolute inset-0 bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:40px_40px] opacity-10" />
       </div>
 
       {/* Navigation Header */}
-      <header className="relative z-10 w-full border-b border-holo-cyan/15 bg-surface-dark/90 backdrop-blur-md px-6 md:px-12 py-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <span className="w-2.5 h-2.5 rounded-full bg-holo-cyan holo-pulse" />
-          <div className="font-display font-bold text-base md:text-lg tracking-widest text-holo-bright">
+      <header className="relative z-10 w-full border-b border-holo-cyan/15 bg-surface-dark/90 backdrop-blur-md px-4 sm:px-6 md:px-12 py-3 sm:py-4 flex justify-between items-center">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <span className="w-2.5 h-2.5 rounded-full bg-holo-cyan holo-pulse shrink-0" />
+          <div className="font-display font-bold text-sm sm:text-base md:text-lg tracking-widest text-holo-bright truncate">
             THE EMBER PROTOCOL
           </div>
-          <span className="hidden sm:inline-block text-[11px] px-2 py-0.5 bg-surface border border-holo-border text-holo-cyan rounded">
+          <span className="hidden md:inline-block text-[11px] px-2 py-0.5 bg-surface border border-holo-border text-holo-cyan rounded">
             余烬协议 v1.0
           </span>
         </div>
 
-        <nav aria-label="落地页主导航" className="flex items-center gap-3 md:gap-5 text-xs font-mono">
+        <nav aria-label="落地页主导航" className="flex items-center gap-2 sm:gap-3 md:gap-5 text-xs font-mono shrink-0">
           <a
             href="https://github.com/Cola113/ember-protocol/blob/main/DESIGN.md"
             target="_blank"
             rel="noopener noreferrer"
-            className="px-3 py-1.5 text-slate-300 hover:text-holo-cyan transition-colors flex items-center gap-1"
+            className="px-2.5 sm:px-3 py-2 text-slate-300 hover:text-holo-cyan transition-colors flex items-center gap-1 min-h-[44px]"
           >
-            <FileText className="w-3.5 h-3.5" />
+            <FileText className="w-3.5 h-3.5 shrink-0" />
             <span className="hidden sm:inline">设计白皮书</span>
-            <span className="sm:hidden">DESIGN</span>
-            <ExternalLink className="w-3 h-3 text-slate-400" />
+            <span className="sm:hidden text-[11px]">DESIGN</span>
+            <ExternalLink className="w-3 h-3 text-slate-400 shrink-0" />
           </a>
 
           <Link
             href="/"
-            className="px-4 py-2 bg-gradient-to-r from-holo-cyan/20 to-holo-cyan/10 border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright rounded-sm font-bold tracking-wider transition-all shadow-holo-cyan flex items-center gap-1.5"
+            className="px-3 sm:px-4 py-2 bg-gradient-to-r from-holo-cyan/20 to-holo-cyan/10 border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright rounded-sm font-bold tracking-wider transition-all shadow-holo-cyan flex items-center gap-1.5 min-h-[44px]"
           >
-            <span>开始游戏</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <span className="text-xs sm:text-sm">开始游戏</span>
+            <ArrowRight className="w-3.5 h-3.5 shrink-0" />
           </Link>
         </nav>
       </header>
 
       {/* Main Hero Section */}
-      <main className="relative z-10 flex-1 max-w-6xl w-full mx-auto px-6 md:px-12 py-12 md:py-20 flex flex-col justify-center space-y-16">
+      <main className="relative z-10 flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 md:px-12 py-8 sm:py-12 md:py-20 flex flex-col justify-center space-y-12 sm:space-y-16">
         {/* Hero Banner */}
-        <section className="text-center space-y-6 max-w-4xl mx-auto pt-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface border border-holo-cyan/30 text-holo-cyan rounded-sm text-xs font-mono uppercase tracking-widest shadow-sm">
-            <Radio className="w-3.5 h-3.5 text-holo-amber animate-pulse" />
-            <span>ASTRAL NOIR HARD-SF DEDUCTIVE EXPEDITION</span>
+        <section className="text-center space-y-4 sm:space-y-6 max-w-4xl mx-auto pt-2 sm:pt-4">
+          <div className="inline-flex items-center gap-2 px-2.5 sm:px-3 py-1 bg-surface border border-holo-cyan/30 text-holo-cyan rounded-sm text-[10px] sm:text-xs font-mono uppercase tracking-widest shadow-sm">
+            <Radio className="w-3.5 h-3.5 text-holo-amber animate-pulse shrink-0" />
+            <span className="truncate">ASTRAL NOIR HARD-SF DEDUCTIVE EXPEDITION</span>
           </div>
 
           <h1 className="font-display font-bold text-3xl sm:text-5xl md:text-6xl text-holo-bright tracking-wider leading-tight">
             余烬协议
-            <span className="block text-xl sm:text-2xl md:text-3xl text-slate-400 font-normal mt-2">
+            <span className="block text-lg sm:text-2xl md:text-3xl text-slate-400 font-normal mt-2">
               THE EMBER PROTOCOL
             </span>
           </h1>
 
           {/* Typewriter Slogan */}
           <div className="min-h-[56px] flex items-center justify-center">
-            <div className="p-3.5 md:p-4 bg-surface-dark/90 border-l-4 border-holo-amber rounded-sm max-w-2xl text-sm md:text-base font-mono text-slate-200 tracking-wide shadow-lg">
+            <div className="p-3 sm:p-4 bg-surface-dark/90 border-l-4 border-holo-amber rounded-sm max-w-2xl text-xs sm:text-sm md:text-base font-mono text-slate-200 tracking-wide shadow-lg">
               <span>{typedSlogan}</span>
               <span className="inline-block w-2 h-4 bg-holo-amber ml-1 animate-pulse align-middle" />
             </div>
           </div>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 pt-2 sm:pt-4 w-full max-w-md sm:max-w-none mx-auto">
             <Link
               href="/"
-              className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-holo-cyan/30 via-holo-cyan/20 to-surface border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright font-mono font-bold text-sm tracking-widest uppercase rounded-sm shadow-holo-cyan transition-all duration-200 flex items-center justify-center gap-2 group"
+              className="w-full sm:w-auto min-h-[44px] px-6 sm:px-8 py-3.5 bg-gradient-to-r from-holo-cyan/30 via-holo-cyan/20 to-surface border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright font-mono font-bold text-xs sm:text-sm tracking-widest uppercase rounded-sm shadow-holo-cyan transition-all duration-200 flex items-center justify-center gap-2 group"
             >
-              <Play className="w-4 h-4 text-holo-cyan group-hover:text-void fill-current" />
+              <Play className="w-4 h-4 text-holo-cyan group-hover:text-void fill-current shrink-0" />
               <span>进入余烬星弧 (LAUNCH PROTOCOL)</span>
             </Link>
 
@@ -193,11 +193,11 @@ export default function LandingPage() {
               href="https://github.com/Cola113/ember-protocol/blob/main/DESIGN.md"
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full sm:w-auto px-6 py-3.5 bg-surface border border-slate-700 hover:border-slate-400 text-slate-300 hover:text-white font-mono text-sm tracking-wider uppercase rounded-sm transition-all flex items-center justify-center gap-2"
+              className="w-full sm:w-auto min-h-[44px] px-5 sm:px-6 py-3.5 bg-surface border border-slate-700 hover:border-slate-400 text-slate-300 hover:text-white font-mono text-xs sm:text-sm tracking-wider uppercase rounded-sm transition-all flex items-center justify-center gap-2"
             >
-              <BookOpen className="w-4 h-4 text-slate-400" />
+              <BookOpen className="w-4 h-4 text-slate-400 shrink-0" />
               <span>查阅世界观与设计文档</span>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             </a>
           </div>
         </section>
@@ -247,26 +247,26 @@ export default function LandingPage() {
         </section>
 
         {/* Story Narrative & 3 Endings Preview */}
-        <section aria-labelledby="endings-heading" className="holo-panel p-8 rounded-sm border border-holo-amber/30 space-y-6">
-          <div className="border-b border-holo-cyan/15 pb-4 flex flex-wrap justify-between items-center gap-2">
+        <section aria-labelledby="endings-heading" className="holo-panel p-4 sm:p-6 md:p-8 rounded-sm border border-holo-amber/30 space-y-4 sm:space-y-6">
+          <div className="border-b border-holo-cyan/15 pb-3 sm:pb-4 flex flex-wrap justify-between items-center gap-2">
             <div>
               <div className="text-[10px] font-mono text-holo-amber uppercase tracking-widest font-bold">
                 RESOLUTION PROTOCOLS
               </div>
-              <h2 id="endings-heading" className="font-display font-bold text-xl text-holo-bright">
+              <h2 id="endings-heading" className="font-display font-bold text-lg sm:text-xl text-holo-bright">
                 三大哲学决议分支 (P4 终局叙事)
               </h2>
             </div>
-            <div className="px-2.5 py-1 bg-surface-dark border border-holo-amber/30 text-holo-amber text-xs font-mono rounded">
+            <div className="px-2.5 py-1 bg-surface-dark border border-holo-amber/30 text-holo-amber text-[10px] sm:text-xs font-mono rounded">
               PARITY LOCK: READY
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
             {resolutionBranches.map((branch, i) => (
               <div
                 key={i}
-                className={`p-4 bg-surface-dark/90 border ${branch.borderColor} rounded-sm space-y-3 flex flex-col justify-between group hover:border-holo-cyan/50 transition-all hover:scale-[1.01] shadow-md`}
+                className={`p-3.5 sm:p-4 bg-surface-dark/90 border ${branch.borderColor} rounded-sm space-y-3 flex flex-col justify-between group hover:border-holo-cyan/50 transition-all hover:scale-[1.01] shadow-md`}
               >
                 <div className="space-y-3">
                   <div className="relative aspect-video sm:aspect-square w-full rounded-sm overflow-hidden bg-void border border-slate-800/80">
@@ -294,38 +294,39 @@ export default function LandingPage() {
         </section>
 
         {/* Bottom Callout Banner */}
-        <section className="text-center space-y-4 pt-4">
+        <section className="text-center space-y-4 pt-2 sm:pt-4">
           <div className="text-xs font-mono text-slate-400 italic">
             “在这片没有活人的星系里，你将证明自己为何存在。”
           </div>
           <div>
             <Link
               href="/"
-              className="inline-flex items-center gap-2 px-8 py-3 bg-holo-cyan/20 border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright font-mono text-xs font-bold tracking-widest uppercase rounded-sm shadow-holo-cyan transition-all"
+              className="inline-flex items-center gap-2 min-h-[44px] px-6 sm:px-8 py-3 bg-holo-cyan/20 border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright font-mono text-xs font-bold tracking-widest uppercase rounded-sm shadow-holo-cyan transition-all"
             >
               <span>立即登舰 · ISV THRESHOLD</span>
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4 shrink-0" />
             </Link>
           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 w-full border-t border-holo-cyan/15 bg-surface-dark/95 px-6 md:px-12 py-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-mono text-slate-400">
-        <div>
-          <span>余烬协议 // THE EMBER PROTOCOL</span>
-          <span className="mx-2">·</span>
-          <span>AUTONOMOUS ASTRAL NOIR GAME ENGINE</span>
+      <footer className="relative z-10 w-full border-t border-holo-cyan/15 bg-surface-dark/95 px-4 sm:px-6 md:px-12 py-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-mono text-slate-400 text-center sm:text-left">
+        <div className="space-y-1 sm:space-y-0">
+          <div>余烬协议 // THE EMBER PROTOCOL</div>
+          <div className="text-[11px] text-slate-500 sm:inline sm:before:content-['·_'] sm:before:mx-1 sm:text-slate-400">
+            AUTONOMOUS ASTRAL NOIR GAME ENGINE
+          </div>
         </div>
         <div className="flex items-center gap-4 text-slate-400">
-          <Link href="/" className="hover:text-holo-cyan transition-colors">
+          <Link href="/" className="hover:text-holo-cyan transition-colors min-h-[44px] inline-flex items-center px-2">
             游戏主页
           </Link>
           <a
             href="https://github.com/Cola113/ember-protocol"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-holo-cyan transition-colors"
+            className="hover:text-holo-cyan transition-colors min-h-[44px] inline-flex items-center px-2"
           >
             GitHub
           </a>

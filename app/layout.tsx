@@ -50,7 +50,6 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-void text-holo-bright font-mono antialiased selection:bg-holo-cyan selection:text-void">
-        <div className="crt-overlay" />
         <div className="screen-vignette" />
         {children}
       </body>

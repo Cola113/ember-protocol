@@ -205,36 +205,37 @@ export default function SurfaceStageView({
       </AnimatePresence>
 
       {/* Top Banner Navigation */}
-      <div className="flex justify-between items-center gap-4">
+      <div className="flex flex-wrap sm:flex-nowrap justify-between items-center gap-2 sm:gap-4 shrink-0">
         <button
           onClick={onReturnOrbit}
-          className="px-4 py-2 bg-surface border border-holo-border hover:border-holo-cyan text-holo-bright text-xs font-mono flex items-center gap-2 rounded-sm transition-all shadow-md"
+          className="min-h-[44px] px-3 sm:px-4 py-2 bg-surface border border-holo-border hover:border-holo-cyan text-holo-bright text-xs font-mono flex items-center gap-1.5 sm:gap-2 rounded-sm transition-all shadow-md"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>RETURN TO ORBIT [ESC]</span>
+          <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
+          <span className="hidden sm:inline">RETURN TO ORBIT [ESC]</span>
+          <span className="sm:hidden">ORBIT [ESC]</span>
         </button>
 
-        <div className="holo-panel px-6 py-2 rounded-sm text-center border-holo-cyan/30">
-          <div className="font-display font-bold text-sm text-holo-bright flex items-center justify-center gap-2">
+        <div className="holo-panel px-3 sm:px-6 py-1.5 sm:py-2 rounded-sm text-center border-holo-cyan/30 flex-1 sm:flex-initial min-w-0">
+          <div className="font-display font-bold text-xs sm:text-sm text-holo-bright flex items-center justify-center gap-1.5 sm:gap-2">
             <span
-              className="w-2.5 h-2.5 rounded-full animate-pulse"
+              className="w-2.5 h-2.5 rounded-full animate-pulse shrink-0"
               style={{ backgroundColor: planet.color, boxShadow: `0 0 8px ${planet.color}` }}
             />
-            <span>{planet.name} // {site.name}</span>
+            <span className="truncate">{planet.name} // {site.name}</span>
           </div>
-          <div className="text-[10px] font-mono text-holo-cyan mt-0.5 tracking-wider">
-            SURFACE MESH TELEMETRY // SECTOR 40×40m ACTIVE
+          <div className="text-[9px] sm:text-[10px] font-mono text-holo-cyan mt-0.5 tracking-wider truncate">
+            SURFACE MESH TELEMETRY // 40×40m ACTIVE
           </div>
         </div>
 
-        <div className="px-3.5 py-1.5 bg-surface border border-holo-border rounded-sm text-xs font-mono text-holo-amber flex items-center gap-2">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>PROPOSITIONS: {collectedPropositions.length} PINNED</span>
+        <div className="px-2.5 sm:px-3.5 py-1.5 bg-surface border border-holo-border rounded-sm text-[10px] sm:text-xs font-mono text-holo-amber flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <Sparkles className="w-3.5 h-3.5 shrink-0" />
+          <span>PROPS: {collectedPropositions.length}</span>
         </div>
       </div>
 
       {/* Surface Hotspots Grid */}
-      <div className="my-auto max-w-4xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 py-4">
+      <div className="my-auto max-w-4xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5 md:gap-6 py-2 sm:py-4 overflow-y-auto max-h-[calc(100vh-140px)]">
         {site.hotspots.map((hs) => {
           const isCollected =
             completedHotspotIds.includes(hs.id) ||
@@ -314,22 +315,22 @@ export default function SurfaceStageView({
       {/* Interactive Modal (Inspect / Operate / Dialogue) */}
       <AnimatePresence>
         {activeModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6 bg-void/85 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-void/85 backdrop-blur-md">
             <motion.div
               initial={{ opacity: 0, scale: 0.93, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.93, y: 15 }}
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-2xl max-h-[90vh] overflow-y-auto holo-panel p-5 md:p-7 rounded-sm relative border-holo-cyan/40 shadow-2xl"
+              className="w-full max-w-2xl max-h-[88vh] overflow-y-auto holo-panel p-4 sm:p-5 md:p-7 rounded-sm relative border-holo-cyan/40 shadow-2xl"
             >
               {/* Modal Header */}
-              <div className="flex justify-between items-start border-b border-holo-cyan/20 pb-3 mb-4">
+              <div className="flex justify-between items-start border-b border-holo-cyan/20 pb-3 mb-3 sm:mb-4">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-holo-amber font-mono text-xs font-bold">
                       [{activeModal.type.toUpperCase()}]
                     </span>
-                    <h3 className="font-display font-bold text-lg text-holo-bright">
+                    <h3 className="font-display font-bold text-base sm:text-lg text-holo-bright">
                       {activeModal.name}
                     </h3>
                   </div>
@@ -339,7 +340,8 @@ export default function SurfaceStageView({
                 </div>
                 <button
                   onClick={() => setActiveModal(null)}
-                  className="text-holo-muted hover:text-holo-bright p-1 text-sm rounded hover:bg-surface-dark"
+                  className="text-holo-muted hover:text-holo-bright p-2 text-sm rounded hover:bg-surface-dark min-h-[44px] min-w-[44px] flex items-center justify-center"
+                  aria-label="关闭窗口"
                 >
                   ✕
                 </button>
@@ -1455,8 +1457,8 @@ export default function SurfaceStageView({
       </AnimatePresence>
 
       {/* Bottom Telemetry Bar */}
-      <div className="flex justify-between items-center text-xs font-mono text-holo-muted border-t border-holo-cyan/15 pt-3">
-        <span>SENSOR STATUS: ACTIVE // 1420.405 MHz CARRIER SYNCED</span>
+      <div className="flex flex-col sm:flex-row justify-between items-center text-[10px] sm:text-xs font-mono text-holo-muted border-t border-holo-cyan/15 pt-2 sm:pt-3 gap-1 shrink-0 text-center sm:text-left">
+        <span className="truncate">SENSOR STATUS: ACTIVE // 1420.405 MHz SYNCED</span>
         <span>OPEN [INDEX] DESK FROM HUD TO SYNTHESIZE</span>
       </div>
     </div>
