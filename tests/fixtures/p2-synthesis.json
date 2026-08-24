@@ -21,10 +21,16 @@
     "feedback": "这个解释与已登记的信标事实冲突，暂不推进真相状态。"
   },
   "hard_gate_rejected": {
-    "contract_version": "v1",
+    "contract_version": "v1.1",
     "status": "rejected",
+    "degraded": false,
     "truth_id": "T1",
-    "error": "canon_violation",
+    "error": {
+      "error": "canon_violation",
+      "message": "硬门拒绝：缺少必要命题 Helix.Signal.Unassigned。",
+      "retryable": false,
+      "degraded": false
+    },
     "missing_required_propositions": ["Helix.Signal.Unassigned"],
     "result": {
       "verdict": "failed",

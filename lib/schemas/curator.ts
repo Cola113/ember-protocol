@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ContractErrorSchema, ContractVersionSchema, modelUnavailable, validationError } from "./common";
+import { ContractVersionSchema, DegradedContractErrorSchema, modelUnavailable, validationError } from "./common";
 
 export const CURATOR_TEMPERATURE = 0.2 as const;
 
@@ -22,6 +22,7 @@ export type SynthesisResult = z.infer<typeof SynthesisResultSchema>;
 export const CuratorScoredResponseSchema = z.object({
   contract_version: ContractVersionSchema,
   status: z.literal("scored"),
+  degraded: z.literal(false),
   truth_id: z.string().min(1),
   result: SynthesisResultSchema
 }).strict();
@@ -29,25 +30,33 @@ export const CuratorScoredResponseSchema = z.object({
 export const CuratorHardGateResponseSchema = z.object({
   contract_version: ContractVersionSchema,
   status: z.literal("rejected"),
+  degraded: z.literal(false),
   truth_id: z.string().min(1),
-  error: z.literal("canon_violation"),
+  error: z.object({
+    error: z.literal("canon_violation"),
+    message: z.string().min(1),
+    retryable: z.literal(false),
+    degraded: z.literal(false)
+  }).strict(),
   missing_required_propositions: z.array(z.string().min(1)).min(1),
+  result: SynthesisResultSchema
+}).strict();
+
+export const CuratorDegradationSchema = z.object({
+  contract_version: ContractVersionSchema,
+  status: z.literal("degraded"),
+  degraded: z.literal(true),
+  truth_id: z.string().min(1),
+  error: DegradedContractErrorSchema,
   result: SynthesisResultSchema
 }).strict();
 
 export const CuratorResponseSchema = z.discriminatedUnion("status", [
   CuratorScoredResponseSchema,
-  CuratorHardGateResponseSchema
+  CuratorHardGateResponseSchema,
+  CuratorDegradationSchema
 ]);
 export type CuratorResponse = z.infer<typeof CuratorResponseSchema>;
-
-export const CuratorDegradationSchema = z.object({
-  contract_version: ContractVersionSchema,
-  status: z.literal("degraded"),
-  truth_id: z.string().min(1),
-  error: ContractErrorSchema,
-  result: SynthesisResultSchema
-}).strict();
 
 export function missingRequiredPropositions(required: readonly string[], pinned: readonly string[]): string[] {
   const pinnedSet = new Set(pinned);
@@ -58,10 +67,16 @@ export function hardGateResult(truthId: string, required: readonly string[], pin
   const missing = missingRequiredPropositions(required, pinned);
   if (missing.length === 0) return null;
   return {
-    contract_version: "v1",
+    contract_version: "v1.1",
     status: "rejected",
+    degraded: false,
     truth_id: truthId,
-    error: "canon_violation",
+    error: {
+      error: "canon_violation",
+      message: `硬门拒绝：缺少必要命题 ${missing.join(", ")}。`,
+      retryable: false,
+      degraded: false
+    },
     missing_required_propositions: missing,
     result: {
       verdict: "failed",
@@ -75,8 +90,9 @@ export function hardGateResult(truthId: string, required: readonly string[], pin
 
 export function curatorDegradedResult(truthId: string, message = "Curator 模型不可用，已使用确定性降级评分。"): CuratorDegradationSchemaType {
   return {
-    contract_version: "v1",
+    contract_version: "v1.1",
     status: "degraded",
+    degraded: true,
     truth_id: truthId,
     error: modelUnavailable(message, "请补齐命题后重试。"),
     result: { verdict: "partial", coverage: 0, correctness: 0, coherence: 0, feedback: "模型不可用，保留为 suspected。" }
@@ -87,5 +103,5 @@ export type CuratorDegradationSchemaType = z.infer<typeof CuratorDegradationSche
 
 export function validateCuratorInput(value: unknown) {
   const parsed = CuratorSynthesizeInputSchema.safeParse(value);
-  return parsed.success ? parsed : { success: false as const, error: validationError("Curator 请求参数不符合 v1 合同。") };
+  return parsed.success ? parsed : { success: false as const, error: validationError("Curator 请求参数不符合 v1.1 合同。") };
 }

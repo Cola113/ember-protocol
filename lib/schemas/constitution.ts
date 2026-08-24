@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ContractErrorSchema, ContractVersionSchema } from "./common";
+import { DegradedContractErrorSchema, ContractVersionSchema } from "./common";
 
 export const ConstitutionNpcSchema = z.object({
   npc_id: z.string().min(1),
@@ -43,15 +43,15 @@ export type Constitution = z.infer<typeof ConstitutionSchema>;
 export const ConstitutionDegradationSchema = z.object({
   contract_version: ContractVersionSchema,
   ok: z.literal(false),
-  error: ContractErrorSchema,
+  error: DegradedContractErrorSchema,
   action: z.enum(["reject_and_use_persisted_constitution", "reject_request"])
 }).strict();
 
 export function validateConstitution(value: unknown) {
   const parsed = ConstitutionSchema.safeParse(value);
-  if (parsed.success) return { contract_version: "v1" as const, ok: true as const, constitution: parsed.data };
+  if (parsed.success) return { contract_version: "v1.1" as const, ok: true as const, constitution: parsed.data };
   return {
-    contract_version: "v1" as const,
+    contract_version: "v1.1" as const,
     ok: false as const,
     error: {
       error: "canon_violation" as const,

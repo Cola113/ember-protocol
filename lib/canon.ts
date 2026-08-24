@@ -1,5 +1,6 @@
 import canonData from "@/docs/canon-ledger.json";
 import type { Constitution } from "@/lib/schemas/constitution";
+import { canonViolation } from "@/lib/schemas/common";
 
 export interface AnchorTruth {
   id: string;
@@ -61,8 +62,8 @@ export interface CanonLedgerData {
   };
   anchor_truths: AnchorTruth[];
   planets: PlanetDef[];
-  /** T1-owned, keyed by planet_id; absent until a planet constitution is frozen. */
-  constitutions?: Record<string, Constitution>;
+  /** The only constitution mount: docs/canon-ledger.json -> constitutions[planet_id]. */
+  constitutions: Record<string, Constitution>;
 }
 
 export const CANON = {
@@ -72,7 +73,7 @@ export const CANON = {
   recorder: canonData.recorder,
   anchorTruths: canonData.anchor_truths as AnchorTruth[],
   planets: canonData.planets as PlanetDef[],
-  constitutions: (canonData as CanonLedgerData).constitutions ?? {}
+  constitutions: (canonData as CanonLedgerData).constitutions
 };
 
 /**
@@ -104,15 +105,46 @@ export const CANON_READ: CanonReadApi = Object.freeze({
   isRegisteredInsight: (insightId: string) => CANON.anchorTruths.some((truth) => truth.unlocked_insights.includes(insightId))
 });
 
+export type RequiredConstitutionResult =
+  | { ok: true; constitution: Readonly<Constitution> }
+  | { ok: false; error: ReturnType<typeof canonViolation> };
+
+/** T3/T4 must reject generation or dialogue when the T1 constitution is absent. */
+export function requireConstitution(planetId: string): RequiredConstitutionResult {
+  const constitution = CANON_READ.getConstitution(planetId);
+  if (constitution) return { ok: true, constitution };
+  return {
+    ok: false,
+    error: canonViolation(`缺少星球 ${planetId} 的冻结宪章；拒绝生成或对话，不得裸生成。`)
+  };
+}
+
+/** Server-side output guard; forbidden claims are never injected into prompt context. */
+export function violatesForbiddenClaims(
+  planetOrConstitution: string | Pick<Constitution, "forbidden_claims"> | undefined,
+  text: string
+): boolean {
+  const constitution = typeof planetOrConstitution === "string"
+    ? CANON_READ.getConstitution(planetOrConstitution)
+    : planetOrConstitution;
+  if (!constitution) return false;
+  const normalizedText = text.toLocaleLowerCase();
+  return constitution.forbidden_claims.some((claim) => {
+    const normalizedClaim = claim.trim().toLocaleLowerCase();
+    return normalizedClaim.length > 0 && normalizedText.includes(normalizedClaim);
+  });
+}
+
 export function getCanonContext(planetId: string) {
   const planet = CANON_READ.getPlanet(planetId);
-  const constitution = CANON_READ.getConstitution(planetId);
+  // Prompt-safe context intentionally omits true_compute_role, truth IDs,
+  // true_facts and forbidden_claims. Those remain server-side validation data.
   return Object.freeze({
     planet_id: planetId,
     display_name: planet?.name,
-    true_compute_role: planet?.true_compute_role,
-    constitution,
-    anchor_truth_ids: CANON.anchorTruths.filter((truth) => truth.primary_planet === planetId).map((truth) => truth.id)
+    category: planet?.category,
+    apparent_civilization: planet?.apparent_civilization,
+    initial_state: planet?.initial_state
   });
 }
 

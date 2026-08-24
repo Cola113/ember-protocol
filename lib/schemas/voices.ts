@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { ContractErrorSchema, ContractVersionSchema, validationError } from "./common";
+import { CANON_READ } from "@/lib/canon";
+import { canonViolation, ContractVersionSchema, DegradedContractErrorSchema, validationError } from "./common";
 
 export const VOICES_TEMPERATURE = 0.8 as const;
 
@@ -22,6 +23,7 @@ export const VoicesCanonContextSchema = z.object({
   known_facts: z.array(z.string().min(1)).default([]),
   insight_gates: z.array(z.string().min(1)).default([])
 }).strict();
+export type VoicesCanonContext = z.infer<typeof VoicesCanonContextSchema>;
 
 export const VoicesChatInputSchema = z.object({
   messages: z.array(VoiceMessageSchema).min(1).max(100),
@@ -54,12 +56,13 @@ export type VoicesToolCall = z.infer<typeof VoicesToolCallSchema>;
 export const VoicesDegradationSchema = z.object({
   contract_version: ContractVersionSchema,
   ok: z.literal(false),
-  error: ContractErrorSchema,
+  degraded: z.literal(true),
+  error: DegradedContractErrorSchema,
   fallback: VoicesOutputSchema
 }).strict();
 
 export const VoicesResultSchema = z.discriminatedUnion("ok", [
-  z.object({ contract_version: ContractVersionSchema, ok: z.literal(true), output: VoicesOutputSchema }).strict(),
+  z.object({ contract_version: ContractVersionSchema, ok: z.literal(true), degraded: z.literal(false), output: VoicesOutputSchema }).strict(),
   VoicesDegradationSchema
 ]);
 export type VoicesResult = z.infer<typeof VoicesResultSchema>;
@@ -74,13 +77,20 @@ const VOICES_FALLBACK: VoicesOutput = {
 
 export function parseVoicesOutput(value: unknown): VoicesResult {
   const parsed = VoicesOutputSchema.safeParse(value);
-  if (parsed.success) return { contract_version: "v1", ok: true, output: parsed.data };
+  if (parsed.success && (parsed.data.offer_insight_id === null || CANON_READ.isRegisteredInsight(parsed.data.offer_insight_id))) {
+    return { contract_version: "v1.1", ok: true, degraded: false, output: parsed.data };
+  }
+
+  const isUnregisteredInsight = parsed.success && parsed.data.offer_insight_id !== null;
   return {
-    contract_version: "v1",
+    contract_version: "v1.1",
     ok: false,
+    degraded: true,
     error: {
-      error: "validation_error",
-      message: "Voices 模型输出未通过 schema 校验，已丢弃并回退保底句。",
+      error: isUnregisteredInsight ? "canon_violation" : "validation_error",
+      message: isUnregisteredInsight
+        ? "Voices 模型交付了未登记的 insight_id，已丢弃并回退保底句。"
+        : "Voices 模型输出未通过 schema 校验，已丢弃并回退保底句。",
       retryable: false,
       degraded: true,
       fallback: VOICES_FALLBACK.say
@@ -91,5 +101,23 @@ export function parseVoicesOutput(value: unknown): VoicesResult {
 
 export function validateVoicesInput(value: unknown) {
   const parsed = VoicesChatInputSchema.safeParse(value);
-  return parsed.success ? parsed : { success: false as const, error: validationError("Voices 请求参数不符合 v1 合同。") };
+  if (!parsed.success) return { success: false as const, error: validationError("Voices 请求参数不符合 v1.1 合同。") };
+  if (!CANON_READ.getNpc(parsed.data.npcId)) {
+    return { success: false as const, error: canonViolation(`未知 npcId：${parsed.data.npcId}`) };
+  }
+  return parsed;
+}
+
+/** Replace all client-supplied canon claims with the server-computed context. */
+export function prepareVoicesRequest(value: unknown, serverCanonContext: VoicesCanonContext) {
+  const parsed = validateVoicesInput(value);
+  if (!parsed.success) return parsed;
+  const serverContext = VoicesCanonContextSchema.safeParse(serverCanonContext);
+  if (!serverContext.success) {
+    return { success: false as const, error: validationError("服务端重算的 canonContext 不符合 v1.1 合同。") };
+  }
+  return {
+    success: true as const,
+    data: { ...parsed.data, canonContext: serverContext.data }
+  };
 }

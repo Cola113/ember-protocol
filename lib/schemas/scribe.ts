@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ContractErrorSchema, ContractVersionSchema, modelUnavailable, validationError } from "./common";
+import { ContractVersionSchema, DegradedContractErrorSchema, modelUnavailable, validationError } from "./common";
 
 export const SCRIBE_TEMPERATURE = 0.7 as const;
 
@@ -36,6 +36,16 @@ export const DossierSchema = z.object({
 }).strict();
 export type Dossier = z.infer<typeof DossierSchema>;
 
+export const ScribeDegradationSchema = z.object({
+  contract_version: ContractVersionSchema,
+  status: z.literal("degraded"),
+  degraded: z.literal(true),
+  cacheable: z.literal(false),
+  error: DegradedContractErrorSchema,
+  dossier: DossierSchema
+}).strict();
+export type ScribeDegradationSchemaType = z.infer<typeof ScribeDegradationSchema>;
+
 export const ScribeGenerateResponseSchema = z.discriminatedUnion("status", [
   z.object({
     contract_version: ContractVersionSchema,
@@ -48,16 +58,10 @@ export const ScribeGenerateResponseSchema = z.discriminatedUnion("status", [
     status: z.literal("cache_hit"),
     cached: z.literal(true),
     dossier: DossierSchema
-  }).strict()
+  }).strict(),
+  ScribeDegradationSchema
 ]);
 export type ScribeGenerateResponse = z.infer<typeof ScribeGenerateResponseSchema>;
-
-export const ScribeDegradationSchema = z.object({
-  contract_version: ContractVersionSchema,
-  status: z.literal("degraded"),
-  error: ContractErrorSchema,
-  dossier: DossierSchema
-}).strict();
 
 const SCRIBE_FALLBACK: Dossier = {
   planet_id: "unknown",
@@ -78,16 +82,16 @@ export function parseDossier(value: unknown): Dossier | null {
 export function scribeDegradedResponse(message = "Scribe 模型不可用，已使用模板档案。", ids?: Partial<Pick<Dossier, "planet_id" | "landing_site_id">>): ScribeDegradationSchemaType {
   const dossier = { ...SCRIBE_FALLBACK, ...ids };
   return {
-    contract_version: "v1",
+    contract_version: "v1.1",
     status: "degraded",
+    degraded: true,
+    cacheable: false,
     error: modelUnavailable(message, dossier.summary),
     dossier
   };
 }
 
-export type ScribeDegradationSchemaType = z.infer<typeof ScribeDegradationSchema>;
-
 export function validateScribeInput(value: unknown) {
   const parsed = ScribeGenerateInputSchema.safeParse(value);
-  return parsed.success ? parsed : { success: false as const, error: validationError("Scribe 请求参数不符合 v1 合同。") };
+  return parsed.success ? parsed : { success: false as const, error: validationError("Scribe 请求参数不符合 v1.1 合同。") };
 }
