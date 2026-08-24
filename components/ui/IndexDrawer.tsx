@@ -21,6 +21,7 @@ import {
   Zap,
   Info
 } from "lucide-react";
+import { clientCuratorSynthesize } from "@/lib/api-client";
 
 interface IndexDrawerProps {
   onClose: () => void;
@@ -31,10 +32,14 @@ interface IndexDrawerProps {
 
 interface EvalResult {
   truth_id?: string;
-  verdict: "believed" | "suspected" | "partial";
+  verdict: "passed" | "partial" | "failed" | "believed" | "suspected";
   coverage_score: number;
   consistency_score: number;
+  coherence_score?: number;
   feedback: string;
+  missing_required_propositions?: string[];
+  degraded?: boolean;
+  status?: string;
   memory_recovered_delta?: number;
 }
 
@@ -126,57 +131,37 @@ export default function IndexDrawer({
     setLoading(true);
 
     try {
-      const res = await fetch("/api/curator/synthesize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          truthId: selectedTruth.id,
-          hypothesisText: hypothesis,
-          pinnedPropositions: collectedPropositions,
-        }),
+      const res = await clientCuratorSynthesize({
+        truthId: selectedTruth.id,
+        hypothesisText: hypothesis,
+        pinnedPropositions: collectedPropositions,
+        slot: "auto"
       });
-      const data: EvalResult = await res.json();
-      setEvalResult(data);
-      if (data.verdict === "believed") {
-        onTruthBelieved(selectedTruth.id);
-      }
-    } catch (e) {
-      // Local robust canonical heuristic fallback with strict proposition guard
-      if (!hasAllRequiredProps) {
-        setEvalResult({
-          truth_id: selectedTruth.id,
-          verdict: "partial",
-          coverage_score: 0.2,
-          consistency_score: 0.4,
-          feedback: `前置命题未集齐：必须先在相关星球收集全部必要命题（缺少：${missingProps.join(", ")}）。`,
-          memory_recovered_delta: 0,
-        });
-        return;
-      }
 
-      const requiredKeywords = selectedTruth.keywords || [];
-      const textLower = hypothesis.toLowerCase();
-      const matchedKeywords = requiredKeywords.filter((kw) =>
-        textLower.includes(kw.toLowerCase())
-      );
-
-      const isPass = matchedKeywords.length >= 1;
-
-      const result: EvalResult = {
+      setEvalResult({
         truth_id: selectedTruth.id,
-        verdict: isPass ? "believed" : "partial",
-        coverage_score: isPass ? 0.95 : 0.45,
-        consistency_score: isPass ? 0.98 : 0.6,
-        feedback: isPass
-          ? `Curator 评估通过：假说准确反映了正典事实【${selectedTruth.title}】。已确证为 BELIEVED。`
-          : `假说推论尚未完全收敛，缺少核心关键推论（如：${requiredKeywords.slice(0, 3).join(", ")}）。请进一步完善。`,
-        memory_recovered_delta: isPass ? 0.103 : 0,
-      };
+        verdict: res.verdict,
+        coverage_score: res.coverage,
+        consistency_score: res.correctness,
+        coherence_score: res.coherence,
+        feedback: res.feedback,
+        missing_required_propositions: res.missingRequiredPropositions,
+        degraded: res.degraded,
+        status: res.status
+      });
 
-      setEvalResult(result);
-      if (result.verdict === "believed") {
+      if (res.verdict === "passed") {
         onTruthBelieved(selectedTruth.id);
       }
+    } catch {
+      setEvalResult({
+        truth_id: selectedTruth.id,
+        verdict: "partial",
+        coverage_score: 0.4,
+        consistency_score: 0.5,
+        feedback: "公证管线连接异常，请重试。",
+        degraded: true
+      });
     } finally {
       setLoading(false);
     }
@@ -535,21 +520,59 @@ export default function IndexDrawer({
                 {evalResult ? (
                   <div>
                     <div
-                      className={`flex items-center gap-2 font-bold mb-2 ${
-                        evalResult.verdict === "believed" ? "text-holo-green" : "text-holo-amber"
+                      className={`flex flex-wrap items-center justify-between gap-2 font-bold mb-2 ${
+                        evalResult.verdict === "passed" || evalResult.verdict === "believed"
+                          ? "text-holo-green"
+                          : evalResult.status === "rejected" || evalResult.verdict === "failed"
+                          ? "text-holo-red"
+                          : "text-holo-amber"
                       }`}
                     >
-                      {evalResult.verdict === "believed" ? (
-                        <CheckCircle className="w-4 h-4" />
-                      ) : (
-                        <AlertCircle className="w-4 h-4" />
+                      <div className="flex items-center gap-1.5">
+                        {evalResult.verdict === "passed" || evalResult.verdict === "believed" ? (
+                          <CheckCircle className="w-4 h-4 text-holo-green" />
+                        ) : (
+                          <AlertCircle className="w-4 h-4" />
+                        )}
+                        <span>
+                          SYNTHESIS VERDICT:{" "}
+                          {evalResult.verdict === "passed" || evalResult.verdict === "believed"
+                            ? "PASSED (BELIEVED)"
+                            : evalResult.status === "rejected"
+                            ? "REJECTED (HARD GATE)"
+                            : evalResult.verdict === "failed"
+                            ? "FAILED"
+                            : "PARTIAL (SUSPECTED)"}
+                        </span>
+                      </div>
+                      {evalResult.degraded && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded font-mono bg-holo-amber/20 text-holo-amber border border-holo-amber/40">
+                          CURATOR DEGRADED
+                        </span>
                       )}
-                      <span>SYNTHESIS VERDICT: {evalResult.verdict.toUpperCase()}</span>
                     </div>
+
                     <div className="text-slate-300 mb-2">{evalResult.feedback}</div>
-                    <div className="flex gap-4 pt-2 border-t border-holo-cyan/10 text-[11px] text-holo-cyan">
+
+                    {evalResult.missing_required_propositions && evalResult.missing_required_propositions.length > 0 && (
+                      <div className="p-2 bg-red-950/40 border border-red-500/30 rounded mb-2 space-y-1">
+                        <div className="text-[11px] text-red-300 font-bold">缺失硬门必要命题：</div>
+                        <div className="flex flex-wrap gap-1">
+                          {evalResult.missing_required_propositions.map((p) => (
+                            <span key={p} className="text-[10px] px-1.5 py-0.5 bg-red-900/60 text-red-200 rounded font-mono">
+                              ✗ {p}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap gap-3 sm:gap-4 pt-2 border-t border-holo-cyan/10 text-[11px] text-holo-cyan">
                       <span>COVERAGE: {(evalResult.coverage_score * 100).toFixed(0)}%</span>
-                      <span>CONSISTENCY: {(evalResult.consistency_score * 100).toFixed(0)}%</span>
+                      <span>CORRECTNESS: {(evalResult.consistency_score * 100).toFixed(0)}%</span>
+                      {evalResult.coherence_score !== undefined && (
+                        <span>COHERENCE: {(evalResult.coherence_score * 100).toFixed(0)}%</span>
+                      )}
                     </div>
                   </div>
                 ) : (

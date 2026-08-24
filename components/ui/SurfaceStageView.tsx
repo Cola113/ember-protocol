@@ -30,7 +30,9 @@ import {
   Volume2,
   FileCode,
   CheckCircle2,
+  Send,
 } from "lucide-react";
+import { clientVoicesChat, type ClientChatMessage } from "@/lib/api-client";
 
 interface SurfaceStageViewProps {
   planet: PlanetDef;
@@ -146,10 +148,15 @@ export default function SurfaceStageView({
   // Black Interval
   const [socketSyncIndex, setSocketSyncIndex] = useState(0);
 
-  const handleHotspotClick = (hotspot: Hotspot) => {
-    setActiveModal(hotspot);
-    setDialogueStep(0);
-  };
+  // Voices Dynamic Dialogue State
+  const [chatMessages, setChatMessages] = useState<ClientChatMessage[]>([]);
+  const [chatSay, setChatSay] = useState("");
+  const [chatMood, setChatMood] = useState("");
+  const [chatLie, setChatLie] = useState(false);
+  const [chatOfferedInsight, setChatOfferedInsight] = useState<string | null>(null);
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [isChatDegraded, setIsChatDegraded] = useState(false);
+  const [chatInput, setChatInput] = useState("");
 
   const isAntennaAligned = Math.abs(antennaAzimuth - 180) < 10;
   const isLensFocused = Math.abs(lensElevation - 68) < 6 && prismRefraction >= 1.6;
@@ -165,6 +172,95 @@ export default function SurfaceStageView({
       return CANON_DIALOGUES[npcId];
     }
     return null;
+  };
+
+  const handleHotspotClick = (hotspot: Hotspot) => {
+    setActiveModal(hotspot);
+    setDialogueStep(0);
+    setChatInput("");
+    setIsChatLoading(false);
+    setIsChatDegraded(false);
+
+    if (hotspot.type === "dialogue") {
+      const tree = getDialogueTree(hotspot);
+      const initialSay = tree ? tree.steps[0]?.text || "残响频段已同步。" : "残响频段已同步。";
+      const initialMood = tree ? tree.speechRegister : "protocol-formal";
+      const initialLie = Boolean(tree?.steps[0]?.hysteresisNote);
+      const initialReward = tree?.steps[0]?.propositionReward
+        ? `INSIGHT_${tree.steps[0].propositionReward.code.replace(/\./g, "_").toUpperCase()}`
+        : null;
+
+      setChatSay(initialSay);
+      setChatMood(initialMood);
+      setChatLie(initialLie);
+      setChatOfferedInsight(initialReward);
+      setChatMessages([
+        {
+          role: "assistant",
+          content: initialSay,
+          mood: initialMood,
+          lie: initialLie,
+          offer_insight_id: initialReward,
+        },
+      ]);
+    }
+  };
+
+  const handleSendDialogueMessage = async (text: string, nextStepIdx?: number) => {
+    if (!text.trim() || !activeModal) return;
+    const npcId = activeModal.npc_id || planet.anchor_npc?.id || "npc-tarkis";
+    const userMsg: ClientChatMessage = { role: "user", content: text.trim() };
+    const updatedMessages = [...chatMessages, userMsg];
+    setChatMessages(updatedMessages);
+    setIsChatLoading(true);
+    setChatInput("");
+
+    if (nextStepIdx !== undefined) {
+      setDialogueStep(nextStepIdx);
+    }
+
+    try {
+      const res = await clientVoicesChat({
+        npcId,
+        messages: updatedMessages,
+        planetId: planet.id,
+        slot: "auto",
+      });
+
+      setChatSay(res.output.say);
+      setChatMood(res.output.mood || "protocol-formal");
+      setChatLie(Boolean(res.output.lie));
+      setChatOfferedInsight(res.output.offer_insight_id || null);
+      setIsChatDegraded(res.degraded);
+      setChatMessages([
+        ...updatedMessages,
+        {
+          role: "assistant",
+          content: res.output.say,
+          mood: res.output.mood,
+          lie: res.output.lie,
+          offer_insight_id: res.output.offer_insight_id,
+        },
+      ]);
+    } catch {
+      // Graceful fallback to hardcoded tree
+      const tree = getDialogueTree(activeModal);
+      const stepIdx = nextStepIdx !== undefined ? nextStepIdx : dialogueStep + 1;
+      const step = tree?.steps[stepIdx] || tree?.steps[0];
+      if (step) {
+        setChatSay(step.text);
+        setChatMood("protocol-formal");
+        setChatLie(Boolean(step.hysteresisNote));
+        setChatOfferedInsight(
+          step.propositionReward
+            ? `INSIGHT_${step.propositionReward.code.replace(/\./g, "_").toUpperCase()}`
+            : null
+        );
+        setIsChatDegraded(true);
+      }
+    } finally {
+      setIsChatLoading(false);
+    }
   };
 
   return (
@@ -380,8 +476,13 @@ export default function SurfaceStageView({
                           <div className="font-bold text-sm text-holo-bright flex items-center gap-2">
                             <span>{tree.name}</span>
                             <span className="text-[10px] text-purple-300 bg-purple-900/40 px-1.5 py-0.5 rounded border border-purple-500/30 uppercase">
-                              {tree.speechRegister}
+                              {chatMood || tree.speechRegister}
                             </span>
+                            {isChatDegraded && (
+                              <span className="text-[9px] text-holo-amber bg-holo-amber/15 px-1 py-0.5 rounded border border-holo-amber/30">
+                                DEGRADED
+                              </span>
+                            )}
                           </div>
                           <div className="text-[11px] text-purple-400 mt-0.5">{currentStep.speakerRole}</div>
                         </div>
@@ -399,25 +500,50 @@ export default function SurfaceStageView({
 
                     {/* Dialogue Content with Typewriter Effect */}
                     <div className="p-4 bg-surface-dark/85 border border-holo-cyan/20 rounded-sm leading-relaxed text-holo-bright text-sm min-h-[95px] space-y-3">
-                      <TypewriterText text={currentStep.text} />
+                      {isChatLoading ? (
+                        <div className="flex items-center gap-2 text-holo-cyan text-xs font-mono animate-pulse py-4">
+                          <span className="w-3 h-3 rounded-full border border-holo-cyan border-t-transparent animate-spin" />
+                          <span>VOICES // 正在解析残响载波频段与因果链...</span>
+                        </div>
+                      ) : (
+                        <TypewriterText text={chatSay || currentStep.text} />
+                      )}
 
                       {/* Hysteresis Lie Tag */}
-                      {currentStep.hysteresisNote && (
+                      {chatLie && (
                         <div className="p-2.5 bg-slate-900/90 border border-amber-500/40 text-[11px] text-holo-amber italic flex items-center gap-2 rounded-sm shadow-sm animate-pulse">
                           <ShieldAlert className="w-4 h-4 text-holo-amber shrink-0" />
-                          <span>[ECHO_HYSTERESIS // 磁滞推演中: {currentStep.hysteresisNote}]</span>
+                          <span>[ECHO_HYSTERESIS // 磁滞灰条目：疑似伪证或残响失真，不可作为确证命题]</span>
                         </div>
                       )}
                     </div>
 
                     {/* Reward Proposition Card */}
                     {currentStep.propositionReward && (
-                      <div className="p-3.5 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm animate-fadeIn">
-                        <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
+                      <div
+                        className={`p-3.5 rounded-sm animate-fadeIn ${
+                          chatLie
+                            ? "bg-slate-900/80 border-l-4 border-slate-600"
+                            : "bg-holo-amber/10 border-l-4 border-holo-amber"
+                        }`}
+                      >
+                        <div
+                          className={`font-bold text-xs flex items-center gap-1.5 mb-1 ${
+                            chatLie ? "text-slate-400" : "text-holo-amber"
+                          }`}
+                        >
                           <Sparkles className="w-3.5 h-3.5" />
-                          <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                          <span>
+                            {chatLie
+                              ? "UNVERIFIED HYSTERESIS ENTRY // 疑似伪证灰条目"
+                              : "EXTRACTED PROPOSITION // 提取可钉选命题"}
+                          </span>
                         </div>
-                        <div className="text-holo-bright font-mono text-sm font-semibold">
+                        <div
+                          className={`font-mono text-sm font-semibold ${
+                            chatLie ? "text-slate-400 line-through" : "text-holo-bright"
+                          }`}
+                        >
                           {currentStep.propositionReward.code}
                         </div>
                         <div className="text-[11px] text-slate-300 mt-0.5">
@@ -428,21 +554,49 @@ export default function SurfaceStageView({
 
                     {/* Dialogue Choice Options or Resolution */}
                     <div className="space-y-2 pt-2">
-                      {currentStep.choices && currentStep.choices.map((choice, idx) => (
+                      {currentStep.choices &&
+                        currentStep.choices.map((choice, idx) => (
+                          <button
+                            key={idx}
+                            disabled={isChatLoading}
+                            onClick={() => handleSendDialogueMessage(choice.text, choice.nextStep)}
+                            className="w-full text-left p-3 bg-surface-dark border border-holo-cyan/25 hover:border-holo-cyan hover:bg-surface rounded-sm text-slate-200 hover:text-holo-cyan transition-all text-xs flex items-center justify-between group disabled:opacity-50"
+                          >
+                            <span>{idx + 1}. {choice.text}</span>
+                            <ArrowRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-holo-cyan shrink-0 ml-2" />
+                          </button>
+                        ))}
+
+                      {/* Custom Prompt Query Input */}
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleSendDialogueMessage(chatInput);
+                        }}
+                        className="flex gap-2 pt-1"
+                      >
+                        <input
+                          type="text"
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          placeholder="向残响发问 (QUERY ECHO)..."
+                          disabled={isChatLoading}
+                          className="flex-1 bg-surface-dark/90 border border-purple-500/30 focus:border-purple-400 px-3 py-2 text-xs font-mono text-holo-bright rounded-sm outline-none"
+                        />
                         <button
-                          key={idx}
-                          onClick={() => setDialogueStep(choice.nextStep)}
-                          className="w-full text-left p-3 bg-surface-dark border border-holo-cyan/25 hover:border-holo-cyan hover:bg-surface rounded-sm text-slate-200 hover:text-holo-cyan transition-all text-xs flex items-center justify-between group"
+                          type="submit"
+                          disabled={isChatLoading || !chatInput.trim()}
+                          className="px-3.5 py-2 bg-purple-900/60 border border-purple-500/50 hover:bg-purple-800 text-purple-200 text-xs font-mono rounded-sm transition-all disabled:opacity-40 flex items-center gap-1.5 shrink-0"
                         >
-                          <span>{idx + 1}. {choice.text}</span>
-                          <ArrowRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-holo-cyan shrink-0 ml-2" />
+                          <Send className="w-3.5 h-3.5" />
+                          <span>探测</span>
                         </button>
-                      ))}
+                      </form>
 
                       {isFinalStep && (
                         <button
                           onClick={() => {
-                            if (currentStep.propositionReward) {
+                            if (currentStep.propositionReward && !chatLie) {
                               handleCollectReward(
                                 currentStep.propositionReward.code,
                                 currentStep.propositionReward.text
