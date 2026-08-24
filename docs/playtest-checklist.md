@@ -227,7 +227,34 @@ Curator 现为 stub：过关条件 = 必选命题齐 **且** 假说命中 ≥1 �
 
 ---
 
-## 10. 签核
+## 10. P2 AI 三层（Voices / Scribe / Curator）
+
+自动化合同保证见 `tests/t7-fullchain.ts`（route 级 / T5 边界 / 跨层链路 / 降级链 / 契约一致性）。本节为手工 playtest，聚焦真 API 与降级切换、评分反馈、服务端/前端状态一致性。
+
+| ID | 步骤 | 预期 | 结果 | 记录 |
+|----|------|------|------|------|
+| P2-01 | Helix-7 教程：检视信标 + 操作天线 + 对话塔基 | 收集两条 T1 命题；塔基可交付 `INSIGHT_T1_BOOTSTRAP_DISCOVERED` | ☐ | |
+| P2-02 | INDEX 综合 T1（真 API，假说命中核心含义） | `result.verdict=passed`；T1→believed；星图出现窑+玻璃果园 | ☐ | |
+| P2-03 | 依次 T2→T3→T4→T5 真实综合 | 每条 believed 后解锁链符合 GX-08~GX-12 | ☐ | |
+| P2-04 | T5 believed 后看星图 | 盲日 + 黑间隔出现 | ☐ | |
+| P2-05 | 黑间隔：插座 + 晚星核心两命题 → 综合 THidden | THidden→believed；6/6；RESOLUTION READY | ☐ | |
+| P2-06 | 三结局在 6/6 + 倒计时门槛下 | 封存/允许/继任可达（ED-03~ED-08） | ☐ | |
+| P2-07 | NPC 对话主路径（真 API，有 key） | `/api/voices/chat` 返回 say/mood/offer_insight_id/lie；`lie:true` 灰条目 | ☐ | |
+| P2-08 | 拔 key（清 AI 环境变量）后对话同一 NPC | Voices 降级保底树（`lib/dialogues.ts`），`offer_insight_id=null`，不发明 insight | ☐ | |
+| P2-09 | 拔 key 后首次锁定降落点 | Scribe 降级模板档案（`cacheable:false`）；刷新再进仍降级（不缓存） | ☐ | |
+| P2-10 | 拔 key 后综合（命题齐） | Curator 降级 `partial`；**不**推进 believed（合同硬约束） | ☐ | |
+| P2-11 | Synthesis 评分反馈展示 | passed/partial/failed 三态文案 + coverage/correctness/coherence 可见；缺命题时列出 `missing_required_propositions` | ☐ | |
+| P2-12 | 存档读档后 believed/命题一致 | 服务端 `playerState`（`truthStates`+`believedTruths`）与前端 `believedTruths`/`collectedPropositions` 一致 | ☐ | |
+| P2-13 | 跨槽隔离：slot_1 综合 believed，切 slot_2 | slot_2 真相 unknown、NPC 记忆空、无 synthesis 记录 | ☐ | |
+| P2-14 | 客户端伪造 `canonContext`（truth_ids/known_facts/insight_gates） | 服务端丢弃；NPC 不采信剧透；system prompt 不含 forbidden/true_facts | ☐ | |
+
+**已知阻断项（T7 发现，交 P3/UI 主力修）**
+
+- **BLOCKER**：`components/ui/IndexDrawer.tsx` `handleSynthesize` 读取 `data.verdict === "believed"`，但 T5 `/api/curator/synthesize` 返回 v1.1 合同形状 `{status, result:{verdict:"passed"|"partial"|"failed", coverage, correctness, coherence, feedback}}`——无顶层 `verdict`、且永不等于 `"believed"`。真 API 成功路径**永不**标记 believed；当前仅 `fetch` 抛错时的关键词兜底（catch 块）能通关，违反合同「不得单独以一个关键词推进 believed」。修复：前端改读 `data.status === "scored" && data.result?.verdict === "passed"`，按 `data.result` 三分数展示；或统一改用 `lib/api-client.ts` 的 `submitSynthesis`。需 P3/UI 主力（agy/Pi）修并圆桌复核。
+- **minor**：`lib/api-client.ts:submitSynthesis` 与 `IndexDrawer` 内联 `fetch` 两条 Curator 调用路径并存，映射逻辑可能不一致；建议收口到 api-client。
+- **节奏待裁决**：合同规定无 key 时 Curator 恒为 `partial`、不 believed，故**无 key 下 3 结局不可达**（除非前端关键词兜底，而那违反合同）。P2-06 的「无 key 降级模式下可玩」应理解为「可探索 + 降级可观察」，而非「可通关」。是否为无 key 模式增加合规的可通关路径，需产品裁决（不属 T7 范围）。
+
+## 11. 签核
 
 | 模块 | 通过数 | 失败数 | 阻塞 | 签核（姓名 / 日期） |
 |------|--------|--------|------|---------------------|
@@ -241,7 +268,8 @@ Curator 现为 stub：过关条件 = 必选命题齐 **且** 假说命中 ≥1 �
 | 7 无障碍 | /12 | | | |
 | 8 响应式 | /11 | | | |
 | 9 横切 | /5 | | | |
-| **合计** | **/116** | | | |
+| 10 P2 AI 三层 | /14 | | | |
+| **合计** | **/130** | | | |
 
 **放行建议**
 
