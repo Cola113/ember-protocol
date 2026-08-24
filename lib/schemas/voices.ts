@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { CANON_READ } from "@/lib/canon";
-import { canonViolation, ContractVersionSchema, DegradedContractErrorSchema, validationError } from "./common";
+import {
+  canonViolation,
+  ContractErrorSchema,
+  ContractVersionSchema,
+  DegradedContractErrorSchema,
+  validationError,
+  type ContractError
+} from "./common";
 
 export const VOICES_TEMPERATURE = 0.8 as const;
 
@@ -67,7 +74,18 @@ export const VoicesResultSchema = z.discriminatedUnion("ok", [
 ]);
 export type VoicesResult = z.infer<typeof VoicesResultSchema>;
 
-const VOICES_FALLBACK: VoicesOutput = {
+/** Hard gate (missing constitution / unknown npc / bad request). Not a degraded model path. */
+export const VoicesHardRejectSchema = z.object({
+  contract_version: ContractVersionSchema,
+  ok: z.literal(false),
+  degraded: z.literal(false),
+  error: ContractErrorSchema.extend({ degraded: z.literal(false) }).strict()
+}).strict();
+export type VoicesHardReject = z.infer<typeof VoicesHardRejectSchema>;
+
+export type VoicesChatResponse = VoicesResult | VoicesHardReject;
+
+export const VOICES_GENERIC_FALLBACK: VoicesOutput = {
   say: "记录员，请稍候。残响正在重新对齐档案。",
   mood: "neutral-melancholy",
   offer_insight_id: null,
@@ -93,9 +111,23 @@ export function parseVoicesOutput(value: unknown): VoicesResult {
         : "Voices 模型输出未通过 schema 校验，已丢弃并回退保底句。",
       retryable: false,
       degraded: true,
-      fallback: VOICES_FALLBACK.say
+      fallback: VOICES_GENERIC_FALLBACK.say
     },
-    fallback: VOICES_FALLBACK
+    fallback: VOICES_GENERIC_FALLBACK
+  };
+}
+
+export function voicesHardReject(error: ContractError): VoicesHardReject {
+  return {
+    contract_version: "v1.1",
+    ok: false,
+    degraded: false,
+    error: {
+      error: error.error,
+      message: error.message,
+      retryable: error.retryable,
+      degraded: false
+    }
   };
 }
 

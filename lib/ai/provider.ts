@@ -2,19 +2,24 @@
  * T2 AI SDK wiring. No Voices / Scribe / Curator business logic.
  *
  * - Reads GEMINI_API_KEY / AI_SDK_PROVIDER (and aliases) from env
- * - Wraps `generateObject` / `streamText` from `ai`
+ * - Wraps `generateObject` / `generateText` / `streamText` from `ai`
  * - No key, timeout, or HTTP failure → contract `model_unavailable`
  * - Ping: GET /api/ai/ping
+ * - T4: generateModelText supports tools (adapters parse native function calls).
+ *   streamText remains a single-delta replay — not a token SSE.
  */
 
 import {
   generateObject,
+  generateText,
   streamText,
   APICallError,
   JSONParseError,
   NoObjectGeneratedError,
   TypeValidationError,
   InvalidResponseDataError,
+  type CoreMessage,
+  type CoreTool,
   type LanguageModelV1
 } from "ai";
 import { z } from "zod";
@@ -286,6 +291,43 @@ export async function streamModelText(options: {
     });
     const text = await result.text;
     return { ok: true, data: { text } };
+  } catch (error) {
+    return { ok: false, error: mapAiSdkError(error) };
+  }
+}
+
+/**
+ * One-shot generateText with optional tools. Used by Voices (T4).
+ * Does not fake SSE: the HTTP route still returns a complete JSON envelope.
+ */
+export async function generateModelText(options: {
+  prompt?: string;
+  messages?: CoreMessage[];
+  system?: string;
+  tools?: Record<string, CoreTool>;
+  maxSteps?: number;
+  temperature?: number;
+  abortSignal?: AbortSignal;
+}): Promise<AiResult<{ text: string }>> {
+  const hasPrompt = Boolean(options.prompt?.trim());
+  const hasMessages = Boolean(options.messages && options.messages.length > 0);
+  if (hasPrompt === hasMessages) {
+    return { ok: false, error: validationError("generateText 需要非空 prompt 或 messages（互斥）。") };
+  }
+  const resolved = resolveLanguageModel();
+  if (!resolved.ok) return { ok: false, error: resolved.error };
+  try {
+    const result = await generateText({
+      model: resolved.data,
+      system: options.system,
+      ...(hasMessages ? { messages: options.messages } : { prompt: options.prompt }),
+      tools: options.tools,
+      maxSteps: options.maxSteps ?? 1,
+      temperature: options.temperature,
+      abortSignal: options.abortSignal,
+      maxRetries: 0
+    });
+    return { ok: true, data: { text: result.text } };
   } catch (error) {
     return { ok: false, error: mapAiSdkError(error) };
   }
