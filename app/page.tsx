@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
-import { CANON, PlanetDef, LandingSite, AnchorTruth } from "@/lib/canon";
+import { CANON, PlanetDef, LandingSite, AnchorTruth, getDecodedPlanetIds } from "@/lib/canon";
 import HudHeader from "@/components/ui/HudHeader";
 import OpeningTerminal from "@/components/ui/OpeningTerminal";
 import PlanetSurveyModal from "@/components/ui/PlanetSurveyModal";
@@ -47,6 +47,7 @@ export default function HomePage() {
 
   // Newly unlocked truth for cinematic overlay
   const [unlockedTruthOverlay, setUnlockedTruthOverlay] = useState<AnchorTruth | null>(null);
+  const [rewriteToast, setRewriteToast] = useState<{ title: string; count: number } | null>(null);
 
   // Derive unlocked planets from believed truths' unlocked_planets fields
   const unlockedPlanetIds = useMemo(
@@ -208,6 +209,7 @@ export default function HomePage() {
           selectedPlanet={selectedPlanet}
           showInferenceLines={showInferenceLines}
           unlockedPlanetIds={unlockedPlanetIds}
+          believedTruthIds={believedTruths}
         />
       </div>
 
@@ -226,8 +228,35 @@ export default function HomePage() {
             onToggleInference={() => setShowInferenceLines((prev) => !prev)}
             canResolveEnding={canResolveEnding}
             emberCycleSecondsLeft={emberCycleSecondsLeft}
+            believedTruthsCount={believedTruths.length}
+            totalTruthsCount={CANON.anchorTruths.length}
           />
         )}
+
+      {/* Star Chart Rewrite Toast Notification */}
+      <AnimatePresence>
+        {rewriteToast && currentView === "galaxy" && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ duration: 0.3 }}
+            className="absolute top-16 sm:top-20 right-3 sm:right-8 z-40 pointer-events-none"
+          >
+            <div className="holo-panel border border-holo-cyan px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-sm shadow-holo-cyan flex items-center gap-2 sm:gap-2.5 bg-surface-dark/95 backdrop-blur-md text-xs font-mono">
+              <span className="w-2 h-2 rounded-full bg-holo-cyan animate-ping shrink-0" />
+              <div>
+                <div className="text-holo-cyan font-bold flex items-center gap-1.5 text-[11px] sm:text-xs">
+                  <span>⚡ 星图拓扑已改写 // STAR CHART REWRITTEN</span>
+                </div>
+                <div className="text-holo-bright text-[10px] sm:text-[11px] mt-0.5">
+                  【{rewriteToast.title}】计算节点已并联接入总线
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Onboarding Guidance Tooltip Bubbles */}
       <OnboardingHints currentView={currentView} />
@@ -353,8 +382,10 @@ export default function HomePage() {
             onLand={handleInitiateLanding}
             collectedPropositions={collectedPropositions}
             completedHotspotIds={completedHotspotIds}
+            isDecoded={getDecodedPlanetIds(believedTruths).includes(selectedPlanet.id)}
           />
         )}
+
       </AnimatePresence>
 
       {/* View 6: Synthesis / Index Drawer */}
@@ -377,12 +408,22 @@ export default function HomePage() {
             canResolveEnding={canResolveEnding}
             onProceed={() => {
               const shouldGoToEnding = unlockedTruthOverlay.id === "THidden" && canResolveEnding;
+              const justUnlockedTruth = unlockedTruthOverlay;
               setUnlockedTruthOverlay(null);
               if (shouldGoToEnding) {
                 setCurrentView("ending");
               } else {
                 setCurrentView("galaxy");
                 setSelectedPlanet(null);
+                if (justUnlockedTruth) {
+                  setRewriteToast({
+                    title: justUnlockedTruth.title,
+                    count: justUnlockedTruth.unlocked_planets.length + 1,
+                  });
+                  setTimeout(() => {
+                    setRewriteToast(null);
+                  }, 4000);
+                }
               }
             }}
           />
