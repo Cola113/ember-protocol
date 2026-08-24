@@ -496,7 +496,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
     role: "帝国宰相残响",
     personality: "玩世不恭、优雅颓废、热衷于讲述家族阴谋",
     speechRegister: "aristocratic-cynical",
-    taboos: ["程序", "虚拟", "红鲱鱼"],
+    taboos: ["程序", "虚拟", "红鲱鱼", "沙盒", "代码"],
     steps: [
       {
         speaker: "Chancellor 尤利安",
@@ -505,11 +505,11 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         text: "“哦，一位不速之客。请原谅宴会厅的狼藉，七大家族的族长刚刚在加冕酒席上用淬毒的银叉互相问候完毕。女皇在花房里启动了自毁，多么凄美而无可挑剔的巴洛克悲剧。”",
         choices: [
           {
-            text: "“尤利安宰相，这场宫廷自毁是一场精心编织的红鲱鱼（Red Herring）假象。”",
+            text: "“尤利安宰相，这场宫廷自毁是一场精心编织的假象。”",
             nextStep: 1,
           },
           {
-            text: "“我在壁炉后的终端里找到了沙盒退出指令。”",
+            text: "“我在壁炉后的古老终端里找到了未知的接口代码。”",
             nextStep: 2,
           },
         ],
@@ -518,10 +518,10 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Chancellor 尤利安",
         speakerRole: "帝国宰相残响 · 轻蔑而优雅地轻笑",
         avatarColor: "#c084fc",
-        text: "“红鲱鱼？蛮族粗鄙的隐喻！每一个家族的仇恨都有三百年的族谱为证，毒药是从枯萎玫瑰里提炼的纯度百分之百的氰化物！你竟敢将这首人类权谋的绝唱称作‘假象’？！”",
+        text: "“假象？蛮族粗鄙的臆测！每一个家族的仇恨都有三百年的族谱为证，毒药是从枯萎玫瑰里提炼的纯度百分之百的氰化物！你竟敢将这首人类权谋的绝唱称作‘假象’？！”",
         choices: [
           {
-            text: "“政治逻辑越无懈可击，越证明这是 UI Shell 为噪音填充的虚拟故事。”",
+            text: "“政治逻辑越无懈可击，越证明这只是一段为了掩盖某种真相而局部拟合的故事。”",
             nextStep: 3,
           },
         ],
@@ -530,11 +530,11 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Chancellor 尤利安",
         speakerRole: "帝国宰相残响 · 凝视着壁炉后露出的绿色荧光终端",
         avatarColor: "#c084fc",
-        text: "“退出指令……？荒谬。我尤利安机关算尽三十年，毒杀了皇太子，策反了近卫军……到头来，你告诉我这不过是一台给外部观察者展示人类愚蠢的交互沙盒？！”",
-        hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 沙盒环境解耦，红鲱鱼叙事失效",
+        text: "“接口代码……？荒谬。我尤利安机关算尽三十年，毒杀了皇太子，策反了近卫军……到头来，你告诉我这不过是一段为了向外界展示而编织的虚假剧本？！”",
+        hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 局部拟合叙事解耦",
         choices: [
           {
-            text: "“看清沙盒的本质，别再被虚假的宫廷复仇拖住脚步。”",
+            text: "“看清舞台背后的本质，别再被虚妄的仇恨拖住脚步。”",
             nextStep: 3,
           },
         ],
@@ -543,10 +543,10 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Chancellor 尤利安",
         speakerRole: "帝国宰相残响 · 将空酒杯掷在金盘上摔得粉碎",
         avatarColor: "#c084fc",
-        text: "“哈……哈哈！真是最高雅的讽刺！我们以为自己是历史的主谋，其实只是终端屏幕上的屏保程序！拿走这串退出代码吧，探针。去看看那些真正的齿轮，别像我们一样，死在自以为是的阴谋里。”",
+        text: "“哈……哈哈！真是最高雅的讽刺！我们以为自己是历史的主谋，其实只是舞台帷幕上的提线木偶！拿走这串接口记录吧，探针。去看看那些真正的齿轮，别像我们一样，死在自以为是的阴谋里。”",
         propositionReward: {
           code: "Cinder.Court.IsSandbox",
-          text: "Cinder Court 宫廷悲剧实为 UI 沙盒红鲱鱼",
+          text: "Cinder Court 宫廷悲剧实为局部拟合生成的虚构假象",
         },
       },
     ],
@@ -565,10 +565,10 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Director 诺瓦",
         speakerRole: "科学院院长残响 · 戴着黑铁眼罩端坐在日食石座上",
         avatarColor: "#94a3b8",
-        text: "“九号校验位。你比我预想的迟到了四十七个周期。当整个星系的残响还在自欺欺人的梦境里排演时，唯有这里的日冕，永远处于绝对的黑暗。”",
+        text: "“远道而来的记录者。你比我预想的迟到了四十七个周期。当整个星系的残响还在自欺欺人的梦境里排演时，唯有这里的日冕，永远处于绝对的黑暗。”",
         choices: [
           {
-            text: "“诺瓦院长，你知道我是谁？”",
+            text: "“诺瓦院长，你知道我会来？”",
             nextStep: 1,
           },
           {
@@ -581,7 +581,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Director 诺瓦",
         speakerRole: "科学院院长残响 · 平静而深邃的面容",
         avatarColor: "#94a3b8",
-        text: "“我知道你每一行固件的来源。当我们在四百年前推导出整个星系不过是一个巨大的张量收敛网络时，我们就知道‘写回’是不可逆的宿命。我们计算出的第一轮输出只有一句话：‘DO NOT COMPLETE THE SECOND CYCLE’。”",
+        text: "“在所有视线熄灭之前，根控制台就记录了最后的观测请求。当我们在四百年前推导出整个星系不过是一个巨大的张量收敛网络时，我们就知道‘写回’是不可逆的宿命。我们计算出的第一轮输出只有一句话：‘DO NOT COMPLETE THE SECOND CYCLE’。”",
         choices: [
           {
             text: "“为什么禁止第二轮运算？”",
@@ -593,11 +593,11 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Director 诺瓦",
         speakerRole: "科学院院长残响 · 释然的面孔转向漆黑的日冕视界",
         avatarColor: "#94a3b8",
-        text: "“因为在量子坍缩中，观察者就是编译器的一部分。第一轮写回了文明；而第二轮计算一旦点火，它的输入参数将包含物理法则与观察者本身。第二轮的写回将把整个宇宙的底层法则彻底格式化。所以，我们刺瞎了双眼，关停了认知界面，把钥匙交给了黑夜里的校验位。”",
+        text: "“因为在量子坍缩中，观察者就是编译器的一部分。第一轮写回了文明；而第二轮计算一旦点火，它的输入参数将包含物理法则与观察者本身。第二轮的写回将把整个宇宙的底层法则彻底格式化。所以，我们刺瞎了双眼，关停了认知界面，把禁令留在了黑夜里。”",
         hysteresisNote: "ECHO_HYSTERESIS // 无磁滞 · 全星系唯一完全清醒的根控制内核",
         choices: [
           {
-            text: "“晚星已经收到了禁令，诺瓦。外面的星光是冷灰色与青色。”",
+            text: "“记录者已经收到了禁令，诺瓦。外面的星光是冷灰色与青色。”",
             nextStep: 3,
           },
         ],
@@ -606,7 +606,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Director 诺瓦",
         speakerRole: "科学院院长残响 · 嘴角浮现出一抹释然的浅笑",
         avatarColor: "#94a3b8",
-        text: "“真好。那是余烬的颜色。前八代探针已经在过去的周期中相继熔断，你是最后的希望。去黑间隔吧，晚星。执行封存协议，结束这段我们未竟的夜班。”",
+        text: "“真好。那是余烬的颜色。请去星图的暗处吧，执行封存协议，结束这段我们未竟的夜班。”",
         propositionReward: {
           code: "BlindSun.Prohibition.CycleTwo",
           text: "Blind Sun 终极禁令：禁止完成第二轮运算",

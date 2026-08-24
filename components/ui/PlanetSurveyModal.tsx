@@ -99,7 +99,7 @@ export default function PlanetSurveyModal({
           </div>
           <div className="text-xs font-mono text-holo-cyan mt-1 flex items-center gap-1.5">
             <Cpu className="w-3.5 h-3.5" />
-            <span>{planet.true_compute_role}</span>
+            <span>{isDecoded ? planet.true_compute_role : "计算职能：[待确证] 需公证相关真相"}</span>
           </div>
         </div>
 
