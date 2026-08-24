@@ -36,6 +36,8 @@ interface ShipInteriorViewProps {
   completedHotspotIds: string[];
   onLoadSave: (data: SaveSlotData) => void;
   onNewGame: () => void;
+  elapsedSeconds?: number;
+  emberCycleSecondsLeft?: number;
 }
 
 export default function ShipInteriorView({
@@ -47,6 +49,8 @@ export default function ShipInteriorView({
   completedHotspotIds,
   onLoadSave,
   onNewGame,
+  elapsedSeconds = 0,
+  emberCycleSecondsLeft = 2382,
 }: ShipInteriorViewProps) {
   const [activeStation, setActiveStation] = useState<
     "nav" | "hearth" | "logs" | "cryo" | "archive"
@@ -101,6 +105,9 @@ export default function ShipInteriorView({
       believedTruths,
       completedHotspotIds,
       currentSector: "HELIX-7 SPUR",
+      elapsedSeconds,
+      playTimeMinutes: Math.floor(elapsedSeconds / 60),
+      emberCycleSecondsLeft,
     });
 
     refreshSlots();
@@ -127,7 +134,11 @@ export default function ShipInteriorView({
   );
 
   return (
-    <div className="relative w-full h-full flex flex-col justify-between p-6 md:p-8 z-30 pointer-events-auto overflow-y-auto">
+    <div
+      role="region"
+      aria-label="ISV Threshold 探针舰桥总控室"
+      className="relative w-full h-full flex flex-col justify-between p-6 md:p-8 z-30 pointer-events-auto overflow-y-auto"
+    >
       {/* Top Banner */}
       <div className="flex justify-between items-center">
         <div className="font-display font-bold text-base text-holo-bright">
@@ -365,7 +376,7 @@ export default function ShipInteriorView({
                               <div>真相: {data.believedTruths.length}/6 · 命题: {data.collectedPropositions.length}</div>
                             </div>
                           ) : (
-                            <div className="text-[10px] text-slate-600 italic">
+                            <div className="text-[10px] text-slate-400 italic">
                               [空存储晶格 · 空白]
                             </div>
                           )}

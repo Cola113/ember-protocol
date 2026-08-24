@@ -16,8 +16,8 @@ const config: Config = {
         "holo-cyan": "#38bdf8",
         "holo-amber": "#f59e0b",
         "holo-bright": "#e0f2fe",
-        "holo-muted": "#64748b",
-        "holo-lie": "#94a3b8",
+        "holo-muted": "#94a3b8",
+        "holo-lie": "#cbd5e1",
         "holo-red": "#f43f5e",
         "holo-green": "#10b981"
       },

@@ -14,6 +14,8 @@ export interface SaveSlotData {
   currentSector: string;
   memoryIntegrity: number;
   playTimeMinutes: number;
+  elapsedSeconds?: number;
+  emberCycleSecondsLeft?: number;
 }
 
 const STORAGE_KEY_PREFIX = "ember_protocol_save_";
@@ -79,10 +81,22 @@ export function validateAndNormalizeSave(
       ? data.currentSector.trim()
       : "HELIX-7";
 
+  const elapsedSeconds =
+    typeof data.elapsedSeconds === "number" && !isNaN(data.elapsedSeconds)
+      ? Math.max(0, data.elapsedSeconds)
+      : typeof data.playTimeMinutes === "number" && !isNaN(data.playTimeMinutes)
+      ? Math.max(0, data.playTimeMinutes * 60)
+      : 0;
+
   const playTimeMinutes =
     typeof data.playTimeMinutes === "number" && !isNaN(data.playTimeMinutes)
       ? Math.max(0, data.playTimeMinutes)
-      : 0;
+      : Math.floor(elapsedSeconds / 60);
+
+  const emberCycleSecondsLeft =
+    typeof data.emberCycleSecondsLeft === "number" && !isNaN(data.emberCycleSecondsLeft)
+      ? Math.max(0, data.emberCycleSecondsLeft)
+      : 2382;
 
   const memoryIntegrity =
     typeof data.memoryIntegrity === "number" && !isNaN(data.memoryIntegrity)
@@ -106,6 +120,8 @@ export function validateAndNormalizeSave(
     currentSector,
     memoryIntegrity,
     playTimeMinutes,
+    elapsedSeconds,
+    emberCycleSecondsLeft,
   };
 }
 
@@ -143,6 +159,8 @@ export interface SavePayload {
   completedHotspotIds: string[];
   currentSector?: string;
   playTimeMinutes?: number;
+  elapsedSeconds?: number;
+  emberCycleSecondsLeft?: number;
 }
 
 export function saveGame(
@@ -169,6 +187,23 @@ export function saveGame(
     payload.collectedPropositions.length
   );
 
+  const elapsedSeconds =
+    typeof payload.elapsedSeconds === "number" && !isNaN(payload.elapsedSeconds)
+      ? Math.max(0, payload.elapsedSeconds)
+      : typeof payload.playTimeMinutes === "number" && !isNaN(payload.playTimeMinutes)
+      ? Math.max(0, payload.playTimeMinutes * 60)
+      : 0;
+
+  const playTimeMinutes =
+    typeof payload.playTimeMinutes === "number" && !isNaN(payload.playTimeMinutes)
+      ? Math.max(0, payload.playTimeMinutes)
+      : Math.floor(elapsedSeconds / 60);
+
+  const emberCycleSecondsLeft =
+    typeof payload.emberCycleSecondsLeft === "number" && !isNaN(payload.emberCycleSecondsLeft)
+      ? Math.max(0, payload.emberCycleSecondsLeft)
+      : 2382;
+
   const slotData: SaveSlotData = {
     version: SAVE_SCHEMA_VERSION,
     id: slotId,
@@ -179,7 +214,9 @@ export function saveGame(
     completedHotspotIds: payload.completedHotspotIds,
     currentSector: payload.currentSector || "HELIX-7",
     memoryIntegrity,
-    playTimeMinutes: payload.playTimeMinutes || 0,
+    playTimeMinutes,
+    elapsedSeconds,
+    emberCycleSecondsLeft,
   };
 
   if (typeof window !== "undefined") {

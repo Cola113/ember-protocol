@@ -12,6 +12,8 @@ import IndexDrawer from "@/components/ui/IndexDrawer";
 import ShipInteriorView from "@/components/ui/ShipInteriorView";
 import LandingCinematic from "@/components/ui/LandingCinematic";
 import TruthUnlockOverlay from "@/components/ui/TruthUnlockOverlay";
+import EndingSequence, { EndingType } from "@/components/ui/EndingSequence";
+import OnboardingHints from "@/components/ui/OnboardingHints";
 import { SaveSlotData, saveGame } from "@/lib/save-system";
 
 // Dynamically import 3D R3F Galaxy Canvas with SSR disabled
@@ -25,9 +27,11 @@ const GalaxyScene = dynamic(() => import("@/components/galaxy/GalaxyScene"), {
   ),
 });
 
+const TOTAL_CYCLE_SECONDS = 2400; // 40 minutes cycle
+
 export default function HomePage() {
   const [currentView, setCurrentView] = useState<
-    "opening" | "galaxy" | "ship" | "index" | "survey" | "landing_cinematic" | "surface"
+    "opening" | "galaxy" | "ship" | "index" | "survey" | "landing_cinematic" | "surface" | "ending"
   >("opening");
 
   const [selectedPlanet, setSelectedPlanet] = useState<PlanetDef | null>(null);
@@ -38,6 +42,8 @@ export default function HomePage() {
   const [collectedPropositions, setCollectedPropositions] = useState<string[]>([]);
   const [believedTruths, setBelievedTruths] = useState<string[]>([]);
   const [completedHotspotIds, setCompletedHotspotIds] = useState<string[]>([]);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [emberCycleSecondsLeft, setEmberCycleSecondsLeft] = useState(2382);
 
   // Newly unlocked truth for cinematic overlay
   const [unlockedTruthOverlay, setUnlockedTruthOverlay] = useState<AnchorTruth | null>(null);
@@ -51,6 +57,29 @@ export default function HomePage() {
     [believedTruths]
   );
 
+  // Canonical gating: all 6 truths (T1-T5 + THidden) must be believed to enter resolution protocols
+  const canResolveEnding = useMemo(
+    () =>
+      CANON.anchorTruths.length > 0 &&
+      CANON.anchorTruths.every((t) => believedTruths.includes(t.id)),
+    [believedTruths]
+  );
+
+  // Overwrite threshold: Remaining countdown <= 25% (<= 600 seconds)
+  const canOverwrite = (emberCycleSecondsLeft / TOTAL_CYCLE_SECONDS) <= 0.25;
+
+  // Realtime game session timers (Freezes during opening and ending cutscenes)
+  useEffect(() => {
+    if (currentView === "opening" || currentView === "ending") return;
+
+    const interval = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+      setEmberCycleSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentView]);
+
   // Auto-save progress whenever propositions, truths or completed hotspots update
   useEffect(() => {
     if (collectedPropositions.length > 0 || believedTruths.length > 0) {
@@ -58,9 +87,12 @@ export default function HomePage() {
         collectedPropositions,
         believedTruths,
         completedHotspotIds,
+        elapsedSeconds,
+        playTimeMinutes: Math.floor(elapsedSeconds / 60),
+        emberCycleSecondsLeft,
       });
     }
-  }, [collectedPropositions, believedTruths, completedHotspotIds]);
+  }, [collectedPropositions, believedTruths, completedHotspotIds, elapsedSeconds, emberCycleSecondsLeft]);
 
   const handleCompleteHotspot = (hotspotId: string) => {
     if (!completedHotspotIds.includes(hotspotId)) {
@@ -68,13 +100,13 @@ export default function HomePage() {
     }
   };
 
-  // Explicit Progress-Only Recovery Contract:
-  // Restores canonical progress (propositions, truths, completed hotspots)
-  // Resets all transient view routing back to galactic overview
+  // Explicit Progress-Only Recovery Contract
   const handleLoadSave = (data: SaveSlotData) => {
     setCollectedPropositions(data.collectedPropositions || []);
     setBelievedTruths(data.believedTruths || []);
     setCompletedHotspotIds(data.completedHotspotIds || []);
+    setElapsedSeconds(data.elapsedSeconds || (data.playTimeMinutes ? data.playTimeMinutes * 60 : 0));
+    setEmberCycleSecondsLeft(data.emberCycleSecondsLeft !== undefined ? data.emberCycleSecondsLeft : 2382);
     setSelectedPlanet(null);
     setActiveSite(null);
     setUnlockedTruthOverlay(null);
@@ -85,19 +117,18 @@ export default function HomePage() {
     setCollectedPropositions([]);
     setBelievedTruths([]);
     setCompletedHotspotIds([]);
+    setElapsedSeconds(0);
+    setEmberCycleSecondsLeft(2382);
     setSelectedPlanet(null);
     setActiveSite(null);
+    setUnlockedTruthOverlay(null);
     setCurrentView("opening");
   };
 
-  // Keyboard shortcuts
+  // Keyboard navigation & Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Tab") {
-        e.preventDefault();
-        if (currentView === "opening" || currentView === "landing_cinematic") return;
-        setCurrentView((prev) => (prev === "index" ? "galaxy" : "index"));
-      }
+      // Allow Escape to dismiss survey or index modals
       if (e.key === "Escape") {
         if (currentView === "survey") {
           setSelectedPlanet(null);
@@ -106,9 +137,14 @@ export default function HomePage() {
           setCurrentView("galaxy");
         }
       }
+
+      // 'L' key toggles inference lines on galaxy map
       if (e.key === "l" || e.key === "L") {
         if (currentView === "galaxy") {
-          setShowInferenceLines((prev) => !prev);
+          const activeTag = document.activeElement?.tagName;
+          if (activeTag !== "INPUT" && activeTag !== "TEXTAREA") {
+            setShowInferenceLines((prev) => !prev);
+          }
         }
       }
     };
@@ -154,7 +190,11 @@ export default function HomePage() {
   };
 
   return (
-    <main className="relative w-screen h-screen overflow-hidden bg-void">
+    <main
+      role="main"
+      aria-label="余烬协议探索界面"
+      className="relative w-screen h-screen overflow-hidden bg-void"
+    >
       {/* Persistent 3D Galaxy Canvas */}
       <div
         className={`absolute inset-0 transition-all duration-700 ${
@@ -172,17 +212,25 @@ export default function HomePage() {
       </div>
 
       {/* Top Astral Noir HUD */}
-      {currentView !== "opening" && currentView !== "landing_cinematic" && (
-        <HudHeader
-          currentView={currentView}
-          onNavigate={(view) => {
-            if (view === "galaxy") setSelectedPlanet(null);
-            setCurrentView(view);
-          }}
-          showInferenceLines={showInferenceLines}
-          onToggleInference={() => setShowInferenceLines((prev) => !prev)}
-        />
-      )}
+      {currentView !== "opening" &&
+        currentView !== "landing_cinematic" &&
+        currentView !== "ending" && (
+          <HudHeader
+            currentView={currentView}
+            onNavigate={(view) => {
+              if (view === "galaxy") setSelectedPlanet(null);
+              if (view === "ending" && !canResolveEnding) return;
+              setCurrentView(view);
+            }}
+            showInferenceLines={showInferenceLines}
+            onToggleInference={() => setShowInferenceLines((prev) => !prev)}
+            canResolveEnding={canResolveEnding}
+            emberCycleSecondsLeft={emberCycleSecondsLeft}
+          />
+        )}
+
+      {/* Onboarding Guidance Tooltip Bubbles */}
+      <OnboardingHints currentView={currentView} />
 
       {/* Main Full-Screen View Transitions */}
       <AnimatePresence mode="wait">
@@ -261,6 +309,33 @@ export default function HomePage() {
               completedHotspotIds={completedHotspotIds}
               onLoadSave={handleLoadSave}
               onNewGame={handleNewGame}
+              elapsedSeconds={elapsedSeconds}
+              emberCycleSecondsLeft={emberCycleSecondsLeft}
+            />
+          </motion.div>
+        )}
+
+        {/* View 8: Ending Sequence (P4 Three Resolution Protocols) */}
+        {currentView === "ending" && canResolveEnding && (
+          <motion.div
+            key="ending-view"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="absolute inset-0 z-50"
+          >
+            <EndingSequence
+              onReturnTitle={() => {
+                setSelectedPlanet(null);
+                setActiveSite(null);
+                setCurrentView("opening");
+              }}
+              onNewGame={handleNewGame}
+              collectedPropositions={collectedPropositions}
+              believedTruths={believedTruths}
+              elapsedSeconds={elapsedSeconds}
+              canOverwrite={canOverwrite}
             />
           </motion.div>
         )}
@@ -299,10 +374,16 @@ export default function HomePage() {
         {unlockedTruthOverlay && (
           <TruthUnlockOverlay
             truth={unlockedTruthOverlay}
+            canResolveEnding={canResolveEnding}
             onProceed={() => {
+              const shouldGoToEnding = unlockedTruthOverlay.id === "THidden" && canResolveEnding;
               setUnlockedTruthOverlay(null);
-              setCurrentView("galaxy");
-              setSelectedPlanet(null);
+              if (shouldGoToEnding) {
+                setCurrentView("ending");
+              } else {
+                setCurrentView("galaxy");
+                setSelectedPlanet(null);
+              }
             }}
           />
         )}
@@ -310,4 +391,3 @@ export default function HomePage() {
     </main>
   );
 }
-

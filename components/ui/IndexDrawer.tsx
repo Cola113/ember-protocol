@@ -52,6 +52,45 @@ export default function IndexDrawer({
   const [draggedProp, setDraggedProp] = useState<string | null>(null);
   const [pinnedFlashProp, setPinnedFlashProp] = useState<string | null>(null);
 
+  const containerRef = React.useRef<HTMLDivElement>(null);
+  const previousActiveElement = React.useRef<HTMLElement | null>(null);
+
+  // Store active element on mount and restore on unmount
+  React.useEffect(() => {
+    previousActiveElement.current = document.activeElement as HTMLElement | null;
+    containerRef.current?.focus();
+    return () => {
+      previousActiveElement.current?.focus();
+    };
+  }, []);
+
+  // Trap focus within the dialog modal
+  React.useEffect(() => {
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !containerRef.current) return;
+      const focusableElements = containerRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusableElements.length === 0) return;
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement || document.activeElement === containerRef.current) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleTab);
+    return () => window.removeEventListener("keydown", handleTab);
+  }, []);
+
   // Derive truth state machine: unknown | encountered | suspected | believed
   const getTruthStatus = (truth: AnchorTruth): "unknown" | "encountered" | "suspected" | "believed" => {
     if (believedTruths.includes(truth.id)) return "believed";
@@ -185,11 +224,16 @@ export default function IndexDrawer({
 
   return (
     <motion.div
+      ref={containerRef}
+      tabIndex={-1}
+      role="dialog"
+      aria-modal="true"
+      aria-label="公证索引台与演绎推理图谱"
       initial={{ opacity: 0, scale: 0.98, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.98, y: 10 }}
       transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed inset-0 z-50 bg-void/95 backdrop-blur-xl flex flex-col p-5 md:p-8 pointer-events-auto"
+      className="fixed inset-0 z-50 bg-void/95 backdrop-blur-xl flex flex-col p-5 md:p-8 pointer-events-auto outline-none"
     >
       {/* Top Bar */}
       <div className="flex justify-between items-center border-b border-holo-cyan/20 pb-4 mb-5">
@@ -254,7 +298,7 @@ export default function IndexDrawer({
               {collectedPropositions.length === 0 ? (
                 <div className="text-xs font-mono text-holo-muted p-6 text-center border border-dashed border-holo-cyan/15 rounded-sm my-auto">
                   <p className="mb-2">尚未从星球探索中提取命题。</p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-slate-400">
                     前往 Helix-7 冷启台地与偶极天线阵列调查以归档线索。
                   </p>
                 </div>
@@ -379,7 +423,7 @@ export default function IndexDrawer({
                             className={`text-[9px] px-1.5 py-0.5 rounded font-mono flex items-center gap-1 ${
                               has
                                 ? "bg-holo-green/15 text-holo-green border border-holo-green/30"
-                                : "bg-surface-dark text-slate-500 border border-slate-800"
+                                : "bg-surface-dark text-slate-400 border border-slate-800"
                             }`}
                           >
                             {has ? <Check className="w-2.5 h-2.5" /> : "○"}
@@ -557,7 +601,7 @@ export default function IndexDrawer({
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="font-bold text-xs text-holo-bright flex items-center gap-1.5">
-                        <Cpu className={`w-3.5 h-3.5 ${isBelieved ? "text-holo-amber" : isSuspected ? "text-holo-cyan" : "text-slate-500"}`} />
+                        <Cpu className={`w-3.5 h-3.5 ${isBelieved ? "text-holo-amber" : isSuspected ? "text-holo-cyan" : "text-slate-400"}`} />
                         <span>{t.id}. {t.title}</span>
                       </div>
                       <span className={`text-[9px] px-2 py-0.5 rounded font-mono uppercase font-bold ${
@@ -565,7 +609,7 @@ export default function IndexDrawer({
                           ? "bg-holo-green/20 text-holo-green border border-holo-green/40"
                           : isSuspected
                           ? "bg-holo-cyan/20 text-holo-cyan border border-holo-cyan/40"
-                          : "bg-surface text-slate-500 border border-slate-800"
+                          : "bg-surface text-slate-400 border border-slate-800"
                       }`}>
                         {status}
                       </span>
