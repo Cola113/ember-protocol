@@ -11,6 +11,7 @@ interface PlanetSurveyModalProps {
   onLand: (planet: PlanetDef, site: LandingSite) => void;
   collectedPropositions: string[];
   completedHotspotIds?: string[];
+  isDecoded?: boolean;
 }
 
 export default function PlanetSurveyModal({
@@ -19,6 +20,7 @@ export default function PlanetSurveyModal({
   onLand,
   collectedPropositions,
   completedHotspotIds = [],
+  isDecoded = false,
 }: PlanetSurveyModalProps) {
   const [selectedSite, setSelectedSite] = useState<LandingSite>(
     planet.landing_sites[0] || { id: "default", name: "Orbital Beacon", hotspots: [] }
@@ -79,17 +81,28 @@ export default function PlanetSurveyModal({
           <div className="flex items-center gap-2">
             <span
               className="w-3 h-3 rounded-full animate-pulse"
-              style={{ backgroundColor: planet.color, boxShadow: `0 0 8px ${planet.color}` }}
+              style={{ backgroundColor: isDecoded ? "#38bdf8" : planet.color, boxShadow: `0 0 8px ${isDecoded ? "#38bdf8" : planet.color}` }}
             />
             <h2 id="planet-survey-title" className="font-display font-bold text-base sm:text-lg text-holo-bright">
               {planet.name}
             </h2>
+            {isDecoded ? (
+              <span className="text-[10px] px-1.5 py-0.5 bg-holo-cyan/20 border border-holo-cyan/50 text-holo-cyan font-mono rounded-sm flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3" />
+                <span>已破译</span>
+              </span>
+            ) : (
+              <span className="text-[10px] px-1.5 py-0.5 bg-holo-amber/15 border border-holo-amber/40 text-holo-amber font-mono rounded-sm">
+                待破译
+              </span>
+            )}
           </div>
           <div className="text-xs font-mono text-holo-cyan mt-1 flex items-center gap-1.5">
             <Cpu className="w-3.5 h-3.5" />
             <span>{planet.true_compute_role}</span>
           </div>
         </div>
+
         <button
           onClick={onClose}
           aria-label="关闭星球遥测检视窗口"

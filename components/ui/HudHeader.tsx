@@ -10,6 +10,8 @@ interface HudHeaderProps {
   onToggleInference: () => void;
   canResolveEnding?: boolean;
   emberCycleSecondsLeft?: number;
+  believedTruthsCount?: number;
+  totalTruthsCount?: number;
 }
 
 export default function HudHeader({
@@ -19,6 +21,8 @@ export default function HudHeader({
   onToggleInference,
   canResolveEnding = false,
   emberCycleSecondsLeft = 2382,
+  believedTruthsCount = 0,
+  totalTruthsCount = 6,
 }: HudHeaderProps) {
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60).toString().padStart(2, "0");
@@ -40,8 +44,9 @@ export default function HudHeader({
           <span className="w-1.5 h-1.5 rounded-full bg-holo-cyan holo-pulse" />
           <span>ISV THRESHOLD // RECORDER-9 [VESPER]</span>
         </div>
-        <div className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface border border-holo-amber/30 rounded-sm text-xs font-mono text-holo-amber">
-          <span>PARITY BIT: 0x00FF</span>
+        <div className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 bg-surface border border-holo-cyan/30 rounded-sm text-xs font-mono text-holo-cyan shadow-sm">
+          <span className={`w-1.5 h-1.5 rounded-full ${believedTruthsCount > 0 ? "bg-holo-cyan holo-pulse" : "bg-holo-amber"}`} />
+          <span>TRUTHS: {believedTruthsCount}/{totalTruthsCount}</span>
         </div>
       </div>
 
