@@ -82,6 +82,7 @@ export const CANON = {
  */
 export interface CanonReadApi {
   readonly version: string;
+  listAnchorTruths(): readonly AnchorTruth[];
   getPlanet(planetId: string): Readonly<PlanetDef> | undefined;
   getLandingSite(planetId: string, landingSiteId: string): Readonly<LandingSite> | undefined;
   getAnchorTruth(truthId: string): Readonly<AnchorTruth> | undefined;
@@ -93,6 +94,7 @@ export interface CanonReadApi {
 
 export const CANON_READ: CanonReadApi = Object.freeze({
   version: CANON.version,
+  listAnchorTruths: () => CANON.anchorTruths.slice(),
   getPlanet: (planetId: string) => CANON.planets.find((planet) => planet.id === planetId),
   getLandingSite: (planetId: string, landingSiteId: string) =>
     CANON.planets.find((planet) => planet.id === planetId)?.landing_sites.find((site) => site.id === landingSiteId),
