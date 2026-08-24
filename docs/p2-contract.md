@@ -71,9 +71,29 @@ Scribe 允许生成地方风物、今日事件、环境描述和浅层 NPC 卡�
 
 **硬门先于 LLM：**服务器先从只读 Canon 取 `required_propositions`。任一命题缺失，立即返回 `status: "rejected"`、统一 `error` 信封（`canon_violation`、`message`、`retryable:false`、`degraded:false`）、`verdict: "failed"` 和 `missing_required_propositions`，不得调用 LLM，也不得标记 believed。只有全部命题已钉选才进入评分。没有模型 key 时唯一合同路径是 `model_unavailable` 降级 `partial`，不推进 believed；T5 实现期可以另加关键词兜底，但它是可选实现，必须不弱于该 partial 规则，不得单独以一个关键词推进 believed。
 
+#### T5 状态迁移与评分阈值
+
+Curator 使用服务端 `playerState` 作为唯一状态源；客户端提交的命题只会先经过登记校验，再并入该槽的已收集命题集合：
+
+| 当前状态 | 迁移条件 | 下一状态 |
+| --- | --- | --- |
+| `unknown` | 至少一个该真相的 `required_propositions` 已收集 | `encountered` |
+| `encountered` | 全部 `required_propositions` 已收集（硬门通过） | `suspected` |
+| `suspected` | Curator 评分 `verdict: passed`，且 `coverage >= 0.75`、`correctness >= 0.75`、`coherence >= 0.60` | `believed` |
+| `suspected` | `partial` 或 `failed` | 保持 `suspected` |
+| `believed` | 任意后续请求 | 保持 `believed`，不可回退 |
+
+硬门在迁移和模型调用之前执行；缺少必要命题直接返回 `canon_violation` + `failed`，不调用模型。模型返回 `passed` 但未达到三项阈值时，服务器将其降为 `partial`。无模型或模型输出不合法时统一降级为 `partial`，不得推进 `believed`。
+
+#### Salience 与 NPC 语境接口
+
+`lib/curator/salience.ts` 暴露 `salienceForTruth(truthId, status)`、`salienceForPlayerState(state)`（别名 `getSalience`）和 `getTruthSalience`。它们返回 `score: 0..1`、线索选择用的 `weight`、当前状态及 `connected` 标记；`encountered`/`suspected` 会提高浮现权重，`believed` 会降低重复提示。该模块只读 Canon 和 playerState，不修改真相内容。
+
+`lib/curator/context.ts` 的 `buildBelievedTruthInjection()` 将服务端已 believed 真相转换为 NPC 后续对话语境；T4 Voices 的 prompt 已接入该查询，已知真相使用“你已知道”的承接语气。
+
 ## Canon 只读面
 
-`lib/canon.ts` 导出 `CANON_READ: CanonReadApi`、`getCanonContext`、`requireConstitution` 和 `violatesForbiddenClaims`。Voices、Scribe、Curator 只能使用以下查询：星球/降落点、锚定真相、锚定 NPC、已发布宪章、已登记 proposition/insight。`getCanonContext` 是 prompt-safe 面，不包含 `true_compute_role`、truth IDs、`true_facts` 或 `forbidden_claims`；禁言由服务器输出校验函数执行。接口没有写入方法，三线不能修改 `CANON`、truth 状态或结局。
+`lib/canon.ts` 导出 `CANON_READ: CanonReadApi`、`getCanonContext`、`requireConstitution` 和 `violatesForbiddenClaims`。Voices、Scribe、Curator 只能使用以下查询：星球/降落点、锚定真相（含 `listAnchorTruths()`）、锚定 NPC、已发布宪章、已登记 proposition/insight。`getCanonContext` 是 prompt-safe 面，不包含 `true_compute_role`、truth IDs、`true_facts` 或 `forbidden_claims`；禁言由服务器输出校验函数执行。接口没有写入方法，三线不能修改 `CANON`、truth 状态或结局。
 
 宪章唯一挂载路径是 `docs/canon-ledger.json` 顶层 `constitutions[planet_id]`，当前为空对象，T1 只能在此发布。`true_facts` 是三线可引用且不可否定的事实；`believed_facts` 只描述 NPC 信念，可含假；`forbidden_claims` 和 `archive_fill_policy` 是 Scribe/Voices 的拒绝边界；`npc_roster`、`insight_gates` 供 Voices；Curator 只读取 truth 的命题和评分事实，不得用宪章改写 truth。宪章缺失时 T3/T4 必须返回 `canon_violation` 并拒绝生成/对话，不得裸生成。
 

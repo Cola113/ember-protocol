@@ -1,5 +1,6 @@
 import type { VoicesCanonContext } from "@/lib/schemas/voices";
 import type { NpcMemory } from "@/lib/storage/stores";
+import { buildBelievedTruthInjection } from "@/lib/curator/context";
 import { promptSafePlanetFace } from "./context";
 import type { VoicesSubject } from "./subject";
 
@@ -198,6 +199,10 @@ ${guide.defenseMechanism}`,
 - 已对记录员解锁的态度门：${canonContext.insight_gates.join(", ") || "（无）"}
 - 你被授权可交付的洞察 ID（offer_insight_id）：${allowedInsights.join(", ") || "（无，只能为 null）"}
 - 记录员与你的关系累计值：${relationship}（上次心情：${lastMood}）`,
+
+    `【已确证真相语境注入】
+${buildBelievedTruthInjection(canonContext.truth_ids)}
+若上方列出真相，使用“你已知道”的语气承接后续对话；不要把已确证内容重新包装成尚未发现的线索。`,
 
     insightGateInstructions(subject, canonContext.insight_gates),
 
