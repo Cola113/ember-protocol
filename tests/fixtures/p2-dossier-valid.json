@@ -1,0 +1,25 @@
+{
+  "planet_id": "helix-7",
+  "landing_site_id": "site-helix-coldboot",
+  "title": "冷启台地地方志",
+  "summary": "高频电磁脉冲持续向外空辐射，地表的校准塔和交接终端仍保持完整。",
+  "today_event": {
+    "title": "第 4,812 次握手窗口",
+    "description": "天线阵列将在本地夜晚短暂转向窑的轨道方向。"
+  },
+  "environment": {
+    "description": "低重力台地覆盖着灰蓝色尘层，远处的天线像冻结的芦苇。",
+    "hazards": ["低重力边缘", "微电离风暴"],
+    "phenomena": ["二次曝光暗影辉光", "规律性载波脉冲"]
+  },
+  "local_npcs": [
+    {
+      "npc_id": "npc-tarkis",
+      "name": "Surveyor-01 塔基",
+      "role": "初级测绘员残响",
+      "disposition": "坚持按交接清单等待舰队",
+      "tells": ["反复核对时间戳", "拒绝谈论四百年"]
+    }
+  ],
+  "archive_fill_notes": "仅为地方风物和今日事件；不生成 T1 主线结论。"
+}

@@ -1,0 +1,37 @@
+{
+  "passed": {
+    "verdict": "passed",
+    "coverage": 0.96,
+    "correctness": 0.93,
+    "coherence": 0.91,
+    "feedback": "你把信标识别为引导扇区的握手载波，并解释了它为何持续广播。"
+  },
+  "partial": {
+    "verdict": "partial",
+    "coverage": 0.58,
+    "correctness": 0.55,
+    "coherence": 0.72,
+    "feedback": "已连接广播现象，但还没有说明它不是求救信号。"
+  },
+  "failed": {
+    "verdict": "failed",
+    "coverage": 0.12,
+    "correctness": 0.08,
+    "coherence": 0.22,
+    "feedback": "这个解释与已登记的信标事实冲突，暂不推进真相状态。"
+  },
+  "hard_gate_rejected": {
+    "contract_version": "v1",
+    "status": "rejected",
+    "truth_id": "T1",
+    "error": "canon_violation",
+    "missing_required_propositions": ["Helix.Signal.Unassigned"],
+    "result": {
+      "verdict": "failed",
+      "coverage": 0,
+      "correctness": 0,
+      "coherence": 0,
+      "feedback": "硬门拒绝：缺少必要命题 Helix.Signal.Unassigned，不得进入 LLM 评分，也不得标记为 believed。"
+    }
+  }
+}

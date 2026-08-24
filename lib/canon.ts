@@ -1,4 +1,5 @@
 import canonData from "@/docs/canon-ledger.json";
+import type { Constitution } from "@/lib/schemas/constitution";
 
 export interface AnchorTruth {
   id: string;
@@ -47,14 +48,73 @@ export interface PlanetDef {
   anchor_npc: AnchorNPC | null;
 }
 
+export interface CanonLedgerData {
+  version: string;
+  spur_name: string;
+  vessel: string;
+  recorder: {
+    model: string;
+    codename: string;
+    role: string;
+    initial_memory_integrity: number;
+    residual_directive: string;
+  };
+  anchor_truths: AnchorTruth[];
+  planets: PlanetDef[];
+  /** T1-owned, keyed by planet_id; absent until a planet constitution is frozen. */
+  constitutions?: Record<string, Constitution>;
+}
+
 export const CANON = {
   version: canonData.version,
   spurName: canonData.spur_name,
   vessel: canonData.vessel,
   recorder: canonData.recorder,
   anchorTruths: canonData.anchor_truths as AnchorTruth[],
-  planets: canonData.planets as PlanetDef[]
+  planets: canonData.planets as PlanetDef[],
+  constitutions: (canonData as CanonLedgerData).constitutions ?? {}
 };
+
+/**
+ * Read-only query surface for Voices, Scribe and Curator.
+ * There are deliberately no write/update methods: only T1 may publish canon.
+ */
+export interface CanonReadApi {
+  readonly version: string;
+  getPlanet(planetId: string): Readonly<PlanetDef> | undefined;
+  getLandingSite(planetId: string, landingSiteId: string): Readonly<LandingSite> | undefined;
+  getAnchorTruth(truthId: string): Readonly<AnchorTruth> | undefined;
+  getNpc(npcId: string): Readonly<AnchorNPC> | undefined;
+  getConstitution(planetId: string): Readonly<Constitution> | undefined;
+  isRegisteredProposition(propositionId: string): boolean;
+  isRegisteredInsight(insightId: string): boolean;
+}
+
+export const CANON_READ: CanonReadApi = Object.freeze({
+  version: CANON.version,
+  getPlanet: (planetId: string) => CANON.planets.find((planet) => planet.id === planetId),
+  getLandingSite: (planetId: string, landingSiteId: string) =>
+    CANON.planets.find((planet) => planet.id === planetId)?.landing_sites.find((site) => site.id === landingSiteId),
+  getAnchorTruth: (truthId: string) => CANON.anchorTruths.find((truth) => truth.id === truthId),
+  getNpc: (npcId: string) => CANON.planets.find((planet) => planet.anchor_npc?.id === npcId)?.anchor_npc ?? undefined,
+  getConstitution: (planetId: string) => CANON.constitutions[planetId],
+  isRegisteredProposition: (propositionId: string) => CANON.planets.some((planet) =>
+    planet.landing_sites.some((site) => site.hotspots.some((hotspot) => hotspot.proposition === propositionId))
+  ),
+  isRegisteredInsight: (insightId: string) => CANON.anchorTruths.some((truth) => truth.unlocked_insights.includes(insightId))
+});
+
+export function getCanonContext(planetId: string) {
+  const planet = CANON_READ.getPlanet(planetId);
+  const constitution = CANON_READ.getConstitution(planetId);
+  return Object.freeze({
+    planet_id: planetId,
+    display_name: planet?.name,
+    true_compute_role: planet?.true_compute_role,
+    constitution,
+    anchor_truth_ids: CANON.anchorTruths.filter((truth) => truth.primary_planet === planetId).map((truth) => truth.id)
+  });
+}
 
 /**
  * Calculates which planets are in a "Decoded" (已破译) state based on believed truth IDs.
