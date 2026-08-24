@@ -2,9 +2,22 @@ import type {
   LanguageModelV1,
   LanguageModelV1CallOptions,
   LanguageModelV1FinishReason,
-  LanguageModelV1Prompt,
+  LanguageModelV1FunctionToolCall,
   LanguageModelV1StreamPart
 } from "@ai-sdk/provider";
+import {
+  parseGeminiToolCalls,
+  parseOpenAIToolCalls,
+  promptSystemText,
+  regularToolChoice,
+  regularTools,
+  toGeminiContents,
+  toGeminiToolConfig,
+  toGeminiToolDeclarations,
+  toOpenAIMessages,
+  toOpenAIToolChoice,
+  toOpenAITools
+} from "@/lib/ai/convert-prompt";
 
 const DEFAULT_TIMEOUT_MS = 20_000;
 
@@ -16,35 +29,6 @@ export interface HttpLanguageModelOptions {
   timeoutMs?: number;
 }
 
-function promptToTextMessages(
-  prompt: LanguageModelV1Prompt
-): { role: "system" | "user" | "assistant"; content: string }[] {
-  const messages: { role: "system" | "user" | "assistant"; content: string }[] = [];
-  for (const message of prompt) {
-    if (message.role === "system") {
-      messages.push({ role: "system", content: message.content });
-      continue;
-    }
-    if (message.role === "user") {
-      const content = message.content
-        .map((part) => (part.type === "text" ? part.text : ""))
-        .join("");
-      messages.push({ role: "user", content: content || " " });
-      continue;
-    }
-    if (message.role === "assistant") {
-      const content = message.content
-        .map((part) => (part.type === "text" ? part.text : ""))
-        .join("");
-      if (content) messages.push({ role: "assistant", content });
-    }
-  }
-  if (!messages.some((message) => message.role === "user")) {
-    messages.push({ role: "user", content: "Follow the instructions and reply." });
-  }
-  return messages;
-}
-
 function wantsJson(options: LanguageModelV1CallOptions): boolean {
   return (
     options.mode?.type === "object-json" ||
@@ -53,7 +37,11 @@ function wantsJson(options: LanguageModelV1CallOptions): boolean {
   );
 }
 
-function mapFinishReason(reason: string | undefined): LanguageModelV1FinishReason {
+function mapFinishReason(
+  reason: string | undefined,
+  toolCalls: LanguageModelV1FunctionToolCall[]
+): LanguageModelV1FinishReason {
+  if (toolCalls.length > 0) return "tool-calls";
   switch ((reason ?? "").toUpperCase()) {
     case "STOP":
       return "stop";
@@ -63,13 +51,17 @@ function mapFinishReason(reason: string | undefined): LanguageModelV1FinishReaso
     case "SAFETY":
     case "CONTENT_FILTER":
       return "content-filter";
+    case "TOOL_CALLS":
+    case "FUNCTION_CALL":
+      return "tool-calls";
     default:
       return "stop";
   }
 }
 
-function textStreamFromGenerate(
+function streamFromGenerate(
   text: string | undefined,
+  toolCalls: LanguageModelV1FunctionToolCall[] | undefined,
   finishReason: LanguageModelV1FinishReason,
   usage: { promptTokens: number; completionTokens: number }
 ): ReadableStream<LanguageModelV1StreamPart> {
@@ -77,6 +69,9 @@ function textStreamFromGenerate(
     start(controller) {
       if (text) {
         controller.enqueue({ type: "text-delta", textDelta: text });
+      }
+      for (const call of toolCalls ?? []) {
+        controller.enqueue({ type: "tool-call", ...call });
       }
       controller.enqueue({ type: "finish", finishReason, usage });
       controller.close();
@@ -116,8 +111,8 @@ export function extractHttpErrorMessage(status: number, body: unknown): string {
 }
 
 /**
- * Gemini generateContent adapter. T2 skeleton: doStream replays doGenerate as one delta.
- * Auth goes in `x-goog-api-key` so the URL never contains the key.
+ * Gemini generateContent adapter.
+ * T2: doStream still replays doGenerate (not token SSE). T4 adds native function calls.
  */
 export function createGoogleLanguageModel(options: HttpLanguageModelOptions): LanguageModelV1 {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -133,26 +128,25 @@ export function createGoogleLanguageModel(options: HttpLanguageModelOptions): La
     defaultObjectGenerationMode: "json",
     supportsStructuredOutputs: false,
     async doGenerate(call) {
-      const messages = promptToTextMessages(call.prompt);
-      const system = messages
-        .filter((message) => message.role === "system")
-        .map((message) => message.content)
-        .join("\n");
-      const contents = messages
-        .filter((message) => message.role !== "system")
-        .map((message) => ({
-          role: message.role === "assistant" ? "model" : "user",
-          parts: [{ text: message.content }]
-        }));
-
+      const tools = regularTools(call);
+      const jsonMode = wantsJson(call) && tools.length === 0;
       const generationConfig: Record<string, unknown> = {
         temperature: call.temperature,
         maxOutputTokens: call.maxTokens
       };
-      if (wantsJson(call)) generationConfig.responseMimeType = "application/json";
+      if (jsonMode) generationConfig.responseMimeType = "application/json";
 
-      const payload: Record<string, unknown> = { contents, generationConfig };
+      const payload: Record<string, unknown> = {
+        contents: toGeminiContents(call.prompt),
+        generationConfig
+      };
+      const system = promptSystemText(call.prompt);
       if (system) payload.systemInstruction = { parts: [{ text: system }] };
+      if (tools.length > 0) {
+        payload.tools = [toGeminiToolDeclarations(tools)];
+        const toolConfig = toGeminiToolConfig(regularToolChoice(call));
+        if (toolConfig) payload.toolConfig = toolConfig;
+      }
 
       const { status, body } = await readHttpJson(
         endpoint,
@@ -173,19 +167,23 @@ export function createGoogleLanguageModel(options: HttpLanguageModelOptions): La
       }
 
       const envelope = body as {
-        candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
+        candidates?: {
+          content?: { parts?: Array<{ text?: string; functionCall?: { name?: string; args?: unknown } }> };
+          finishReason?: string;
+        }[];
         usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
       };
       const candidate = envelope?.candidates?.[0];
-      const text = candidate?.content?.parts?.map((part) => part.text ?? "").join("") ?? "";
+      const parsed = parseGeminiToolCalls(candidate?.content?.parts);
       const usage = {
         promptTokens: envelope?.usageMetadata?.promptTokenCount ?? 0,
         completionTokens: envelope?.usageMetadata?.candidatesTokenCount ?? 0
       };
 
       return {
-        text,
-        finishReason: mapFinishReason(candidate?.finishReason),
+        text: parsed.text,
+        toolCalls: parsed.toolCalls.length > 0 ? parsed.toolCalls : undefined,
+        finishReason: mapFinishReason(candidate?.finishReason, parsed.toolCalls),
         usage,
         rawCall: { rawPrompt: payload, rawSettings: { provider: options.provider, model: options.modelId } }
       };
@@ -193,7 +191,7 @@ export function createGoogleLanguageModel(options: HttpLanguageModelOptions): La
     async doStream(call) {
       const generated = await model.doGenerate(call);
       return {
-        stream: textStreamFromGenerate(generated.text, generated.finishReason, generated.usage),
+        stream: streamFromGenerate(generated.text, generated.toolCalls, generated.finishReason, generated.usage),
         rawCall: generated.rawCall
       };
     }
@@ -203,7 +201,8 @@ export function createGoogleLanguageModel(options: HttpLanguageModelOptions): La
 }
 
 /**
- * OpenAI-compatible Chat Completions (OpenAI + xAI). Streaming is replayed as one delta.
+ * OpenAI-compatible Chat Completions (OpenAI + xAI).
+ * T2: doStream still replays doGenerate. T4 adds tools / tool_calls.
  */
 export function createOpenAICompatibleLanguageModel(options: HttpLanguageModelOptions): LanguageModelV1 {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -216,16 +215,22 @@ export function createOpenAICompatibleLanguageModel(options: HttpLanguageModelOp
     defaultObjectGenerationMode: "json",
     supportsStructuredOutputs: false,
     async doGenerate(call) {
-      const messages = promptToTextMessages(call.prompt);
+      const tools = regularTools(call);
+      const jsonMode = wantsJson(call) && tools.length === 0;
       const payload: Record<string, unknown> = {
         model: options.modelId,
-        messages,
+        messages: toOpenAIMessages(call.prompt),
         temperature: call.temperature,
         max_tokens: call.maxTokens,
         stream: false
       };
-      if (wantsJson(call)) {
+      if (jsonMode) {
         payload.response_format = { type: "json_object" };
+      }
+      if (tools.length > 0) {
+        payload.tools = toOpenAITools(tools);
+        const toolChoice = toOpenAIToolChoice(regularToolChoice(call));
+        if (toolChoice) payload.tool_choice = toolChoice;
       }
 
       const { status, body } = await readHttpJson(
@@ -247,19 +252,26 @@ export function createOpenAICompatibleLanguageModel(options: HttpLanguageModelOp
       }
 
       const envelope = body as {
-        choices?: { message?: { content?: string | null }; finish_reason?: string }[];
+        choices?: {
+          message?: {
+            content?: string | null;
+            tool_calls?: Array<{ id?: string; function?: { name?: string; arguments?: string } }>;
+          };
+          finish_reason?: string;
+        }[];
         usage?: { prompt_tokens?: number; completion_tokens?: number };
       };
       const choice = envelope?.choices?.[0];
-      const text = choice?.message?.content ?? "";
+      const parsed = parseOpenAIToolCalls(choice?.message);
       const usage = {
         promptTokens: envelope?.usage?.prompt_tokens ?? 0,
         completionTokens: envelope?.usage?.completion_tokens ?? 0
       };
 
       return {
-        text,
-        finishReason: mapFinishReason(choice?.finish_reason),
+        text: parsed.text,
+        toolCalls: parsed.toolCalls.length > 0 ? parsed.toolCalls : undefined,
+        finishReason: mapFinishReason(choice?.finish_reason, parsed.toolCalls),
         usage,
         rawCall: { rawPrompt: payload, rawSettings: { provider: options.provider, model: options.modelId } }
       };
@@ -267,7 +279,7 @@ export function createOpenAICompatibleLanguageModel(options: HttpLanguageModelOp
     async doStream(call) {
       const generated = await model.doGenerate(call);
       return {
-        stream: textStreamFromGenerate(generated.text, generated.finishReason, generated.usage),
+        stream: streamFromGenerate(generated.text, generated.toolCalls, generated.finishReason, generated.usage),
         rawCall: generated.rawCall
       };
     }
