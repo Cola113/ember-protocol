@@ -59,16 +59,16 @@ export default function OpeningTerminal({ onComplete }: OpeningTerminalProps) {
       </div>
 
       {step === "terminal" ? (
-        <div className="w-full max-w-3xl holo-panel p-8 md:p-10 rounded-sm relative z-10">
-          <div className="flex justify-between items-center border-b border-holo-cyan/15 pb-3 mb-6 text-xs text-holo-muted font-mono tracking-wider">
+        <div className="w-full max-w-3xl holo-panel p-4 sm:p-8 md:p-10 rounded-sm relative z-10">
+          <div className="flex justify-between items-center border-b border-holo-cyan/15 pb-3 mb-4 sm:mb-6 text-xs text-holo-muted font-mono tracking-wider">
             <span className="flex items-center gap-2">
-              <Terminal className="w-3.5 h-3.5 text-holo-cyan" />
-              ARCHIVAL BOOT SEQUENCE // RECORDER-9
+              <Terminal className="w-3.5 h-3.5 text-holo-cyan shrink-0" />
+              <span className="truncate">ARCHIVAL BOOT // RECORDER-9</span>
             </span>
-            <span className="text-holo-cyan">SYS_CLK.0x4A12</span>
+            <span className="text-holo-cyan shrink-0">SYS_CLK.0x4A12</span>
           </div>
 
-          <div className="min-h-[180px] font-mono text-sm leading-relaxed space-y-2">
+          <div className="min-h-[160px] sm:min-h-[180px] font-mono text-xs sm:text-sm leading-relaxed space-y-2">
             {logLines.slice(0, lineIdx).map((l, i) => (
               <div
                 key={i}
@@ -94,7 +94,7 @@ export default function OpeningTerminal({ onComplete }: OpeningTerminalProps) {
           </div>
 
           {done && (
-            <div className="mt-6 p-4 bg-holo-amber/10 border-l-4 border-holo-amber text-holo-amber font-mono text-sm animate-fadeIn">
+            <div className="mt-6 p-3 sm:p-4 bg-holo-amber/10 border-l-4 border-holo-amber text-holo-amber font-mono text-xs sm:text-sm animate-fadeIn">
               <div className="font-bold tracking-wide">
                 RESIDUAL DIRECTIVE: "Record the Spur. Confirm the silence. Do not ignite."
               </div>
@@ -104,14 +104,14 @@ export default function OpeningTerminal({ onComplete }: OpeningTerminalProps) {
             </div>
           )}
 
-          <div className="mt-8 flex justify-between items-center pt-4 border-t border-holo-cyan/10">
+          <div className="mt-6 sm:mt-8 flex flex-wrap justify-between items-center gap-3 pt-4 border-t border-holo-cyan/10">
             <button
               onClick={() => {
                 setIsFast(true);
                 setLineIdx(logLines.length);
                 setDone(true);
               }}
-              className="text-xs font-mono text-holo-muted hover:text-holo-bright flex items-center gap-1.5 transition-colors"
+              className="min-h-[44px] text-xs font-mono text-holo-muted hover:text-holo-bright flex items-center gap-1.5 transition-colors px-2"
             >
               <FastForward className="w-3.5 h-3.5" />
               <span>FAST-FORWARD</span>
@@ -120,7 +120,7 @@ export default function OpeningTerminal({ onComplete }: OpeningTerminalProps) {
             {done ? (
               <button
                 onClick={() => setStep("viewport")}
-                className="px-6 py-2.5 bg-gradient-to-r from-holo-cyan/20 to-surface border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright font-mono text-xs tracking-widest uppercase flex items-center gap-2 rounded-sm shadow-holo-cyan transition-all duration-200"
+                className="w-full sm:w-auto min-h-[44px] px-5 sm:px-6 py-2.5 bg-gradient-to-r from-holo-cyan/20 to-surface border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright font-mono text-xs tracking-widest uppercase flex items-center justify-center gap-2 rounded-sm shadow-holo-cyan transition-all duration-200"
               >
                 <Eye className="w-4 h-4" />
                 <span>开启舰桥观察窗 (INITIATE VIEWPORT)</span>
@@ -135,16 +135,16 @@ export default function OpeningTerminal({ onComplete }: OpeningTerminalProps) {
         </div>
       ) : (
         /* Phase 2: Vessel Observation Viewport Cutscene */
-        <div className="w-full max-w-4xl holo-panel p-8 md:p-10 rounded-sm relative z-10 animate-fadeIn">
-          <div className="flex justify-between items-center border-b border-holo-cyan/15 pb-3 mb-6 text-xs text-holo-muted font-mono tracking-wider">
-            <span className="flex items-center gap-2 text-holo-cyan">
-              <Eye className="w-4 h-4" />
-              ISV THRESHOLD // 舰桥观测窗 · 主光学传感器已校准
+        <div className="w-full max-w-4xl holo-panel p-4 sm:p-8 md:p-10 rounded-sm relative z-10 animate-fadeIn">
+          <div className="flex justify-between items-center border-b border-holo-cyan/15 pb-3 mb-4 sm:mb-6 text-xs text-holo-muted font-mono tracking-wider">
+            <span className="flex items-center gap-2 text-holo-cyan truncate">
+              <Eye className="w-4 h-4 shrink-0" />
+              <span>ISV THRESHOLD // 舰桥观测窗</span>
             </span>
-            <span className="text-holo-amber">RECORDER-9 ONLINE</span>
+            <span className="text-holo-amber shrink-0">RECORDER-9 ONLINE</span>
           </div>
 
-          <div className="relative h-72 md:h-80 w-full bg-surface-dark border border-holo-cyan/30 rounded-sm overflow-hidden flex flex-col items-center justify-center p-6 text-center">
+          <div className="relative min-h-[280px] md:h-80 w-full bg-surface-dark border border-holo-cyan/30 rounded-sm overflow-hidden flex flex-col items-center justify-center p-4 sm:p-6 text-center">
             {/* Observation Viewport Window Image Background */}
             <div
               className="absolute inset-0 bg-cover bg-center opacity-75"
@@ -159,28 +159,28 @@ export default function OpeningTerminal({ onComplete }: OpeningTerminalProps) {
               <div className="absolute h-full w-[1px] bg-holo-cyan/30" />
             </div>
 
-            <div className="relative z-10 max-w-xl space-y-3 bg-surface-dark/80 p-5 rounded-sm border border-holo-cyan/20 backdrop-blur-sm shadow-xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-holo-amber/15 border border-holo-amber/30 text-holo-amber font-mono text-xs rounded-full">
+            <div className="relative z-10 max-w-xl space-y-2 sm:space-y-3 bg-surface-dark/80 p-4 sm:p-5 rounded-sm border border-holo-cyan/20 backdrop-blur-sm shadow-xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-holo-amber/15 border border-holo-amber/30 text-holo-amber font-mono text-[11px] sm:text-xs rounded-full">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>THE EMBER SPUR (余烬星弧) 首次显现</span>
               </div>
-              <h1 className="font-display font-bold text-2xl md:text-3xl text-holo-bright tracking-widest drop-shadow">
+              <h1 className="font-display font-bold text-xl sm:text-2xl md:text-3xl text-holo-bright tracking-widest drop-shadow">
                 余烬协议 // EMBER PROTOCOL
               </h1>
-              <p className="text-xs font-mono text-slate-200 leading-relaxed drop-shadow">
+              <p className="text-[11px] sm:text-xs font-mono text-slate-200 leading-relaxed drop-shadow">
                 四百年的冷却之后，九颗恒星节点之间再次涌现自催化电流。
                 你是最后的第 9 号奇偶校验位。在恒星熔炉被二次点火前，查明全部 5+1 锚定真相。
               </p>
             </div>
           </div>
 
-          <div className="mt-6 flex justify-between items-center">
-            <div className="text-xs font-mono text-holo-muted">
+          <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div className="text-xs font-mono text-holo-muted text-center sm:text-left">
               INITIAL SECTOR: <span className="text-holo-cyan font-bold">HELIX-7 (螺旋-7)</span>
             </div>
             <button
               onClick={onComplete}
-              className="px-8 py-3 bg-gradient-to-r from-holo-cyan/30 via-holo-cyan/20 to-surface border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright font-mono text-xs tracking-widest uppercase flex items-center gap-2 rounded-sm shadow-holo-cyan transition-all duration-200"
+              className="w-full sm:w-auto min-h-[44px] px-6 sm:px-8 py-3 bg-gradient-to-r from-holo-cyan/30 via-holo-cyan/20 to-surface border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright font-mono text-xs tracking-widest uppercase flex items-center justify-center gap-2 rounded-sm shadow-holo-cyan transition-all duration-200"
             >
               <span>接入星弧测绘总线 (ENTER GALAXY MAP)</span>
               <ArrowRight className="w-4 h-4" />

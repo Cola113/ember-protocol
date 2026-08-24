@@ -25,16 +25,6 @@ body {
   user-select: none;
 }
 
-/* CRT Scanlines Overlay */
-.crt-overlay {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%),
-              linear-gradient(90deg, rgba(56, 189, 248, 0.02), rgba(0, 0, 0, 0.01), rgba(245, 158, 11, 0.02));
-  background-size: 100% 3px, 4px 100%;
-  pointer-events: none;
-  z-index: 100;
-}
 
 /* Screen Vignette */
 .screen-vignette {

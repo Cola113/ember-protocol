@@ -146,11 +146,11 @@ export default function OnboardingHints({ currentView }: OnboardingHintsProps) {
 
           <button
             onClick={handleDismiss}
-            className="p-1 text-slate-400 hover:text-holo-cyan hover:bg-surface-dark rounded transition-colors"
+            className="p-2 -mr-1 text-slate-400 hover:text-holo-cyan hover:bg-surface-dark rounded transition-colors flex items-center justify-center min-w-[36px] min-h-[36px]"
             aria-label="关闭新手引导提示"
             title="关闭引导 (不再提示)"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
@@ -159,7 +159,7 @@ export default function OnboardingHints({ currentView }: OnboardingHintsProps) {
           <div className="w-8 h-8 rounded-sm bg-holo-cyan/15 border border-holo-cyan/40 flex items-center justify-center text-holo-cyan shrink-0 mt-0.5">
             <IconComponent className="w-4 h-4" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h4 className="font-display font-bold text-xs text-holo-bright">
               {currentHint.title}
             </h4>
@@ -172,7 +172,7 @@ export default function OnboardingHints({ currentView }: OnboardingHintsProps) {
         {/* Footer Actions */}
         <div className="mt-3 pt-2.5 border-t border-holo-cyan/15 flex justify-between items-center text-[10px] font-mono">
           {currentHint.shortcut ? (
-            <span className="px-2 py-0.5 bg-void/80 border border-holo-border text-holo-amber rounded">
+            <span className="px-2 py-0.5 bg-void/80 border border-holo-border text-holo-amber rounded truncate max-w-[120px]">
               {currentHint.shortcut}
             </span>
           ) : (
@@ -182,13 +182,13 @@ export default function OnboardingHints({ currentView }: OnboardingHintsProps) {
           <div className="flex items-center gap-2">
             <button
               onClick={handleDismiss}
-              className="text-slate-400 hover:text-slate-200 px-2 py-1 transition-colors"
+              className="min-h-[36px] px-2.5 py-1 text-slate-400 hover:text-slate-200 transition-colors flex items-center"
             >
               跳过
             </button>
             <button
               onClick={handleNext}
-              className="px-3 py-1 bg-holo-cyan/20 border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright rounded transition-all flex items-center gap-1 font-bold"
+              className="min-h-[36px] px-3 py-1 bg-holo-cyan/20 border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright rounded transition-all flex items-center gap-1 font-bold"
             >
               <span>{currentStepIndex < HINT_STEPS.length - 1 ? "下一步" : "已知晓"}</span>
               <ChevronRight className="w-3 h-3" />

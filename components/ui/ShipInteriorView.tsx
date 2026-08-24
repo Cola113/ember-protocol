@@ -137,7 +137,7 @@ export default function ShipInteriorView({
     <div
       role="region"
       aria-label="ISV Threshold 探针舰桥总控室"
-      className="relative w-full h-full flex flex-col justify-between p-6 md:p-8 z-30 pointer-events-auto overflow-y-auto bg-void/90"
+      className="relative w-full h-full flex flex-col justify-between p-4 sm:p-6 md:p-8 z-30 pointer-events-auto overflow-y-auto bg-void/90"
     >
       {/* Ship Interior Astral Noir Viewport Backdrop Layer */}
       <div
@@ -151,8 +151,8 @@ export default function ShipInteriorView({
       <div className="absolute inset-0 bg-gradient-to-b from-void/85 via-void/65 to-void/90 pointer-events-none z-0" />
 
       {/* Top Banner */}
-      <div className="relative z-10 flex justify-between items-center">
-        <div className="font-display font-bold text-base text-holo-bright">
+      <div className="relative z-10 flex flex-wrap justify-between items-center gap-2 pb-1">
+        <div className="font-display font-bold text-sm sm:text-base text-holo-bright">
           ISV THRESHOLD // 探针舰桥主甲板
         </div>
         <div className="text-xs font-mono text-holo-amber flex items-center gap-2">
@@ -162,9 +162,9 @@ export default function ShipInteriorView({
       </div>
 
       {/* Main Grid: Stations List & Terminal Output */}
-      <div className="relative z-10 my-auto max-w-5xl mx-auto w-full grid grid-cols-1 md:grid-cols-3 gap-6 py-4">
+      <div className="relative z-10 my-auto max-w-5xl mx-auto w-full grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 py-2 sm:py-4">
         {/* Left Stations */}
-        <div className="holo-panel p-4 md:p-5 rounded-sm flex flex-col gap-2.5">
+        <div className="holo-panel p-3.5 sm:p-4 md:p-5 rounded-sm flex flex-col gap-2">
           <div className="text-xs font-mono font-bold text-holo-cyan border-b border-holo-cyan/15 pb-2 mb-1 flex justify-between items-center">
             <span>舰桥操作节点 (5 STATIONS)</span>
             <span className="text-[10px] text-holo-muted">DECK A</span>
@@ -172,7 +172,7 @@ export default function ShipInteriorView({
 
           <button
             onClick={() => setActiveStation("nav")}
-            className={`p-3 rounded-sm border text-left text-xs font-mono transition-all flex items-center gap-3 ${
+            className={`min-h-[44px] p-2.5 sm:p-3 rounded-sm border text-left text-xs font-mono transition-all flex items-center gap-3 ${
               activeStation === "nav"
                 ? "bg-holo-cyan/20 border-holo-cyan text-holo-cyan shadow-holo-cyan"
                 : "bg-surface-dark border-holo-border text-slate-300 hover:border-holo-cyan/50"
@@ -349,7 +349,7 @@ export default function ShipInteriorView({
                   </div>
 
                   {/* Slots Grid */}
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {SLOT_IDS.map((slotId) => {
                       const data = saveSlots[slotId];
                       const isSelected = selectedSlotId === slotId;
@@ -381,8 +381,8 @@ export default function ShipInteriorView({
                           {data ? (
                             <div className="space-y-0.5 text-[10px] text-holo-muted">
                               <div className="flex items-center gap-1 text-slate-400">
-                                <Clock className="w-2.5 h-2.5" />
-                                <span>{new Date(data.timestamp).toLocaleString("zh-CN", { hour12: false })}</span>
+                                <Clock className="w-2.5 h-2.5 shrink-0" />
+                                <span className="truncate">{new Date(data.timestamp).toLocaleString("zh-CN", { hour12: false })}</span>
                               </div>
                               <div>真相: {data.believedTruths.length}/6 · 命题: {data.collectedPropositions.length}</div>
                             </div>
@@ -399,13 +399,13 @@ export default function ShipInteriorView({
                   {/* Selected Slot Detailed Panel & Actions */}
                   <div className="p-3.5 bg-surface-dark/90 border border-holo-cyan/25 rounded-sm flex flex-col gap-3">
                     <div className="flex justify-between items-center text-xs">
-                      <span className="font-bold text-holo-cyan">
+                      <span className="font-bold text-holo-cyan truncate">
                         当前选中：{selectedSlotId === "auto" ? "自动存档 (AUTOSAVE)" : `槽位 ${selectedSlotId.toUpperCase()}`}
                       </span>
                       {selectedSlotData && (
                         <button
                           onClick={() => handleDeleteSlot(selectedSlotId)}
-                          className="text-red-400 hover:text-red-300 flex items-center gap-1 text-[11px] transition-colors"
+                          className="text-red-400 hover:text-red-300 flex items-center gap-1 text-[11px] transition-colors p-1"
                         >
                           <Trash2 className="w-3 h-3" />
                           <span>删除</span>
@@ -413,10 +413,10 @@ export default function ShipInteriorView({
                       )}
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <button
                         onClick={() => handleSaveToSlot(selectedSlotId)}
-                        className="flex-1 py-2 bg-holo-cyan/20 border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright text-xs font-mono uppercase tracking-wider rounded-sm flex items-center justify-center gap-2 transition-all"
+                        className="flex-1 min-h-[44px] py-2.5 bg-holo-cyan/20 border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright text-xs font-mono uppercase tracking-wider rounded-sm flex items-center justify-center gap-2 transition-all"
                       >
                         <Save className="w-3.5 h-3.5" />
                         <span>写入此槽位 (SAVE)</span>
@@ -425,7 +425,7 @@ export default function ShipInteriorView({
                       <button
                         onClick={() => handleLoadSlot(selectedSlotId)}
                         disabled={!selectedSlotData}
-                        className="flex-1 py-2 bg-holo-green/20 border border-holo-green hover:bg-holo-green hover:text-void disabled:opacity-30 disabled:hover:bg-holo-green/20 disabled:hover:text-holo-green text-holo-green text-xs font-mono uppercase tracking-wider rounded-sm flex items-center justify-center gap-2 transition-all"
+                        className="flex-1 min-h-[44px] py-2.5 bg-holo-green/20 border border-holo-green hover:bg-holo-green hover:text-void disabled:opacity-30 disabled:hover:bg-holo-green/20 disabled:hover:text-holo-green text-holo-green text-xs font-mono uppercase tracking-wider rounded-sm flex items-center justify-center gap-2 transition-all"
                       >
                         <ShieldCheck className="w-3.5 h-3.5" />
                         <span>读取此槽位 (LOAD)</span>
@@ -437,11 +437,11 @@ export default function ShipInteriorView({
             </div>
           </div>
 
-          <div className="pt-6 border-t border-holo-cyan/10">
+          <div className="pt-4 sm:pt-6 border-t border-holo-cyan/10">
             {activeStation === "nav" && (
               <button
                 onClick={onNavigateGalaxy}
-                className="w-full py-3 bg-gradient-to-r from-holo-cyan/20 to-surface border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright text-xs font-mono uppercase tracking-widest rounded-sm shadow-holo-cyan flex items-center justify-center gap-2 transition-all"
+                className="w-full min-h-[44px] py-3 bg-gradient-to-r from-holo-cyan/20 to-surface border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright text-xs font-mono uppercase tracking-widest rounded-sm shadow-holo-cyan flex items-center justify-center gap-2 transition-all"
               >
                 <span>接入 3D 星系视图</span>
                 <ArrowRight className="w-4 h-4" />
@@ -451,7 +451,7 @@ export default function ShipInteriorView({
             {activeStation === "hearth" && (
               <button
                 onClick={onNavigateIndex}
-                className="w-full py-3 bg-gradient-to-r from-holo-amber/20 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void text-holo-amber text-xs font-mono uppercase tracking-widest rounded-sm shadow-holo-amber flex items-center justify-center gap-2 transition-all"
+                className="w-full min-h-[44px] py-3 bg-gradient-to-r from-holo-amber/20 to-surface border border-holo-amber hover:bg-holo-amber hover:text-void text-holo-amber text-xs font-mono uppercase tracking-widest rounded-sm shadow-holo-amber flex items-center justify-center gap-2 transition-all"
               >
                 <span>打开综合索引面板</span>
                 <ArrowRight className="w-4 h-4" />
@@ -461,7 +461,7 @@ export default function ShipInteriorView({
             {activeStation === "logs" && (
               <button
                 onClick={() => setActiveStation("archive")}
-                className="w-full py-3 bg-gradient-to-r from-holo-cyan/20 to-surface border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright text-xs font-mono uppercase tracking-widest rounded-sm shadow-holo-cyan flex items-center justify-center gap-2 transition-all"
+                className="w-full min-h-[44px] py-3 bg-gradient-to-r from-holo-cyan/20 to-surface border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright text-xs font-mono uppercase tracking-widest rounded-sm shadow-holo-cyan flex items-center justify-center gap-2 transition-all"
               >
                 <span>前往记忆归档台 (SAVE/LOAD)</span>
                 <ArrowRight className="w-4 h-4" />
@@ -471,7 +471,7 @@ export default function ShipInteriorView({
             {activeStation === "cryo" && (
               <button
                 onClick={onNavigateIndex}
-                className="w-full py-3 bg-gradient-to-r from-holo-cyan/20 to-surface border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright text-xs font-mono uppercase tracking-widest rounded-sm shadow-holo-cyan flex items-center justify-center gap-2 transition-all"
+                className="w-full min-h-[44px] py-3 bg-gradient-to-r from-holo-cyan/20 to-surface border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright text-xs font-mono uppercase tracking-widest rounded-sm shadow-holo-cyan flex items-center justify-center gap-2 transition-all"
               >
                 <span>前往综合索引矩阵校验认知</span>
                 <ArrowRight className="w-4 h-4" />
