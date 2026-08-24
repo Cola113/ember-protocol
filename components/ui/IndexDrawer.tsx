@@ -150,7 +150,12 @@ export default function IndexDrawer({
         status: res.status
       });
 
-      if (res.verdict === "passed") {
+      if (
+        res.ok === true &&
+        res.status === "scored" &&
+        res.degraded === false &&
+        res.verdict === "passed"
+      ) {
         onTruthBelieved(selectedTruth.id);
       }
     } catch {

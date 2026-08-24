@@ -298,47 +298,54 @@ export async function clientCuratorSynthesize({
       })
     });
 
-    const data: CuratorResponse = await res.json();
+    const json = await res.json();
+    const dataObj = json as Record<string, unknown>;
 
-    if (data.status === "scored") {
+    if (dataObj.status === "scored" && dataObj.result) {
+      const result = dataObj.result as SynthesisResult;
       return {
         ok: true,
         status: "scored",
         degraded: false,
-        verdict: data.result.verdict,
-        coverage: data.result.coverage,
-        correctness: data.result.correctness,
-        coherence: data.result.coherence,
-        feedback: data.result.feedback
+        verdict: result.verdict,
+        coverage: result.coverage,
+        correctness: result.correctness,
+        coherence: result.coherence,
+        feedback: result.feedback
       };
     }
 
-    if (data.status === "rejected") {
+    if (dataObj.status === "rejected") {
+      const resultObj = (dataObj.result || {}) as Partial<SynthesisResult>;
+      const errorObj = dataObj.error as { error: string; message: string } | undefined;
+      const missing = (dataObj.missing_required_propositions || []) as string[];
+
       return {
         ok: false,
         status: "rejected",
         degraded: false,
-        verdict: data.result.verdict,
-        coverage: data.result.coverage,
-        correctness: data.result.correctness,
-        coherence: data.result.coherence,
-        feedback: data.result.feedback,
-        missingRequiredPropositions: data.missing_required_propositions,
-        error: data.error
+        verdict: "failed",
+        coverage: resultObj.coverage ?? 0,
+        correctness: resultObj.correctness ?? 0,
+        coherence: resultObj.coherence ?? 0,
+        feedback: resultObj.feedback || errorObj?.message || "硬门拒绝：假说不符合正典先决条件。",
+        missingRequiredPropositions: missing.length > 0 ? missing : undefined,
+        error: errorObj
       };
     }
 
-    if (data.status === "degraded") {
+    if (dataObj.status === "degraded" && dataObj.result) {
+      const result = dataObj.result as SynthesisResult;
       return {
         ok: false,
         status: "degraded",
         degraded: true,
-        verdict: data.result.verdict,
-        coverage: data.result.coverage,
-        correctness: data.result.correctness,
-        coherence: data.result.coherence,
-        feedback: data.result.feedback,
-        error: data.error
+        verdict: "partial",
+        coverage: result.coverage,
+        correctness: result.correctness,
+        coherence: result.coherence,
+        feedback: result.feedback,
+        error: dataObj.error as { error: string; message: string } | undefined
       };
     }
   } catch {
@@ -366,26 +373,19 @@ export async function clientCuratorSynthesize({
         };
       }
 
-      // Local keyword matching heuristic
-      const keywords = anchor.keywords || [];
-      const textLower = hypothesisText.toLowerCase();
-      const matched = keywords.filter((k) => textLower.includes(k.toLowerCase()));
-      const isPass = matched.length >= 1;
-
+      // Contract rule: Offline / without model MUST only degrade to partial and never advance to believed
       return {
-        ok: isPass,
+        ok: false,
         status: "offline_fallback",
         degraded: true,
-        verdict: isPass ? "passed" : "partial",
-        coverage: isPass ? 0.92 : 0.45,
-        correctness: isPass ? 0.9 : 0.5,
-        coherence: isPass ? 0.85 : 0.6,
-        feedback: isPass
-          ? `[本地离线公证通过] 假说准确涵盖了正典事实【${anchor.title}】的核心机制。`
-          : `[本地离线推演未完全收敛] 假说尚缺少核心推论关键字（如：${keywords.slice(0, 2).join(", ")}）。`,
+        verdict: "partial",
+        coverage: 0.5,
+        correctness: 0.5,
+        coherence: 0.5,
+        feedback: `[网络不可用 · 离线降级] 已登记假说推论，但依据正典公证法典，离线/无模型状态下只能降级为 PARTIAL (SUSPECTED)，不得直接推进 BELIEVED。`,
         error: {
           error: "model_unavailable",
-          message: "网络不可用，已运行本地离线启发式公证。"
+          message: "网络连接不可用，已进入离线降级 partial 状态。"
         }
       };
     }
@@ -396,7 +396,7 @@ export async function clientCuratorSynthesize({
     ok: false,
     status: "degraded",
     degraded: true,
-    verdict: degraded.result.verdict,
+    verdict: "partial",
     coverage: degraded.result.coverage,
     correctness: degraded.result.correctness,
     coherence: degraded.result.coherence,

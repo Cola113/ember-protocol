@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PlanetDef, LandingSite } from "@/lib/canon";
+import { CANON, PlanetDef, LandingSite } from "@/lib/canon";
 import { CANON_DIALOGUES, NPCDialogueTree } from "@/lib/dialogues";
 import {
   ArrowLeft,
@@ -82,6 +82,56 @@ function TypewriterText({ text, onDone }: { text: string; onDone?: () => void })
       )}
     </div>
   );
+}
+
+function resolvePropositionFromInsight(
+  insightId: string | null | undefined,
+  planetId?: string,
+  fallbackReward?: { code: string; text: string }
+): { code: string; text: string } | null {
+  if (!insightId) return fallbackReward || null;
+
+  // 1. Check constitution insight_gates of current planet (or all planets)
+  const constitution = planetId ? CANON.constitutions[planetId] : null;
+  const gates = constitution?.insight_gates || Object.values(CANON.constitutions).flatMap((c) => c.insight_gates || []);
+  const matchedGate = gates.find((g) => g.insight_id === insightId);
+  const clueCode = matchedGate?.unlocks_clue_ids?.[0];
+
+  if (clueCode) {
+    for (const tree of Object.values(CANON_DIALOGUES)) {
+      for (const s of tree.steps) {
+        if (s.propositionReward?.code === clueCode) {
+          return s.propositionReward;
+        }
+      }
+    }
+    for (const p of CANON.planets) {
+      for (const site of p.landing_sites) {
+        for (const hs of site.hotspots) {
+          if (hs.proposition === clueCode) {
+            return { code: clueCode, text: hs.name };
+          }
+        }
+      }
+    }
+    return { code: clueCode, text: `正典线索命题 [${clueCode}]` };
+  }
+
+  // 2. Check anchor truths
+  const matchedTruth = CANON.anchorTruths.find((t) => t.unlocked_insights?.includes(insightId));
+  if (matchedTruth && matchedTruth.required_propositions.length > 0) {
+    const propCode = matchedTruth.required_propositions[0];
+    for (const tree of Object.values(CANON_DIALOGUES)) {
+      for (const s of tree.steps) {
+        if (s.propositionReward?.code === propCode) {
+          return s.propositionReward;
+        }
+      }
+    }
+    return { code: propCode, text: matchedTruth.title };
+  }
+
+  return fallbackReward || null;
 }
 
 export default function SurfaceStageView({
@@ -232,6 +282,22 @@ export default function SurfaceStageView({
       setChatLie(Boolean(res.output.lie));
       setChatOfferedInsight(res.output.offer_insight_id || null);
       setIsChatDegraded(res.degraded);
+
+      // Wire offer_insight_id to actual proposition collection
+      if (res.output.offer_insight_id && !res.output.lie) {
+        const tree = getDialogueTree(activeModal);
+        const stepIdx = nextStepIdx !== undefined ? nextStepIdx : dialogueStep;
+        const step = tree?.steps[stepIdx];
+        const mappedProp = resolvePropositionFromInsight(
+          res.output.offer_insight_id,
+          planet.id,
+          step?.propositionReward
+        );
+        if (mappedProp) {
+          handleCollectReward(mappedProp.code, mappedProp.text);
+        }
+      }
+
       setChatMessages([
         ...updatedMessages,
         {
@@ -460,6 +526,11 @@ export default function SurfaceStageView({
 
                 const currentStep = tree.steps[dialogueStep] || tree.steps[0];
                 const isFinalStep = !currentStep.choices || currentStep.choices.length === 0;
+                const activeReward = resolvePropositionFromInsight(
+                  chatOfferedInsight,
+                  planet.id,
+                  currentStep.propositionReward
+                );
 
                 return (
                   <div className="space-y-4 text-xs font-mono">
@@ -519,7 +590,7 @@ export default function SurfaceStageView({
                     </div>
 
                     {/* Reward Proposition Card */}
-                    {currentStep.propositionReward && (
+                    {activeReward && (
                       <div
                         className={`p-3.5 rounded-sm animate-fadeIn ${
                           chatLie
@@ -544,10 +615,10 @@ export default function SurfaceStageView({
                             chatLie ? "text-slate-400 line-through" : "text-holo-bright"
                           }`}
                         >
-                          {currentStep.propositionReward.code}
+                          {activeReward.code}
                         </div>
                         <div className="text-[11px] text-slate-300 mt-0.5">
-                          （{currentStep.propositionReward.text}）
+                          （{activeReward.text}）
                         </div>
                       </div>
                     )}
@@ -596,10 +667,10 @@ export default function SurfaceStageView({
                       {isFinalStep && (
                         <button
                           onClick={() => {
-                            if (currentStep.propositionReward && !chatLie) {
+                            if (activeReward && !chatLie) {
                               handleCollectReward(
-                                currentStep.propositionReward.code,
-                                currentStep.propositionReward.text
+                                activeReward.code,
+                                activeReward.text
                               );
                             }
                             markHotspotComplete(activeModal.id);

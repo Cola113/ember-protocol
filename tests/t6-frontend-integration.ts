@@ -130,19 +130,20 @@ async function runT6IntegrationTests() {
     );
     passedAssertions += 4;
 
-    // Test valid proposition set with keywords matching heuristic
+    // Test valid proposition set in offline / network fallback mode (MUST only be partial, degraded: true, ok: false)
     const anchorT1 = CANON_READ.getAnchorTruth("T1");
     assert.ok(anchorT1, "T1 must exist in canon");
-    const passedRes = await clientCuratorSynthesize({
+    const offlineRes = await clientCuratorSynthesize({
       truthId: "T1",
       hypothesisText: "信标是引导扇区的握手载波，400年未收到应答因此持续广播。",
       pinnedPropositions: anchorT1.required_propositions,
       slot: "auto"
     });
-    assert.equal(passedRes.verdict, "passed");
-    assert.ok(passedRes.coverage > 0.8, "Coverage score must be high");
-    assert.ok(passedRes.correctness > 0.8, "Correctness score must be high");
-    passedAssertions += 4;
+    assert.equal(offlineRes.verdict, "partial", "Offline fallback must NEVER return passed; contract dictates partial only");
+    assert.equal(offlineRes.degraded, true, "Offline fallback must be marked degraded");
+    assert.equal(offlineRes.ok, false, "Offline fallback ok must be false");
+    assert.equal(offlineRes.status, "offline_fallback", "Status must be offline_fallback");
+    passedAssertions += 5;
   }
   console.log("  [PASS] Curator hard gate rejection and canonical keyword synthesis verified.\n");
 
