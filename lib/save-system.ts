@@ -1,3 +1,11 @@
+/**
+ * Playable progress slots (3 manual + auto) in `ember_protocol_save_*` localStorage keys.
+ *
+ * T2 `lib/datastore.ts` player_state is a facade over this module:
+ * - collectedPropositions / believedTruths / completedHotspotIds / timers stay here
+ * - truth-state sidecar lives under `ember_protocol_ds_player_state:*`
+ * Do not add NextAuth or cloud sync here (P3).
+ */
 export const SAVE_SCHEMA_VERSION = 1;
 
 export const SLOT_IDS = ["slot_1", "slot_2", "slot_3", "auto"] as const;

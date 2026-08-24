@@ -8,6 +8,15 @@ Version numbers below are **product milestones** (design → playable P0–P5). 
 
 ## [Unreleased]
 
+### feat
+
+- T2 local-first datastore (`lib/datastore.ts`): `dossier_cache` / `npc_cache` / `player_state` / `synthesis_attempts`
+- AI SDK minimal wiring (`lib/ai/provider.ts`) with `GET /api/ai/ping`; missing key maps to `model_unavailable`
+
+### fix
+
+- T2: isolate provider model/base URL env vars; atomic `putIfAbsent`; generated-envelope-only dossier cache; schema errors → `validation_error`; believed cannot be stripped; per-slot npc/synthesis keys
+
 ### docs
 
 - Rewrite `README.md` for the playable P0–P5 build

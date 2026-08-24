@@ -38,3 +38,8 @@ export function validationError(message: string): ContractError {
 export function modelUnavailable(message: string, fallback: string): DegradedContractError {
   return { error: "model_unavailable", message, retryable: true, degraded: true, fallback };
 }
+
+/** Cache hit is a successful Scribe short-circuit, not a degraded model failure. */
+export function cacheHit(message: string): ContractError {
+  return { error: "cache_hit", message, retryable: false, degraded: false };
+}
