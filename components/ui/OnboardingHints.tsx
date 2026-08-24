@@ -146,7 +146,7 @@ export default function OnboardingHints({ currentView }: OnboardingHintsProps) {
 
           <button
             onClick={handleDismiss}
-            className="p-2 -mr-1 text-slate-400 hover:text-holo-cyan hover:bg-surface-dark rounded transition-colors flex items-center justify-center min-w-[36px] min-h-[36px]"
+            className="p-2 -mr-1 text-slate-400 hover:text-holo-cyan hover:bg-surface-dark rounded transition-colors flex items-center justify-center min-w-[44px] min-h-[44px]"
             aria-label="关闭新手引导提示"
             title="关闭引导 (不再提示)"
           >
@@ -182,13 +182,13 @@ export default function OnboardingHints({ currentView }: OnboardingHintsProps) {
           <div className="flex items-center gap-2">
             <button
               onClick={handleDismiss}
-              className="min-h-[36px] px-2.5 py-1 text-slate-400 hover:text-slate-200 transition-colors flex items-center"
+              className="min-h-[44px] px-2.5 py-1 text-slate-400 hover:text-slate-200 transition-colors flex items-center"
             >
               跳过
             </button>
             <button
               onClick={handleNext}
-              className="min-h-[36px] px-3 py-1 bg-holo-cyan/20 border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright rounded transition-all flex items-center gap-1 font-bold"
+              className="min-h-[44px] px-3.5 py-1 bg-holo-cyan/20 border border-holo-cyan hover:bg-holo-cyan hover:text-void text-holo-bright rounded transition-all flex items-center gap-1 font-bold"
             >
               <span>{currentStepIndex < HINT_STEPS.length - 1 ? "下一步" : "已知晓"}</span>
               <ChevronRight className="w-3 h-3" />

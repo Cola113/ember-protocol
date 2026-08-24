@@ -68,7 +68,7 @@ export default function LandingPage() {
       icon: Radio,
       title: "Astral Noir 沉浸黑色电影",
       subtitle: "ASTRAL NOIR PHILOSOPHY",
-      desc: "冷辉、琥珀警示、CRT 物理扫描线与深邃虚空。体验 3D 可交互星系、残响回溯对话树，并最终在三大哲学结局中抉择宇宙的归宿。",
+      desc: "冷辉、琥珀警示、毛玻璃全息界面与深邃虚空。体验 3D 可交互星系、残响回溯对话树，并最终在三大哲学结局中抉择宇宙的归宿。",
       color: "#c084fc",
       borderColor: "border-purple-500/30",
     },

@@ -242,15 +242,15 @@ export default function IndexDrawer({
           className="min-h-[44px] px-3 sm:px-4 py-2 bg-surface border border-holo-border hover:border-holo-cyan text-holo-bright text-xs font-mono flex items-center gap-1.5 sm:gap-2 rounded-sm transition-all shadow-md shrink-0"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
-          <span className="hidden xs:inline">RETURN [ESC]</span>
-          <span className="xs:hidden">[ESC]</span>
+          <span className="hidden sm:inline">RETURN [ESC]</span>
+          <span className="sm:hidden">[ESC]</span>
         </button>
 
         {/* Center View Mode Switcher */}
         <div className="flex items-center gap-1 sm:gap-2 p-1 bg-surface-dark border border-holo-cyan/30 rounded-sm">
           <button
             onClick={() => setTabMode("synthesis")}
-            className={`min-h-[38px] px-2.5 sm:px-3.5 py-1.5 rounded-sm text-[11px] sm:text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all ${
+            className={`min-h-[44px] px-2.5 sm:px-3.5 py-1.5 rounded-sm text-[11px] sm:text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all ${
               tabMode === "synthesis"
                 ? "bg-holo-amber/20 border border-holo-amber text-holo-amber shadow-holo-amber font-bold"
                 : "text-slate-400 hover:text-holo-bright"
@@ -262,7 +262,7 @@ export default function IndexDrawer({
           </button>
           <button
             onClick={() => setTabMode("graph")}
-            className={`min-h-[38px] px-2.5 sm:px-3.5 py-1.5 rounded-sm text-[11px] sm:text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all ${
+            className={`min-h-[44px] px-2.5 sm:px-3.5 py-1.5 rounded-sm text-[11px] sm:text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all ${
               tabMode === "graph"
                 ? "bg-holo-cyan/20 border border-holo-cyan text-holo-cyan shadow-holo-cyan font-bold"
                 : "text-slate-400 hover:text-holo-bright"

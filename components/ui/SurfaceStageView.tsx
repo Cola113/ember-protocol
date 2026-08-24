@@ -211,8 +211,8 @@ export default function SurfaceStageView({
           className="min-h-[44px] px-3 sm:px-4 py-2 bg-surface border border-holo-border hover:border-holo-cyan text-holo-bright text-xs font-mono flex items-center gap-1.5 sm:gap-2 rounded-sm transition-all shadow-md"
         >
           <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
-          <span className="hidden xs:inline">RETURN TO ORBIT [ESC]</span>
-          <span className="xs:hidden">ORBIT [ESC]</span>
+          <span className="hidden sm:inline">RETURN TO ORBIT [ESC]</span>
+          <span className="sm:hidden">ORBIT [ESC]</span>
         </button>
 
         <div className="holo-panel px-3 sm:px-6 py-1.5 sm:py-2 rounded-sm text-center border-holo-cyan/30 flex-1 sm:flex-initial min-w-0">

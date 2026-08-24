@@ -51,7 +51,7 @@ export default function HudHeader({
         {canResolveEnding && currentView !== "ending" && (
           <button
             onClick={() => onNavigate("ending")}
-            className="min-h-[44px] px-2.5 sm:px-3 py-1.5 rounded-sm border border-holo-amber bg-holo-amber/25 hover:bg-holo-amber hover:text-void text-holo-amber text-xs font-mono font-bold flex items-center gap-1.5 shadow-holo-amber animate-pulse transition-all"
+            className="min-h-[44px] min-w-[44px] justify-center px-2.5 sm:px-3 py-1.5 rounded-sm border border-holo-amber bg-holo-amber/25 hover:bg-holo-amber hover:text-void text-holo-amber text-xs font-mono font-bold flex items-center gap-1.5 shadow-holo-amber animate-pulse transition-all"
             aria-label="执行全域终局决议协议"
           >
             <AlertTriangle className="w-3.5 h-3.5" />
@@ -63,7 +63,7 @@ export default function HudHeader({
         {currentView === "galaxy" && (
           <button
             onClick={onToggleInference}
-            className={`min-h-[44px] px-2.5 sm:px-3 py-1.5 rounded-sm border text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all duration-200 ${
+            className={`min-h-[44px] min-w-[44px] justify-center px-2.5 sm:px-3 py-1.5 rounded-sm border text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all duration-200 ${
               showInferenceLines
                 ? "bg-holo-amber/20 border-holo-amber text-holo-amber shadow-holo-amber"
                 : "bg-surface border-holo-border text-holo-bright hover:border-holo-cyan"
@@ -79,7 +79,7 @@ export default function HudHeader({
 
         <button
           onClick={() => onNavigate("galaxy")}
-          className={`min-h-[44px] px-2.5 sm:px-3 py-1.5 rounded-sm border text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all duration-200 ${
+          className={`min-h-[44px] min-w-[44px] justify-center px-2.5 sm:px-3 py-1.5 rounded-sm border text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all duration-200 ${
             currentView === "galaxy"
               ? "bg-holo-cyan/20 border-holo-cyan text-holo-cyan shadow-holo-cyan"
               : "bg-surface border-holo-border text-holo-bright hover:border-holo-cyan"
@@ -93,7 +93,7 @@ export default function HudHeader({
 
         <button
           onClick={() => onNavigate("index")}
-          className={`min-h-[44px] px-2.5 sm:px-3 py-1.5 rounded-sm border text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all duration-200 ${
+          className={`min-h-[44px] min-w-[44px] justify-center px-2.5 sm:px-3 py-1.5 rounded-sm border text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all duration-200 ${
             currentView === "index"
               ? "bg-holo-amber/20 border-holo-amber text-holo-amber shadow-holo-amber"
               : "bg-surface border-holo-border text-holo-bright hover:border-holo-amber"
@@ -107,7 +107,7 @@ export default function HudHeader({
 
         <button
           onClick={() => onNavigate("ship")}
-          className={`min-h-[44px] px-2.5 sm:px-3 py-1.5 rounded-sm border text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all duration-200 ${
+          className={`min-h-[44px] min-w-[44px] justify-center px-2.5 sm:px-3 py-1.5 rounded-sm border text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all duration-200 ${
             currentView === "ship"
               ? "bg-holo-cyan/20 border-holo-cyan text-holo-cyan shadow-holo-cyan"
               : "bg-surface border-holo-border text-holo-bright hover:border-holo-cyan"
