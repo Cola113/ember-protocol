@@ -26,7 +26,7 @@ Play locally at [`/`](http://localhost:3000) after `npm run dev`. Marketing / on
 - **5+1 acyclic truth chain** — T1–T5 plus **THidden**; believing a truth unlocks the next worlds (no cycles)
 - **Index console + inference graph** — proposition pinning, Synthesis, and a four-state machine (`unknown` → `encountered` → `suspected` → `believed`)
 - **Three resolution protocols** — Seal-Off, Permission to Overwrite, Night Shift Recurse (Overwrite gated until the Ember Cycle is in its last 25%)
-- **Saves** — three named `localStorage` slots plus an auto slot
+- **Saves** — three named `localStorage` slots plus an auto slot (`lib/save-system.ts`). T2 `player_state` is a facade over those slots, not a second progress file.
 - **Cinematics** — opening log, atmospheric landing, holographic truth-unlock burst
 - **Landing page, first-run hints, accessibility** — skippable onboarding, labelled landmarks, modal `aria` / focus handling
 
@@ -39,10 +39,11 @@ P2 live AI (Voices / Scribe / Curator) is **stubbed**: `/api/voices/chat`, `/api
 | App | Next.js 14 App Router (`next@^14.2`) |
 | UI | React 18, Tailwind CSS, Framer Motion, Lucide |
 | 3D | React Three Fiber, Drei, Three.js (dynamically imported, SSR off) |
-| AI | Vercel AI SDK (`ai`, `@ai-sdk/react`) — wired as route stubs for P2 |
+| AI | Vercel AI SDK (`ai`, `@ai-sdk/react`) — T2 `lib/ai/provider.ts` + `GET /api/ai/ping`; Voices/Scribe/Curator routes still Canon stubs |
+| Data | Local-first `lib/datastore.ts` (memory on the server, localStorage in the browser). Postgres/NextAuth not required. |
 | Language | TypeScript (`strict: true`) |
 
-The design doc also targets Vercel Postgres (pgvector) + KV + Blob and NextAuth for cross-device saves. Those backends are **not required** to play the current build.
+The design doc also targets Vercel Postgres (pgvector) + KV + Blob and NextAuth for cross-device saves. T2 does **not** implement those; the game runs with empty env.
 
 ## Quick start
 
@@ -85,14 +86,18 @@ ember-protocol/
 │   ├── page.tsx            # Game shell (views, unlocks, timers, saves)
 │   ├── landing/page.tsx    # Public landing page
 │   ├── globals.css         # Astral Noir tokens + CRT overlay
-│   └── api/                # Voices / Scribe / Curator stubs
+│   └── api/                # Voices / Scribe / Curator stubs + T2 `/api/ai/ping`
 ├── components/
 │   ├── galaxy/             # R3F galaxy (planets, orbits, inference lines)
 │   └── ui/                 # HUD, Index, stages, cinematics, endings
 ├── lib/
 │   ├── canon.ts            # Types + load docs/canon-ledger.json
 │   ├── dialogues.ts        # Anchored NPC dialogue trees
-│   └── save-system.ts      # localStorage slots + schema validation
+│   ├── save-system.ts      # localStorage slots + schema v1 (playable progress)
+│   ├── datastore.ts        # T2 stores: dossier_cache, npc_cache, player_state, synthesis_attempts
+│   ├── storage/            # memory + localStorage KV backends
+│   ├── ai/                 # AI SDK provider + generateObject/streamText wrappers
+│   └── schemas/            # P2 Zod contracts (v1.1)
 ├── docs/
 │   ├── canon-ledger.json   # Structured canon (worlds, truths, NPCs, sites)
 │   └── ui-design/          # HTML prototypes + visual-spec.md
@@ -117,7 +122,22 @@ ember-protocol/
 
 Frontend phases **P0–P5** are playable in-browser (scaffold → nine worlds → camera/saves/graph → endings, onboarding, landing, a11y).
 
-Still ahead of the design doc: live P2 AI, Postgres/KV/Blob, NextAuth, and a linked Vercel production project.
+Still ahead of the design doc: live P2 Voices/Scribe/Curator, Postgres/KV/Blob, NextAuth, and a linked Vercel Git connection.
+
+## P2 data layer (T2)
+
+Local-first so a Vercel deploy without Postgres still boots.
+
+| Store | Key | What is stored | What is refused |
+| --- | --- | --- | --- |
+| `dossier_cache` | `planetId:landingSiteId` | `status: "generated"` dossiers | `cacheable: false` / `degraded` / template |
+| `npc_cache` | `npcId` | dialogue turns, mood, relationship | — |
+| `player_state` | save slot id | Curator truth machine + write-through to `save-system` | downgrading `believed` |
+| `synthesis_attempts` | ring buffer (20) | recent Synthesis records | — |
+
+`player_state` does **not** replace `lib/save-system.ts`. The playable UI keeps using `saveGame` / `loadGame` (`ember_protocol_save_*`). Datastore sidecars use `ember_protocol_ds_*`. No auth, no cross-device sync.
+
+AI ping: `GET /api/ai/ping`. Empty env returns `{ error: "model_unavailable", degraded: true }`. Set `GEMINI_API_KEY` (or `AI_SDK_PROVIDER` + matching key) to exercise `generateObject`.
 
 ## License
 
