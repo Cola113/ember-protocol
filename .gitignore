@@ -31,3 +31,5 @@ yarn-error.log*
 # TypeScript Build Info
 *.tsbuildinfo
 tsconfig.tsbuildinfo
+# grok CLI local config
+.grok/

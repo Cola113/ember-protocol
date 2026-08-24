@@ -1,20 +1,25 @@
 import { NextResponse } from "next/server";
+import { runScribePipeline } from "@/lib/scribe/generation";
+import { scribeDegradedResponse } from "@/lib/schemas/scribe";
+
+export const runtime = "nodejs";
+export const maxDuration = 300;
 
 export async function POST(req: Request) {
+  let body: unknown;
   try {
-    const { planetId } = await req.json();
+    body = await req.json();
+  } catch {
+    body = undefined;
+  }
 
-    // Stub for P2 Codex/Scribe integration with Vercel AI SDK
-    return NextResponse.json({
-      planet_id: planetId,
-      dossier: {
-        summary: "高频电磁脉冲正在持续向外空辐射，地表建筑保存完整。",
-        environmental_hazards: "低重力，微电离风暴",
-        local_phenomena: "夜间可见二次曝光暗影辉光"
-      },
-      cached: true
-    });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  try {
+    const result = await runScribePipeline(body, { abortSignal: req.signal });
+    return NextResponse.json(result.response, { status: result.httpStatus });
+  } catch {
+    return NextResponse.json(
+      scribeDegradedResponse("Scribe 管线暂不可用，已使用不可缓存模板档案。"),
+      { status: 200 }
+    );
   }
 }
