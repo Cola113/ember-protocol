@@ -48,6 +48,8 @@ export default function HomePage() {
   // Newly unlocked truth for cinematic overlay
   const [unlockedTruthOverlay, setUnlockedTruthOverlay] = useState<AnchorTruth | null>(null);
   const [rewriteToast, setRewriteToast] = useState<{ title: string; count: number } | null>(null);
+  const [shockwavePlanets, setShockwavePlanets] = useState<string[]>([]);
+  const [shockwaveTrigger, setShockwaveTrigger] = useState<number>(0);
 
   // Derive unlocked planets from believed truths' unlocked_planets fields
   const unlockedPlanetIds = useMemo(
@@ -111,6 +113,8 @@ export default function HomePage() {
     setSelectedPlanet(null);
     setActiveSite(null);
     setUnlockedTruthOverlay(null);
+    setShockwavePlanets([]);
+    setShockwaveTrigger(0);
     setCurrentView("galaxy");
   };
 
@@ -123,6 +127,8 @@ export default function HomePage() {
     setSelectedPlanet(null);
     setActiveSite(null);
     setUnlockedTruthOverlay(null);
+    setShockwavePlanets([]);
+    setShockwaveTrigger(0);
     setCurrentView("opening");
   };
 
@@ -210,6 +216,8 @@ export default function HomePage() {
           showInferenceLines={showInferenceLines}
           unlockedPlanetIds={unlockedPlanetIds}
           believedTruthIds={believedTruths}
+          shockwavePlanets={shockwavePlanets}
+          shockwaveTrigger={shockwaveTrigger}
         />
       </div>
 
@@ -416,9 +424,17 @@ export default function HomePage() {
                 setCurrentView("galaxy");
                 setSelectedPlanet(null);
                 if (justUnlockedTruth) {
+                  const targetPlanets = [
+                    justUnlockedTruth.primary_planet,
+                    ...justUnlockedTruth.unlocked_planets,
+                  ].filter(Boolean) as string[];
+
+                  setShockwavePlanets(targetPlanets);
+                  setShockwaveTrigger(Date.now());
+
                   setRewriteToast({
                     title: justUnlockedTruth.title,
-                    count: justUnlockedTruth.unlocked_planets.length + 1,
+                    count: targetPlanets.length,
                   });
                   setTimeout(() => {
                     setRewriteToast(null);

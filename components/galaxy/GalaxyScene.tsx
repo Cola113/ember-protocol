@@ -24,6 +24,8 @@ interface GalaxySceneProps {
   unlockedPlanetIds: string[];
   believedTruthIds?: string[];
   onFocusPlanet?: (planetId: string) => void;
+  shockwavePlanets?: string[];
+  shockwaveTrigger?: number;
 }
 
 // Background Starfield + Floating Astral Dust
@@ -266,12 +268,16 @@ function PlanetNode({
   planet,
   isSelected,
   isDecoded,
+  shouldShockwave,
+  shockwaveTrigger,
   onSelect,
   textures,
 }: {
   planet: PlanetDef;
   isSelected: boolean;
   isDecoded: boolean;
+  shouldShockwave?: boolean;
+  shockwaveTrigger?: number;
   onSelect: (p: PlanetDef) => void;
   textures?: TexturesSet;
 }) {
@@ -326,10 +332,17 @@ function PlanetNode({
       : textures.iceRock
     : undefined;
 
-  // Trigger rewrite shockwave when freshly transitioning to decoded
+  // Trigger rewrite shockwave on explicit gameplay trigger (e.g. on return from TruthUnlockOverlay)
+  useEffect(() => {
+    if (shouldShockwave && shockwaveTrigger) {
+      shockwaveTimerRef.current = 1.3;
+    }
+  }, [shouldShockwave, shockwaveTrigger]);
+
+  // Also trigger when transitioning to decoded locally
   useEffect(() => {
     if (isDecoded && !wasDecodedRef.current) {
-      shockwaveTimerRef.current = 1.2; // 1.2s shockwave burst
+      shockwaveTimerRef.current = 1.3;
     }
     wasDecodedRef.current = isDecoded;
   }, [isDecoded]);
@@ -368,6 +381,7 @@ function PlanetNode({
     }
 
     // 2. Material Emissive Lerp & Carrier Glow Shimmer
+    // Adjusted lerp factor to 0.42 to preserve surface texture details while retaining clear Astral Cyan carrier wave
     if (materialRef.current) {
       const baseEmissive = isBlindSun
         ? new THREE.Color("#b45309")
@@ -378,7 +392,7 @@ function PlanetNode({
         : new THREE.Color(planet.color);
 
       const decodedEmissive = new THREE.Color("#38bdf8"); // Astral Cyan Carrier wave
-      const mixedEmissive = baseEmissive.clone().lerp(decodedEmissive, decProg * 0.75);
+      const mixedEmissive = baseEmissive.clone().lerp(decodedEmissive, decProg * 0.42);
       materialRef.current.emissive.copy(mixedEmissive);
 
       const defaultIntensity = isKiln
@@ -391,7 +405,7 @@ function PlanetNode({
         ? 0.45
         : 0.3;
 
-      const decodedBonus = decProg * 0.4 + (decProg > 0.2 ? Math.sin(t * 3.0) * 0.1 : 0);
+      const decodedBonus = decProg * 0.35 + (decProg > 0.2 ? Math.sin(t * 3.0) * 0.08 : 0);
       const hoverBonus = hovered || isSelected ? 0.6 : 0;
       materialRef.current.emissiveIntensity =
         defaultIntensity + decodedBonus + hoverBonus;
@@ -422,7 +436,7 @@ function PlanetNode({
     // 5. Star Chart Rewrite Shockwave Pulse Ring
     if (shockwaveTimerRef.current > 0 && shockwaveRef.current) {
       shockwaveTimerRef.current = Math.max(0, shockwaveTimerRef.current - delta);
-      const ratio = 1.0 - shockwaveTimerRef.current / 1.2; // 0 -> 1
+      const ratio = 1.0 - shockwaveTimerRef.current / 1.3; // 0 -> 1
       const waveScale = 1.2 + ratio * 2.8;
       shockwaveRef.current.scale.set(waveScale, waveScale, waveScale);
       const shockMat = shockwaveRef.current.material as THREE.MeshBasicMaterial;
@@ -434,7 +448,7 @@ function PlanetNode({
 
   return (
     <group position={pos}>
-      {/* 0. Rewrite Shockwave Burst Ring (Only visible during ~1.2s rewrite animation) */}
+      {/* 0. Rewrite Shockwave Burst Ring (Only visible during ~1.3s rewrite animation) */}
       <mesh
         ref={shockwaveRef}
         rotation={[Math.PI / 2, 0, 0]}
@@ -796,11 +810,15 @@ function CameraController({
 function TexturedPlanets({
   visiblePlanets,
   decodedPlanetIds,
+  shockwavePlanetIds,
+  shockwaveTrigger,
   selectedPlanet,
   onSelectPlanet,
 }: {
   visiblePlanets: PlanetDef[];
   decodedPlanetIds: Set<string>;
+  shockwavePlanetIds: Set<string>;
+  shockwaveTrigger?: number;
   selectedPlanet: PlanetDef | null;
   onSelectPlanet: (planet: PlanetDef) => void;
 }) {
@@ -839,6 +857,8 @@ function TexturedPlanets({
           planet={planet}
           isSelected={selectedPlanet?.id === planet.id}
           isDecoded={decodedPlanetIds.has(planet.id)}
+          shouldShockwave={shockwavePlanetIds.has(planet.id)}
+          shockwaveTrigger={shockwaveTrigger}
           onSelect={onSelectPlanet}
           textures={textures}
         />
@@ -889,7 +909,7 @@ function TruthDashboardOverlay({
           </div>
           <button
             aria-label={isExpanded ? "收起真相仪表盘" : "展开真相仪表盘"}
-            className="p-1 hover:text-holo-cyan text-holo-muted transition-colors rounded min-h-[32px] min-w-[32px] flex items-center justify-center shrink-0"
+            className="p-1 hover:text-holo-cyan text-holo-muted transition-colors rounded min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0"
           >
             {isExpanded ? (
               <ChevronUp className="w-4 h-4" />
@@ -932,32 +952,32 @@ function TruthDashboardOverlay({
 
               {CANON.anchorTruths.map((truth) => {
                 const isBelieved = believedTruthIds.includes(truth.id);
-                const isHidden = truth.id === "THidden";
 
                 return (
                   <div
                     key={truth.id}
                     onClick={() => {
-                      if (truth.primary_planet && onSelectTruthPlanet) {
+                      // Guard: Only allow clicking and focusing for confirmed/believed truths
+                      if (isBelieved && truth.primary_planet && onSelectTruthPlanet) {
                         onSelectTruthPlanet(truth.primary_planet);
                       }
                     }}
-                    className={`p-1.5 rounded border text-[11px] font-mono flex items-center justify-between transition-all cursor-pointer ${
+                    className={`p-1.5 rounded border text-[11px] font-mono flex items-center justify-between transition-all select-none ${
                       isBelieved
-                        ? "bg-holo-cyan/15 border-holo-cyan/50 text-holo-cyan hover:bg-holo-cyan/25"
-                        : "bg-surface-dark/60 border-holo-border/40 text-holo-muted hover:border-holo-amber/40"
+                        ? "bg-holo-cyan/15 border-holo-cyan/50 text-holo-cyan hover:bg-holo-cyan/25 cursor-pointer shadow-sm"
+                        : "bg-surface-dark/60 border-holo-border/30 text-holo-muted/60 cursor-not-allowed opacity-70"
                     }`}
                     title={
                       isBelieved
-                        ? `【${truth.title}】点击聚焦主节点`
-                        : "未破译真相"
+                        ? `【${truth.title}】点击聚焦已破译主节点`
+                        : "未破译真相（未接入总线，无法从星图聚焦）"
                     }
                   >
                     <div className="flex items-center gap-1.5 min-w-0">
                       {isBelieved ? (
                         <CheckCircle2 className="w-3.5 h-3.5 text-holo-cyan shrink-0" />
                       ) : (
-                        <Lock className="w-3.5 h-3.5 text-holo-muted/60 shrink-0" />
+                        <Lock className="w-3.5 h-3.5 text-holo-muted/50 shrink-0" />
                       )}
                       <span className="font-bold truncate">
                         {truth.id} {truth.title.split("/")[0].trim()}
@@ -968,7 +988,7 @@ function TruthDashboardOverlay({
                       className={`text-[9px] px-1 py-0.5 rounded font-bold shrink-0 ${
                         isBelieved
                           ? "bg-holo-cyan/20 text-holo-bright"
-                          : "bg-surface text-holo-muted/70"
+                          : "bg-surface text-holo-muted/60"
                       }`}
                     >
                       {isBelieved ? "ONLINE" : "LOCKED"}
@@ -991,6 +1011,8 @@ export default function GalaxyScene({
   unlockedPlanetIds,
   believedTruthIds = [],
   onFocusPlanet,
+  shockwavePlanets = [],
+  shockwaveTrigger = 0,
 }: GalaxySceneProps) {
   const controlsRef = useRef<any>(null);
 
@@ -998,6 +1020,12 @@ export default function GalaxyScene({
   const decodedPlanetIds = useMemo(
     () => new Set(getDecodedPlanetIds(believedTruthIds)),
     [believedTruthIds]
+  );
+
+  // Set of planets that should receive a real-time shockwave ripple animation
+  const shockwavePlanetIds = useMemo(
+    () => new Set(shockwavePlanets),
+    [shockwavePlanets]
   );
 
   // Only render planets that are mapped or explicitly unlocked
@@ -1011,7 +1039,8 @@ export default function GalaxyScene({
   );
 
   const handleSelectTruthPlanet = (planetId: string) => {
-    const target = CANON.planets.find((p) => p.id === planetId);
+    // Guard: Only allow focusing planets that are currently unlocked / visible in star chart
+    const target = visiblePlanets.find((p) => p.id === planetId);
     if (target) {
       onSelectPlanet(target);
     }
@@ -1084,6 +1113,8 @@ export default function GalaxyScene({
                   planet={planet}
                   isSelected={selectedPlanet?.id === planet.id}
                   isDecoded={decodedPlanetIds.has(planet.id)}
+                  shouldShockwave={shockwavePlanetIds.has(planet.id)}
+                  shockwaveTrigger={shockwaveTrigger}
                   onSelect={onSelectPlanet}
                 />
               ))}
@@ -1093,6 +1124,8 @@ export default function GalaxyScene({
           <TexturedPlanets
             visiblePlanets={visiblePlanets}
             decodedPlanetIds={decodedPlanetIds}
+            shockwavePlanetIds={shockwavePlanetIds}
+            shockwaveTrigger={shockwaveTrigger}
             selectedPlanet={selectedPlanet}
             onSelectPlanet={onSelectPlanet}
           />
@@ -1113,3 +1146,4 @@ export default function GalaxyScene({
     </div>
   );
 }
+
