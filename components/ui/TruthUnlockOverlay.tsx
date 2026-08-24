@@ -19,6 +19,7 @@ export default function TruthUnlockOverlay({
   const onProceedRef = useRef(onProceed);
   onProceedRef.current = onProceed;
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const isHiddenTruth = truth.id === "THidden";
   const shouldDirectToEnding = isHiddenTruth && canResolveEnding;
@@ -38,6 +39,29 @@ export default function TruthUnlockOverlay({
       if (e.key === "Escape") {
         e.preventDefault();
         onProceedRef.current();
+      } else if (e.key === "Tab") {
+        const container = containerRef.current;
+        if (!container) return;
+        const focusable = Array.from(
+          container.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+          )
+        );
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === first || !container.contains(document.activeElement)) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last || !container.contains(document.activeElement)) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -49,6 +73,7 @@ export default function TruthUnlockOverlay({
 
   return (
     <motion.div
+      ref={containerRef}
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 1.05 }}

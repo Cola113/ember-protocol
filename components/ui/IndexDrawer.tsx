@@ -298,7 +298,7 @@ export default function IndexDrawer({
               {collectedPropositions.length === 0 ? (
                 <div className="text-xs font-mono text-holo-muted p-6 text-center border border-dashed border-holo-cyan/15 rounded-sm my-auto">
                   <p className="mb-2">尚未从星球探索中提取命题。</p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-slate-400">
                     前往 Helix-7 冷启台地与偶极天线阵列调查以归档线索。
                   </p>
                 </div>
@@ -423,7 +423,7 @@ export default function IndexDrawer({
                             className={`text-[9px] px-1.5 py-0.5 rounded font-mono flex items-center gap-1 ${
                               has
                                 ? "bg-holo-green/15 text-holo-green border border-holo-green/30"
-                                : "bg-surface-dark text-slate-500 border border-slate-800"
+                                : "bg-surface-dark text-slate-400 border border-slate-800"
                             }`}
                           >
                             {has ? <Check className="w-2.5 h-2.5" /> : "○"}
@@ -601,7 +601,7 @@ export default function IndexDrawer({
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div className="font-bold text-xs text-holo-bright flex items-center gap-1.5">
-                        <Cpu className={`w-3.5 h-3.5 ${isBelieved ? "text-holo-amber" : isSuspected ? "text-holo-cyan" : "text-slate-500"}`} />
+                        <Cpu className={`w-3.5 h-3.5 ${isBelieved ? "text-holo-amber" : isSuspected ? "text-holo-cyan" : "text-slate-400"}`} />
                         <span>{t.id}. {t.title}</span>
                       </div>
                       <span className={`text-[9px] px-2 py-0.5 rounded font-mono uppercase font-bold ${
@@ -609,7 +609,7 @@ export default function IndexDrawer({
                           ? "bg-holo-green/20 text-holo-green border border-holo-green/40"
                           : isSuspected
                           ? "bg-holo-cyan/20 text-holo-cyan border border-holo-cyan/40"
-                          : "bg-surface text-slate-500 border border-slate-800"
+                          : "bg-surface text-slate-400 border border-slate-800"
                       }`}>
                         {status}
                       </span>
