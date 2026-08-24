@@ -34,7 +34,7 @@ The design doc also targets Vercel Postgres (pgvector) + KV + Blob and NextAuth 
 
 ## Quick start
 
-Requires Node.js 18+ and npm.
+Requires Node.js 18.17+ and npm.
 
 ```bash
 git clone https://github.com/Cola113/ember-protocol.git
