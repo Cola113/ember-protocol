@@ -95,8 +95,10 @@ Curator 使用服务端 `playerState` 作为唯一状态源；客户端提交的
 
 `lib/canon.ts` 导出 `CANON_READ: CanonReadApi`、`getCanonContext`、`requireConstitution` 和 `violatesForbiddenClaims`。Voices、Scribe、Curator 只能使用以下查询：星球/降落点、锚定真相（含 `listAnchorTruths()`）、锚定 NPC、已发布宪章、已登记 proposition/insight。`getCanonContext` 是 prompt-safe 面，不包含 `true_compute_role`、truth IDs、`true_facts` 或 `forbidden_claims`；禁言由服务器输出校验函数执行。接口没有写入方法，三线不能修改 `CANON`、truth 状态或结局。
 
+候选 2 W0 非破坏扩展：`anchor_truths[]` 的可选 `surface_claim` / `foil_claim` / `half_claim` 与根级可选 `proposition_labels` 均为 UI-only 文案。T3 Scribe、T4 Voices、T5 Curator 当前不读取这些字段；命题登记、综合硬门、评分阈值和宪章 `strict()` schema 均不变，因此合同仍为 `v1.1`。
+
 宪章唯一挂载路径是 `docs/canon-ledger.json` 顶层 `constitutions[planet_id]`，当前为空对象，T1 只能在此发布。`true_facts` 是三线可引用且不可否定的事实；`believed_facts` 只描述 NPC 信念，可含假；`forbidden_claims` 和 `archive_fill_policy` 是 Scribe/Voices 的拒绝边界；`npc_roster`、`insight_gates` 供 Voices；Curator 只读取 truth 的命题和评分事实，不得用宪章改写 truth。宪章缺失时 T3/T4 必须返回 `canon_violation` 并拒绝生成/对话，不得裸生成。
 
 ## 金样
 
-`tests/fixtures/` 提供 Voices（含 `lie: true`）、dossier、Curator 的 passed/partial/failed 以及带完整错误信封的硬门拒绝反例。T3-T6 的请求、缓存、UI 和测试必须以这些 fixture 为合同对照；任何 `degraded` dossier 都不得写入缓存。
+`tests/fixtures/` 提供 Voices（含 `lie: true`）、dossier、Curator 的 passed/partial/failed、带完整错误信封的硬门拒绝反例，以及 `p2-dual-layer.json` 的双层文案金样。T3-T6 的请求、缓存、UI 和测试必须以这些 fixture 为合同对照；任何 `degraded` dossier 都不得写入缓存。
