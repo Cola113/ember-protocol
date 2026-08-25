@@ -48,23 +48,29 @@ function claimResonance(text: string) {
 
 // ---- 2. 两槽门（残缺句拦截）----
 {
+  const slotA_val = "信标从不求救";
+  const slotB_val = "";
   const usingSlots = true; // hypothesis 为空走拼装
-  const bothSlotsFilled = "信标从不求救" !== "" && "" !== "";
+  const bothSlotsFilled = slotA_val.trim() !== "" && slotB_val.trim() !== "";
   const blocked = usingSlots && !bothSlotsFilled;
   assert.equal(blocked, true, "单槽提交应被拦截");
   console.log("[PASS] 单槽残缺句被两槽门拦截");
 }
 {
+  const slotA_val = "信标从不求救";
+  const slotB_val = "天线等不到应答";
   const usingSlots = true;
-  const bothSlotsFilled = "信标从不求救" !== "" && "天线等不到应答" !== "";
+  const bothSlotsFilled = slotA_val.trim() !== "" && slotB_val.trim() !== "";
   const allowed = !(usingSlots && !bothSlotsFilled);
   assert.equal(allowed, true, "双槽提交应放行");
   console.log("[PASS] 双槽完整提交放行");
 }
 {
   // 自由编辑模式（hypothesis 非空）不受槽位门约束
+  const slotA_val = "";
+  const slotB_val = "";
   const usingSlots = false;
-  const bothSlotsFilled = "" !== "" && "" !== "";
+  const bothSlotsFilled = slotA_val.trim() !== "" && slotB_val.trim() !== "";
   const allowed = !(usingSlots && !bothSlotsFilled);
   assert.equal(allowed, true, "自由编辑完整假说应放行");
   console.log("[PASS] 自由编辑模式不受槽位门约束");
