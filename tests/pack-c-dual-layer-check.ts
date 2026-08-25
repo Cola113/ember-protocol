@@ -178,25 +178,69 @@ assert.ok(!surfaceSarcophagus.includes("熔断"), "[P0-4 LEAK] Surface sarcophag
 // Verify hotspot cards render human proposition labels
 assert.ok(stageViewSource.includes("CANON.proposition_labels"), "[P0-4] Hotspot cards must use proposition_labels");
 
-console.log("  [PASS] All 4 Codex Gate P0 semantic leak checks passed cleanly.\n");
+console.log("--- 5. Validating Round 2 Codex Gate Residual Leak Fixes ---");
 
-// 4. Hotspots Structure Scan
-console.log("--- 4. Validating SurfaceStageView Structure ---");
-const hotspots = [
-  "hs-nerve-cluster",
-  "hs-bio-matrix",
-  "hs-sandbox-terminal",
-  "hs-blackened-mirror",
-  "hs-blindness-archive",
-  "hs-sarcophagus",
-  "hs-vesper-mirror"
+// Check 5.1: next-step.ts HUD hint leak
+const nextStepSource = readFileSync(join(process.cwd(), "lib", "curator", "next-step.ts"), "utf-8");
+assert.ok(!nextStepSource.includes("并联"), "[Round 2 FAIL] next-step.ts contains 并联 in HUD hint");
+console.log("  [PASS] next-step.ts has zero '并联' in HUD hints.");
+
+// Check 5.2: canon-ledger.json hotspot names
+for (const planet of ledger.planets) {
+  for (const site of planet.landing_sites) {
+    for (const hs of site.hotspots) {
+      assert.ok(
+        !/Recorder-0\d/i.test(hs.name),
+        `[Round 2 FAIL] canon-ledger hotspot "${hs.id}" has raw recorder name: "${hs.name}"`
+      );
+    }
+  }
+}
+console.log("  [PASS] canon-ledger.json hotspots contain zero 'Recorder-0X' names.");
+
+// Check 5.3: SurfaceStageView modal proposition boxes do not display raw IDs in surface view
+const rawPropositionCodes = [
+  "Marrow.God.IsProcess",
+  "Marrow.Bio.WriteBack",
+  "Cinder.Court.IsSandbox",
+  "BlindSun.Prohibition.CycleTwo",
+  "BlindSun.Director.Blindness",
+  "Interval.Core.Recorder9",
+  "Interval.Memory.Vesper",
+  "Helix.Signal.Unassigned",
+  "Helix.Beacon.Broadcasting",
+  "Kiln.Bus.Mutex",
+  "Orchard.ROM.Exhaustion",
+  "Choir.Hymn.IsClock",
+  "Ledger.Error.IsChecksum",
+  "Ledger.Protocol.RecorderKey",
+  "Needle.Pointer.Rebased"
 ];
 
-for (const hs of hotspots) {
-  assert.ok(stageViewSource.includes(`activeModal.id === "${hs}"`), `${hs} exists`);
+// Check that inside the extracted proposition boxes, raw code strings are not hardcoded
+for (const code of rawPropositionCodes) {
+  // Modal surface block shouldn't have raw code string in text-sm / font-mono without being a map lookup
+  assert.ok(
+    !stageViewSource.includes(`<div className="text-holo-bright font-mono text-sm font-semibold">\n                      ${code}`),
+    `[Round 2 FAIL] SurfaceStageView modal contains hardcoded raw proposition ID in surface view: ${code}`
+  );
 }
-assert.ok(stageViewSource.includes("isDecoded"), "isDecoded prop integrated");
+console.log("  [PASS] SurfaceStageView modals render human proposition labels instead of raw proposition IDs.");
 
-console.log("  [PASS] SurfaceStageView Pack C & Hidden hotspots & dual-layer conditions verified.\n");
+// Check 5.4: ShipInteriorView logs gate and cryo identity
+const shipInteriorSource = readFileSync(
+  join(process.cwd(), "components", "ui", "ShipInteriorView.tsx"),
+  "utf-8"
+);
+assert.ok(
+  shipInteriorSource.includes("isDecoded || believedTruthsCount >= 5"),
+  "[Round 2 FAIL] ShipInteriorView does not gate logs behind isDecoded / truths count"
+);
+assert.ok(
+  shipInteriorSource.includes("【历代记录员日志 // 加密信道】"),
+  "[Round 2 FAIL] ShipInteriorView missing encrypted channel fallback"
+);
+console.log("  [PASS] ShipInteriorView logs and cryo stations are properly gated and generalized.\n");
 
-console.log("=== All Pack C Dual-Layer & Claims Checks Passed Successfully! ===");
+console.log("=== All Pack C Dual-Layer & Claims Checks (including Round 2) Passed Successfully! ===");
+

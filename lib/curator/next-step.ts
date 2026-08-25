@@ -175,7 +175,7 @@ export const NEXT_STEP_PROTOCOL_TABLE = Object.freeze({
     unlocked_initial: {
       planetLabel: "髓",
       siteLabel: "搏动心室",
-      text: "原质神教血肉并联——深入搏动心室打探肉食之神降临的遗迹",
+      text: "原质神教地心仍在搏动——深入搏动心室打探肉食之神降临的遗迹",
       actionType: "dialogue" as const
     }
   },

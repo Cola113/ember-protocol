@@ -360,6 +360,7 @@ export default function HomePage() {
               onNewGame={handleNewGame}
               elapsedSeconds={elapsedSeconds}
               emberCycleSecondsLeft={emberCycleSecondsLeft}
+              isDecoded={decodedPlanetIds.length >= 5 || believedTruths.length >= 5}
             />
           </motion.div>
         )}

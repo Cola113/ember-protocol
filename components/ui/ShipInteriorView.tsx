@@ -38,6 +38,7 @@ interface ShipInteriorViewProps {
   onNewGame: () => void;
   elapsedSeconds?: number;
   emberCycleSecondsLeft?: number;
+  isDecoded?: boolean;
 }
 
 export default function ShipInteriorView({
@@ -51,6 +52,7 @@ export default function ShipInteriorView({
   onNewGame,
   elapsedSeconds = 0,
   emberCycleSecondsLeft = 2382,
+  isDecoded = false,
 }: ShipInteriorViewProps) {
   const [activeStation, setActiveStation] = useState<
     "nav" | "hearth" | "logs" | "cryo" | "archive"
@@ -311,19 +313,33 @@ export default function ShipInteriorView({
 
               {activeStation === "logs" && (
                 <>
-                  <p className="text-holo-muted">
-                    [RECORDER-01]: "星系开始冷却。第一轮计算收敛于 0x00FF。" [熔断]<br />
-                    [RECORDER-04]: "我们在髓发现了活体湿件。神不是创造者，神是常驻进程。" [熔断]<br />
-                    [RECORDER-08]: "我终于明白了为什么不能回头……不要点火。" [熔断]<br />
-                    [RECORDER-09 / VESPER]: "核心记忆损坏 62%。执行余烬协议。" [当前运行中]
-                  </p>
+                  {isDecoded || believedTruthsCount >= 5 ? (
+                    <p className="text-holo-muted leading-relaxed">
+                      [RECORDER-01]: &quot;星系开始冷却。第一轮计算收敛于 0x00FF。&quot; [熔断]<br />
+                      [RECORDER-04]: &quot;我们在髓发现了活体湿件。神不是创造者，神是常驻进程。&quot; [熔断]<br />
+                      [RECORDER-08]: &quot;我终于明白了为什么不能回头……不要点火。&quot; [熔断]<br />
+                      [RECORDER-09 / VESPER]: &quot;核心记忆损坏 62%。执行余烬协议。&quot; [当前运行中]
+                    </p>
+                  ) : (
+                    <div className="space-y-2 text-holo-muted leading-relaxed">
+                      <p className="text-holo-cyan font-bold text-xs">
+                        【历代记录员日志 // 加密信道】
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        “……深空航行日志已加锁。残存的几笔早期航标指示着星弧深处的冷却迹象。随着锚定真相的逐步确证，加密日志将逐层解开。”
+                      </p>
+                      <p className="text-[11px] text-holo-amber">
+                        [当前状态：探针巡航中 · 记忆核心完整度 {currentIntegrity}%]
+                      </p>
+                    </div>
+                  )}
                 </>
               )}
 
               {activeStation === "cryo" && (
                 <>
-                  <p>
-                    - 身份代号：Recorder-9 [Parity Check Bit]<br />
+                  <p className="leading-relaxed">
+                    - 身份代号：{isDecoded || believedTruthsCount >= 5 ? "Recorder-9 [Parity Check Bit]" : "探针晚星 (Vesper)"}<br />
                     - 核心记忆完整度：{currentIntegrity}%<br />
                     - 倒计时时钟：与星弧自催化能量涨落同步<br />
                     - 状态：每确证一条锚定真相与命题，核心记忆将逐步复苏。

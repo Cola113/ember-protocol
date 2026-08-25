@@ -1369,7 +1369,7 @@
           "hotspots": [
             {
               "id": "hs-sarcophagus",
-              "name": "Recorder-09 插座",
+              "name": "冷蓝座舱",
               "type": "inspect",
               "proposition": "Interval.Core.Recorder9"
             },

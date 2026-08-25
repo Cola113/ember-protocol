@@ -615,14 +615,11 @@ export default function SurfaceStageView({
                           </span>
                         </div>
                         <div
-                          className={`font-mono text-sm font-semibold ${
+                          className={`text-xs sm:text-sm font-semibold leading-snug ${
                             chatLie ? "text-slate-400 line-through" : "text-holo-bright"
                           }`}
                         >
-                          {activeReward.code}
-                        </div>
-                        <div className="text-[11px] text-slate-300 mt-0.5">
-                          （{activeReward.text}）
+                          {activeReward.text}
                         </div>
                       </div>
                     )}
@@ -731,11 +728,8 @@ export default function SurfaceStageView({
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
                       </div>
-                      <div className="text-holo-bright font-mono text-sm font-semibold">
-                        Helix.Signal.Unassigned
-                      </div>
-                      <div className="text-[11px] text-slate-300 mt-1">
-                        （螺旋-7 偶极天线对准深空，捕获到无人认领的恒定频段）
+                      <div className="text-holo-bright text-xs sm:text-sm font-semibold leading-snug">
+                        {CANON.proposition_labels["Helix.Signal.Unassigned"] || "天线对准的航向，始终等不到一句应答"}
                       </div>
                     </div>
 
@@ -811,11 +805,8 @@ export default function SurfaceStageView({
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
                     </div>
-                    <div className="text-holo-bright font-mono text-sm font-semibold">
-                      Helix.Beacon.Broadcasting
-                    </div>
-                    <div className="text-[11px] text-slate-300 mt-1">
-                      （螺旋-7 校准信标四百年来持续广播，从未发出求援脉冲）
+                    <div className="text-holo-bright text-xs sm:text-sm font-semibold leading-snug">
+                      {CANON.proposition_labels["Helix.Beacon.Broadcasting"] || "信标从不求救，只确认交接班"}
                     </div>
                   </div>
 
@@ -896,11 +887,8 @@ export default function SurfaceStageView({
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
                     </div>
-                    <div className="text-holo-bright font-mono text-sm font-semibold">
-                      Kiln.Bus.Mutex
-                    </div>
-                    <div className="text-[11px] text-slate-300 mt-1">
-                      （窑的地脉与熔炉内战本质上是两路管道无法同时供热）
+                    <div className="text-holo-bright text-xs sm:text-sm font-semibold leading-snug">
+                      {CANON.proposition_labels["Kiln.Bus.Mutex"] || "总管两头只能择一开，无法同时供热"}
                     </div>
                   </div>
 
@@ -988,11 +976,8 @@ export default function SurfaceStageView({
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
                       </div>
-                      <div className="text-holo-bright font-mono text-sm font-semibold">
-                        Orchard.ROM.Exhaustion
-                      </div>
-                      <div className="text-[11px] text-slate-300 mt-1">
-                        （物镜投射出整片晶林光芒在同一瞬间被照亮、看尽的干涉条纹）
+                      <div className="text-holo-bright text-xs sm:text-sm font-semibold leading-snug">
+                        {CANON.proposition_labels["Orchard.ROM.Exhaustion"] || "大旱那年，整片晶林被天眼一次读完"}
                       </div>
                     </div>
 
@@ -1074,11 +1059,8 @@ export default function SurfaceStageView({
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
                     </div>
-                    <div className="text-holo-bright font-mono text-sm font-semibold">
-                      Choir.Hymn.IsClock
-                    </div>
-                    <div className="text-[11px] text-slate-300 mt-1">
-                      （管风琴从未停歇，全星系按其音高对拍）
+                    <div className="text-holo-bright text-xs sm:text-sm font-semibold leading-snug">
+                      {CANON.proposition_labels["Choir.Hymn.IsClock"] || "管风琴从未停歇，全星系按其音高对拍"}
                     </div>
                   </div>
                 ) : (
@@ -1135,11 +1117,8 @@ export default function SurfaceStageView({
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
                   </div>
-                  <div className="text-holo-bright font-mono text-sm font-semibold">
-                    Ledger.Error.IsChecksum
-                  </div>
-                  <div className="text-[11px] text-slate-300 mt-1">
-                    （病人临终念的数串，差分机里全有）
+                  <div className="text-holo-bright text-xs sm:text-sm font-semibold leading-snug">
+                    {CANON.proposition_labels["Ledger.Error.IsChecksum"] || "病人临终念的数串，差分机里全有"}
                   </div>
                 </div>
 
@@ -1182,11 +1161,8 @@ export default function SurfaceStageView({
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
                   </div>
-                  <div className="text-holo-bright font-mono text-sm font-semibold">
-                    Ledger.Protocol.RecorderKey
-                  </div>
-                  <div className="text-[11px] text-slate-300 mt-1">
-                    （卷轴写明：中断点火的不是器物，是理解）
+                  <div className="text-holo-bright text-xs sm:text-sm font-semibold leading-snug">
+                    {CANON.proposition_labels["Ledger.Protocol.RecorderKey"] || "中断点火的不是器物，是理解"}
                   </div>
                 </div>
 
@@ -1248,11 +1224,8 @@ export default function SurfaceStageView({
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
                     </div>
-                    <div className="text-holo-bright font-mono text-sm font-semibold">
-                      Needle.Pointer.Rebased
-                    </div>
-                    <div className="text-[11px] text-slate-300 mt-1">
-                      （激光测出的坐标，总比旧海图错开一格）
+                    <div className="text-holo-bright text-xs sm:text-sm font-semibold leading-snug">
+                      {CANON.proposition_labels["Needle.Pointer.Rebased"] || "激光测出的坐标，总比旧海图错开一格"}
                     </div>
                   </div>
                 ) : (
@@ -1303,11 +1276,8 @@ export default function SurfaceStageView({
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
                     </div>
-                    <div className="text-holo-bright font-mono text-sm font-semibold">
-                      Marrow.God.IsProcess
-                    </div>
-                    <div className="text-[11px] text-slate-300 mt-1">
-                      （肉食之神没有身体，只在神经里搏动）
+                    <div className="text-holo-bright text-xs sm:text-sm font-semibold leading-snug">
+                      {CANON.proposition_labels["Marrow.God.IsProcess"] || "肉食之神没有身体，只在神经里搏动"}
                     </div>
                   </div>
 
@@ -1376,11 +1346,8 @@ export default function SurfaceStageView({
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
                       </div>
-                      <div className="text-holo-bright font-mono text-sm font-semibold">
-                        Marrow.Bio.WriteBack
-                      </div>
-                      <div className="text-[11px] text-slate-300 mt-1">
-                        （信徒未被吞噬，是狂喜中并入回响）
+                      <div className="text-holo-bright text-xs sm:text-sm font-semibold leading-snug">
+                        {CANON.proposition_labels["Marrow.Bio.WriteBack"] || "信徒未被吞噬，是狂喜中并入回响"}
                       </div>
                     </div>
 
@@ -1457,11 +1424,8 @@ export default function SurfaceStageView({
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
                     </div>
-                    <div className="text-holo-bright font-mono text-sm font-semibold">
-                      Cinder.Court.IsSandbox
-                    </div>
-                    <div className="text-[11px] text-slate-300 mt-1">
-                      （壁炉后藏着一具不属于这宫廷的机关）
+                    <div className="text-holo-bright text-xs sm:text-sm font-semibold leading-snug">
+                      {CANON.proposition_labels["Cinder.Court.IsSandbox"] || "壁炉后藏着一具不属于这宫廷的机关"}
                     </div>
                   </div>
 
@@ -1537,11 +1501,8 @@ export default function SurfaceStageView({
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
                       </div>
-                      <div className="text-holo-bright font-mono text-sm font-semibold">
-                        BlindSun.Prohibition.CycleTwo
-                      </div>
-                      <div className="text-[11px] text-slate-300 mt-1">
-                        （视界镜被涂黑，是不让人再望向第二轮）
+                      <div className="text-holo-bright text-xs sm:text-sm font-semibold leading-snug">
+                        {CANON.proposition_labels["BlindSun.Prohibition.CycleTwo"] || "视界镜被涂黑，是不让人再望向第二轮"}
                       </div>
                     </div>
 
@@ -1604,11 +1565,8 @@ export default function SurfaceStageView({
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
                     </div>
-                    <div className="text-holo-bright font-mono text-sm font-semibold">
-                      BlindSun.Director.Blindness
-                    </div>
-                    <div className="text-[11px] text-slate-300 mt-1">
-                      （学者自愿饮下致盲药，只为封住双眼）
+                    <div className="text-holo-bright text-xs sm:text-sm font-semibold leading-snug">
+                      {CANON.proposition_labels["BlindSun.Director.Blindness"] || "学者自愿饮下致盲药，只为封住双眼"}
                     </div>
                   </div>
 
@@ -1670,11 +1628,8 @@ export default function SurfaceStageView({
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
                     </div>
-                    <div className="text-holo-bright font-mono text-sm font-semibold">
-                      Interval.Core.Recorder9
-                    </div>
-                    <div className="text-[11px] text-slate-300 mt-1">
-                      （插座正合你的尺寸，像等了你很久）
+                    <div className="text-holo-bright text-xs sm:text-sm font-semibold leading-snug">
+                      {CANON.proposition_labels["Interval.Core.Recorder9"] || "插座正合你的尺寸，像等了你很久"}
                     </div>
                   </div>
 
@@ -1731,11 +1686,8 @@ export default function SurfaceStageView({
                       <Sparkles className="w-3.5 h-3.5" />
                       <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
                     </div>
-                    <div className="text-holo-bright font-mono text-sm font-semibold">
-                      Interval.Memory.Vesper
-                    </div>
-                    <div className="text-[11px] text-slate-300 mt-1">
-                      （记忆核心认得你，唤你一声晚星）
+                    <div className="text-holo-bright text-xs sm:text-sm font-semibold leading-snug">
+                      {CANON.proposition_labels["Interval.Memory.Vesper"] || "记忆核心认得你，唤你一声晚星"}
                     </div>
                   </div>
 
@@ -1796,10 +1748,10 @@ export default function SurfaceStageView({
                     <div className="p-4 bg-surface-dark border border-holo-amber/40 rounded-sm">
                       <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>EXTRACTED PROPOSITION</span>
+                        <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
                       </div>
-                      <div className="text-holo-bright font-semibold">
-                        {activeModal.proposition}
+                      <div className="text-holo-bright text-xs sm:text-sm font-semibold leading-snug">
+                        {(CANON.proposition_labels as Record<string, string>)[activeModal.proposition] || activeModal.proposition}
                       </div>
                     </div>
                   )}
