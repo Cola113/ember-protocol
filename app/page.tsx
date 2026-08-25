@@ -238,6 +238,8 @@ export default function HomePage() {
             emberCycleSecondsLeft={emberCycleSecondsLeft}
             believedTruthsCount={believedTruths.length}
             totalTruthsCount={CANON.anchorTruths.length}
+            collectedPropositions={collectedPropositions}
+            believedTruths={believedTruths}
           />
         )}
 

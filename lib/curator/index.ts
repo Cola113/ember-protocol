@@ -27,3 +27,10 @@ export {
   buildBelievedTruthInjection,
   type BelievedTruthContext
 } from "./context";
+export {
+  deriveNextStepHints,
+  NEXT_STEP_PROTOCOL_TABLE,
+  GLOBAL_FORBIDDEN_WORDS,
+  PLANET_FORBIDDEN_WORDS,
+  type NextStepHint
+} from "./next-step";
