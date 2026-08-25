@@ -30,6 +30,7 @@ export {
 export {
   deriveNextStepHints,
   getUnlockedPlanetIds,
+  buildIdleHint,
   NEXT_STEP_PROTOCOL_TABLE,
   GLOBAL_FORBIDDEN_WORDS,
   PLANET_FORBIDDEN_WORDS,

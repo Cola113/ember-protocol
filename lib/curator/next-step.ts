@@ -281,6 +281,23 @@ export function getUnlockedPlanetIds(believedTruths: readonly string[]): Set<str
 }
 
 /**
+ * Helper to build the canonical idle hint.
+ */
+export function buildIdleHint(): NextStepHint {
+  const emptyCfg = NEXT_STEP_PROTOCOL_TABLE.idle.empty;
+  return {
+    id: "idle-empty",
+    planetLabel: emptyCfg.planetLabel,
+    siteLabel: emptyCfg.siteLabel,
+    text: emptyCfg.text,
+    priority: 0,
+    salienceWeight: 0,
+    status: "idle",
+    actionType: emptyCfg.actionType
+  };
+}
+
+/**
  * Derive deterministic, fiction-interior next-step hints from player progress.
  *
  * Salience Integration:
@@ -291,8 +308,9 @@ export function getUnlockedPlanetIds(believedTruths: readonly string[]): Set<str
  * - Parallel Rule (窑/果园并列 / 其它并列):
  *   When multiple truths or companion planets can be advanced concurrently,
  *   returns multiple distinct hints side-by-side without forcing a choice.
- * - Idle / Empty State:
- *   Reachable when explicitly requested, or when all available leads are complete.
+ * - Reachable Idle / Empty State:
+ *   Reachable when explicitly requested, when no candidate truths remain,
+ *   or when idle fallback is triggered.
  */
 export function deriveNextStepHints(
   collectedPropositions: readonly string[],
@@ -301,19 +319,7 @@ export function deriveNextStepHints(
 ): NextStepHint[] {
   // 0. Explicit idle request
   if (options?.forceIdle) {
-    const emptyCfg = NEXT_STEP_PROTOCOL_TABLE.idle.empty;
-    return [
-      {
-        id: "idle-empty",
-        planetLabel: emptyCfg.planetLabel,
-        siteLabel: emptyCfg.siteLabel,
-        text: emptyCfg.text,
-        priority: 0,
-        salienceWeight: 0,
-        status: "idle",
-        actionType: emptyCfg.actionType
-      }
-    ];
+    return [buildIdleHint()];
   }
 
   // 1. All anchor truths believed -> Full canon resolution ready
@@ -661,17 +667,5 @@ export function deriveNextStepHints(
   }
 
   // 6. Reachable Empty State (空态)
-  const emptyCfg = NEXT_STEP_PROTOCOL_TABLE.idle.empty;
-  return [
-    {
-      id: "idle-empty",
-      planetLabel: emptyCfg.planetLabel,
-      siteLabel: emptyCfg.siteLabel,
-      text: emptyCfg.text,
-      priority: 0,
-      salienceWeight: 0,
-      status: "idle",
-      actionType: emptyCfg.actionType
-    }
-  ];
+  return [buildIdleHint()];
 }

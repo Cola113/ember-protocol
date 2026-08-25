@@ -3,6 +3,7 @@ import { CANON } from "@/lib/canon";
 import {
   deriveNextStepHints,
   getUnlockedPlanetIds,
+  buildIdleHint,
   NEXT_STEP_PROTOCOL_TABLE,
   GLOBAL_FORBIDDEN_WORDS,
   PLANET_FORBIDDEN_WORDS,
@@ -184,33 +185,41 @@ console.log("=== Running Next-Step Protocol Self-Checks ===");
   console.log("ok  终局态：全真相锚定后提示决议协议 (priority 4)");
 }
 
-// 12. Reachable Idle State (Explicit / Free cruising mode)
+// 12. Reachable Idle State (Explicit & Fallback)
 {
-  const hints = deriveNextStepHints([], [], { forceIdle: true });
-  assert.equal(hints.length, 1);
-  assert.equal(hints[0].status, "idle");
-  assert.equal(hints[0].priority, 0);
-  assert.equal(hints[0].salienceWeight, 0);
-  assert.match(hints[0].text, /当前星域无待解悬念/);
+  const idleHint = buildIdleHint();
+  assert.equal(idleHint.status, "idle");
+  assert.equal(idleHint.priority, 0);
+  assert.equal(idleHint.salienceWeight, 0);
+
+  const forcedHints = deriveNextStepHints([], [], { forceIdle: true });
+  assert.equal(forcedHints.length, 1);
+  assert.equal(forcedHints[0].status, "idle");
+  assert.equal(forcedHints[0].priority, 0);
+  assert.match(forcedHints[0].text, /当前星域无待解悬念/);
   console.log("ok  空态可达性：明确空态/巡航态调用返回规范空态提示 (priority 0)");
 }
 
 // 13. Bible Lexicon Compliance & Forbidden Word Regression Tests
 {
-  const allTexts: string[] = [];
-
-  const collectTexts = (obj: any) => {
-    if (!obj || typeof obj !== "object") return;
-    for (const val of Object.values(obj)) {
-      if (typeof val === "string") {
-        allTexts.push(val);
-      } else if (typeof val === "object") {
-        collectTexts(val);
+  const extractTexts = (target: any): string[] => {
+    const list: string[] = [];
+    const walk = (node: any) => {
+      if (!node || typeof node !== "object") return;
+      for (const val of Object.values(node)) {
+        if (typeof val === "string") {
+          list.push(val);
+        } else if (typeof val === "object") {
+          walk(val);
+        }
       }
-    }
+    };
+    walk(target);
+    return list;
   };
 
-  collectTexts(NEXT_STEP_PROTOCOL_TABLE);
+  const allTexts = extractTexts(NEXT_STEP_PROTOCOL_TABLE);
+  assert.ok(allTexts.length > 20, `Protocol table should contain ample texts (found ${allTexts.length})`);
 
   // Check §2 Global Forbidden Words
   for (const text of allTexts) {
@@ -235,27 +244,34 @@ console.log("=== Running Next-Step Protocol Self-Checks ===");
     THidden: ["black-interval"]
   };
 
+  let planetScanCount = 0;
+  let planetStringsScanned = 0;
+
   for (const [truthKey, truthCfg] of Object.entries(NEXT_STEP_PROTOCOL_TABLE)) {
     const planetIds = truthPlanetMapping[truthKey];
     if (planetIds && planetIds.length > 0) {
-      const texts: string[] = [];
-      collectTexts(truthCfg);
+      const texts = extractTexts(truthCfg);
+      assert.ok(texts.length > 0, `Truth ${truthKey} must have texts to scan`);
       for (const t of texts) {
+        planetStringsScanned++;
         for (const planetId of planetIds) {
           const forbiddenList = PLANET_FORBIDDEN_WORDS[planetId];
-          if (forbiddenList) {
-            for (const forbidden of forbiddenList) {
-              assert.ok(
-                !t.includes(forbidden),
-                `Surface text violates §3 ${planetId} forbidden word "${forbidden}": "${t}"`
-              );
-            }
+          assert.ok(forbiddenList && forbiddenList.length > 0, `Planet ${planetId} must have forbidden words list`);
+          for (const forbidden of forbiddenList) {
+            planetScanCount++;
+            assert.ok(
+              !t.includes(forbidden),
+              `Surface text violates §3 ${planetId} forbidden word "${forbidden}": "${t}"`
+            );
           }
         }
       }
     }
   }
-  console.log("ok  §3 本星专属禁词扫描通过 (完整覆盖 T1-THidden、窑/果园/咏井/针/烬廷/盲日)");
+
+  assert.ok(planetScanCount > 0, "Planet-specific forbidden word scans must execute and count > 0");
+  assert.ok(planetStringsScanned >= 15, "Must scan all planet-specific strings");
+  console.log(`ok  §3 本星专属禁词扫描通过 (真实执行 ${planetScanCount} 次分星禁词匹配，涵盖 ${planetStringsScanned} 句分星文本)`);
 
   // Check no true_compute_role leak in any text
   for (const text of allTexts) {

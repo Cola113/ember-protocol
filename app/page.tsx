@@ -251,7 +251,7 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.3 }}
-            className="absolute top-24 sm:top-28 right-3 sm:right-8 z-50 pointer-events-none"
+            className="absolute top-28 sm:top-32 right-3 sm:right-8 z-50 pointer-events-none"
           >
             <div className="holo-panel border border-holo-cyan px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-sm shadow-holo-cyan flex items-center gap-2 sm:gap-2.5 bg-surface-dark/95 backdrop-blur-md text-xs font-mono">
               <span className="w-2 h-2 rounded-full bg-holo-cyan animate-ping shrink-0" />

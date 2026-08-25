@@ -1,49 +1,53 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Compass, BookOpen, Ship, Network, AlertTriangle, Radio, Sparkles, Navigation } from "lucide-react";
-import { deriveNextStepHints, type NextStepHint } from "@/lib/curator/next-step";
+import { Compass, BookOpen, Layers, Terminal, Sparkles, Radio, CheckCircle2 } from "lucide-react";
+import { deriveNextStepHints, buildIdleHint, type NextStepHint } from "@/lib/curator/next-step";
 
-interface HudHeaderProps {
-  currentView: "opening" | "galaxy" | "ship" | "index" | "survey" | "surface" | "landing_cinematic" | "ending";
-  onNavigate: (view: "opening" | "galaxy" | "ship" | "index" | "ending") => void;
-  showInferenceLines: boolean;
-  onToggleInference: () => void;
+export interface HudHeaderProps {
+  currentView: string;
+  onNavigate: (view: any) => void;
+  emberCycleSecondsLeft: number;
+  believedTruthsCount: number;
+  totalTruthsCount: number;
+  showInferenceLines?: boolean;
+  onToggleInference?: () => void;
   canResolveEnding?: boolean;
-  emberCycleSecondsLeft?: number;
-  believedTruthsCount?: number;
-  totalTruthsCount?: number;
-  collectedPropositions?: string[];
-  believedTruths?: string[];
+  collectedPropositions?: readonly string[];
+  believedTruths?: readonly string[];
 }
 
-export default function HudHeader({
+export function HudHeader({
   currentView,
   onNavigate,
-  showInferenceLines,
-  onToggleInference,
-  canResolveEnding = false,
-  emberCycleSecondsLeft = 2382,
-  believedTruthsCount = 0,
-  totalTruthsCount = 6,
+  emberCycleSecondsLeft,
+  believedTruthsCount,
+  totalTruthsCount,
   collectedPropositions = [],
-  believedTruths = [],
+  believedTruths = []
 }: HudHeaderProps) {
-  const formatTime = (secs: number) => {
-    const m = Math.floor(secs / 60).toString().padStart(2, "0");
-    const s = (secs % 60).toString().padStart(2, "0");
-    return `${m}:${s}`;
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Derive deterministic fiction-interior next step hints from player state
-  const nextStepHints = useMemo<NextStepHint[]>(
+  const isEndingReady = believedTruthsCount >= totalTruthsCount && totalTruthsCount > 0;
+
+  // Derive next-step hints deterministically from player's current evidence state
+  const rawHints = useMemo(
     () => deriveNextStepHints(collectedPropositions, believedTruths),
     [collectedPropositions, believedTruths]
   );
 
+  // Bounded display: at most 2 hints in the single-line tactical sub-bar
+  const nextStepHints = rawHints.length > 0 ? rawHints : [buildIdleHint()];
+  const displayedHints = nextStepHints.slice(0, 2);
+  const overflowCount = Math.max(0, nextStepHints.length - 2);
+
   return (
-    <header role="banner" className="absolute top-0 left-0 right-0 z-50 pointer-events-auto">
-      {/* Top Primary Bar */}
+    <header role="banner" className="absolute top-0 left-0 right-0 z-40 pointer-events-auto">
+      {/* Top Primary Bar (h-14 sm:h-16) */}
       <div className="h-14 sm:h-16 px-2.5 sm:px-4 md:px-8 flex justify-between items-center bg-gradient-to-b from-surface-dark via-surface-dark/95 to-surface-dark/90 border-b border-holo-cyan/15 backdrop-blur-md">
         {/* Left: Vessel Identity */}
         <div className="flex items-center gap-2 sm:gap-3 md:gap-4 min-w-0">
@@ -66,77 +70,67 @@ export default function HudHeader({
           </div>
         </div>
 
-        {/* Right: Actions & Timer */}
-        <nav aria-label="HUD 导航操作栏" className="flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0">
-          {/* Full Canon Resolution Trigger Badge */}
-          {canResolveEnding && currentView !== "ending" && (
-            <button
-              onClick={() => onNavigate("ending")}
-              className="min-h-[44px] min-w-[44px] justify-center px-2.5 sm:px-3 py-1.5 rounded-sm border border-holo-amber bg-holo-amber/25 hover:bg-holo-amber hover:text-void text-holo-amber text-xs font-mono font-bold flex items-center gap-1.5 shadow-holo-amber animate-pulse transition-all"
-              aria-label="执行全域终局决议协议"
-            >
-              <AlertTriangle className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">RESOLUTION READY</span>
-              <span className="sm:hidden text-[10px]">RESOLVE</span>
-            </button>
-          )}
-
-          {currentView === "galaxy" && (
-            <button
-              onClick={onToggleInference}
-              className={`min-h-[44px] min-w-[44px] justify-center px-2.5 sm:px-3 py-1.5 rounded-sm border text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all duration-200 ${
-                showInferenceLines
-                  ? "bg-holo-amber/20 border-holo-amber text-holo-amber shadow-holo-amber"
-                  : "bg-surface border-holo-border text-holo-bright hover:border-holo-cyan"
-              }`}
-              aria-label="切换推理图谱拓扑连线 (快捷键 L)"
-              title="推理拓扑 [L]"
-            >
-              <Network className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">INFERENCE [L]</span>
-              <span className="md:hidden text-[11px]">[L]</span>
-            </button>
-          )}
-
+        {/* Right: Primary Navigation Controls */}
+        <nav aria-label="主要导航" className="flex items-center gap-1 sm:gap-2 md:gap-3">
           <button
             onClick={() => onNavigate("galaxy")}
-            className={`min-h-[44px] min-w-[44px] justify-center px-2.5 sm:px-3 py-1.5 rounded-sm border text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all duration-200 ${
+            className={`px-2.5 sm:px-3.5 py-1.5 rounded-sm text-xs font-mono flex items-center gap-1.5 transition-all duration-150 ${
               currentView === "galaxy"
-                ? "bg-holo-cyan/20 border-holo-cyan text-holo-cyan shadow-holo-cyan"
-                : "bg-surface border-holo-border text-holo-bright hover:border-holo-cyan"
+                ? "bg-holo-cyan/20 border border-holo-cyan text-holo-bright shadow-holo-cyan"
+                : "bg-surface border border-holo-border text-holo-muted hover:text-holo-cyan hover:border-holo-cyan/50"
             }`}
-            aria-label="打开星系地图 (GALAXY MAP)"
-            title="星系地图"
           >
-            <Compass className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">GALAXY MAP</span>
+            <Compass className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-holo-cyan" />
+            <span className="hidden sm:inline">STAR CHART</span>
           </button>
 
           <button
             onClick={() => onNavigate("index")}
-            className={`min-h-[44px] min-w-[44px] justify-center px-2.5 sm:px-3 py-1.5 rounded-sm border text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all duration-200 ${
+            className={`px-2.5 sm:px-3.5 py-1.5 rounded-sm text-xs font-mono flex items-center gap-1.5 transition-all duration-150 ${
               currentView === "index"
-                ? "bg-holo-amber/20 border-holo-amber text-holo-amber shadow-holo-amber"
-                : "bg-surface border-holo-border text-holo-bright hover:border-holo-amber"
+                ? "bg-holo-cyan/20 border border-holo-cyan text-holo-bright shadow-holo-cyan"
+                : "bg-surface border border-holo-border text-holo-muted hover:text-holo-cyan hover:border-holo-cyan/50"
             }`}
-            aria-label="打开公证索引台"
-            title="公证索引台"
           >
-            <BookOpen className="w-3.5 h-3.5" />
+            <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-holo-cyan" />
             <span className="hidden sm:inline">INDEX</span>
           </button>
 
           <button
-            onClick={() => onNavigate("ship")}
-            className={`min-h-[44px] min-w-[44px] justify-center px-2.5 sm:px-3 py-1.5 rounded-sm border text-xs font-mono flex items-center gap-1.5 sm:gap-2 transition-all duration-200 ${
-              currentView === "ship"
-                ? "bg-holo-cyan/20 border-holo-cyan text-holo-cyan shadow-holo-cyan"
-                : "bg-surface border-holo-border text-holo-bright hover:border-holo-cyan"
+            onClick={() => onNavigate("terminal")}
+            className={`px-2.5 sm:px-3.5 py-1.5 rounded-sm text-xs font-mono flex items-center gap-1.5 transition-all duration-150 ${
+              currentView === "terminal"
+                ? "bg-holo-cyan/20 border border-holo-cyan text-holo-bright shadow-holo-cyan"
+                : "bg-surface border border-holo-border text-holo-muted hover:text-holo-cyan hover:border-holo-cyan/50"
             }`}
-            aria-label="打开舰载总控室 (SHIP DECK)"
-            title="舰载总控室"
           >
-            <Ship className="w-3.5 h-3.5" />
+            <Terminal className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-holo-cyan" />
+            <span className="hidden sm:inline">LOGS</span>
+          </button>
+
+          {isEndingReady && (
+            <button
+              onClick={() => onNavigate("ending")}
+              className={`px-2.5 sm:px-3.5 py-1.5 rounded-sm text-xs font-mono flex items-center gap-1.5 transition-all duration-150 ${
+                currentView === "ending"
+                  ? "bg-holo-amber/30 border border-holo-amber text-holo-amber shadow-holo-amber font-bold"
+                  : "bg-holo-amber/15 border border-holo-amber/60 text-holo-amber hover:bg-holo-amber/25 animate-pulse font-bold"
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-holo-amber" />
+              <span>ENDING</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => onNavigate("ship")}
+            className={`px-2.5 sm:px-3.5 py-1.5 rounded-sm text-xs font-mono flex items-center gap-1.5 transition-all duration-150 ${
+              currentView === "ship"
+                ? "bg-holo-cyan/20 border border-holo-cyan text-holo-bright shadow-holo-cyan"
+                : "bg-surface border border-holo-border text-holo-muted hover:text-holo-cyan hover:border-holo-cyan/50"
+            }`}
+          >
+            <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-holo-cyan" />
             <span className="hidden sm:inline">SHIP DECK</span>
           </button>
 
@@ -147,20 +141,20 @@ export default function HudHeader({
         </nav>
       </div>
 
-      {/* Next Step Tactical Protocol Bar (Astral Noir HUD Sub-Bar) */}
+      {/* Next Step Tactical Protocol Bar (Astral Noir HUD Sub-Bar, h-9 sm:h-10 strictly single-line) */}
       <div
         aria-label="下一步指引"
-        className="w-full px-2.5 sm:px-4 md:px-8 py-1.5 bg-void/90 border-b border-holo-cyan/20 backdrop-blur-md flex flex-wrap items-center justify-between gap-2 text-xs font-mono shadow-sm"
+        className="w-full h-9 sm:h-10 px-2.5 sm:px-4 md:px-8 py-1 bg-void/90 border-b border-holo-cyan/20 backdrop-blur-md flex items-center justify-between gap-2 text-xs font-mono shadow-sm overflow-hidden"
       >
         {/* Left Badge: Status Tag */}
         <div className="flex items-center gap-1.5 shrink-0 text-holo-cyan/90 font-bold tracking-wider">
-          <Radio className="w-3.5 h-3.5 text-holo-cyan animate-pulse" />
-          <span className="text-[11px] sm:text-xs">NEXT STEP // 下一步:</span>
+          <Radio className="w-3.5 h-3.5 text-holo-cyan animate-pulse shrink-0" />
+          <span className="text-[11px] sm:text-xs whitespace-nowrap">NEXT STEP // 下一步:</span>
         </div>
 
-        {/* Center / Body: Next Step Hints (Single or Parallel Side-by-Side) */}
-        <div className="flex-1 flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
-          {nextStepHints.map((hint) => {
+        {/* Center / Body: Next Step Hints (Bounded to at most 2 side-by-side single-line cards) */}
+        <div className="flex-1 flex items-center gap-2 sm:gap-3 min-w-0 overflow-hidden">
+          {displayedHints.map((hint) => {
             const isSuspected = hint.status === "suspected";
             const isEnding = hint.status === "ending";
             const isIdle = hint.status === "idle";
@@ -179,22 +173,22 @@ export default function HudHeader({
             return (
               <div
                 key={hint.id}
-                className={`flex items-center gap-2 px-2.5 py-1 rounded-sm border ${borderClass} text-xs transition-all duration-200 min-w-0 max-w-full`}
+                className={`flex-1 flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-sm border ${borderClass} text-xs transition-all duration-200 min-w-0 overflow-hidden`}
               >
                 {/* Planet / Target Badge */}
-                <span className={`shrink-0 font-bold text-[11px] sm:text-xs ${tagClass}`}>
+                <span className={`shrink-0 font-bold text-[10px] sm:text-xs whitespace-nowrap ${tagClass}`}>
                   [{hint.planetLabel}
                   {hint.siteLabel && !isSuspected && !isEnding && !isIdle ? ` · ${hint.siteLabel}` : ""}]
                 </span>
 
                 {/* Human Sentence */}
-                <span className="truncate text-[11px] sm:text-xs tracking-tight">{hint.text}</span>
+                <span className="truncate text-[10px] sm:text-xs tracking-tight">{hint.text}</span>
 
                 {/* Action quick jump if suspected or ending */}
                 {isSuspected && (
                   <button
                     onClick={() => onNavigate("index")}
-                    className="ml-1 px-2 py-0.5 rounded text-[10px] bg-holo-amber/20 border border-holo-amber/50 text-holo-amber font-bold hover:bg-holo-amber hover:text-void transition-colors shrink-0"
+                    className="ml-auto px-1.5 py-0.5 rounded text-[10px] bg-holo-amber/20 border border-holo-amber/50 text-holo-amber font-bold hover:bg-holo-amber hover:text-void transition-colors shrink-0 whitespace-nowrap"
                     title="前往公证索引台进行两槽因果综合"
                   >
                     综合 →
@@ -203,7 +197,7 @@ export default function HudHeader({
                 {isEnding && (
                   <button
                     onClick={() => onNavigate("ending")}
-                    className="ml-1 px-2 py-0.5 rounded text-[10px] bg-holo-amber/30 border border-holo-amber text-holo-amber font-bold hover:bg-holo-amber hover:text-void transition-colors shrink-0 animate-pulse"
+                    className="ml-auto px-1.5 py-0.5 rounded text-[10px] bg-holo-amber/30 border border-holo-amber text-holo-amber font-bold hover:bg-holo-amber hover:text-void transition-colors shrink-0 animate-pulse whitespace-nowrap"
                     title="执行全域终局决议协议"
                   >
                     终局决议 →
@@ -212,8 +206,20 @@ export default function HudHeader({
               </div>
             );
           })}
+
+          {/* Overflow Indicator if more than 2 parallel leads exist */}
+          {overflowCount > 0 && (
+            <span
+              className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-mono bg-holo-cyan/15 border border-holo-cyan/40 text-holo-cyan whitespace-nowrap"
+              title={`另有 ${overflowCount} 个星系探索线索可用`}
+            >
+              +{overflowCount} 更多
+            </span>
+          )}
         </div>
       </div>
     </header>
   );
 }
+
+export default HudHeader;
