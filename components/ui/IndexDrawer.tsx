@@ -11,15 +11,14 @@ import {
   AlertCircle,
   Pin,
   FileText,
-  Lightbulb,
   Check,
   ShieldCheck,
   Lock,
   Network,
-  Layers,
   Cpu,
   Zap,
-  Info
+  Sparkles,
+  RefreshCw
 } from "lucide-react";
 import { clientCuratorSynthesize } from "@/lib/api-client";
 
@@ -43,6 +42,8 @@ interface EvalResult {
   memory_recovered_delta?: number;
 }
 
+const CONNECTIVES = ["因为", "所以", "不是", "而是", "并非"] as const;
+
 export default function IndexDrawer({
   onClose,
   collectedPropositions,
@@ -51,11 +52,15 @@ export default function IndexDrawer({
 }: IndexDrawerProps) {
   const [tabMode, setTabMode] = useState<"synthesis" | "graph">("synthesis");
   const [selectedTruth, setSelectedTruth] = useState<AnchorTruth>(CANON.anchorTruths[0]);
+  const [slotA, setSlotA] = useState("");
+  const [slotB, setSlotB] = useState("");
+  const [connective, setConnective] = useState<string>("并非");
   const [hypothesis, setHypothesis] = useState("");
   const [evalResult, setEvalResult] = useState<EvalResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [draggedProp, setDraggedProp] = useState<string | null>(null);
   const [pinnedFlashProp, setPinnedFlashProp] = useState<string | null>(null);
+  const [activeSlotTarget, setActiveSlotTarget] = useState<"A" | "B">("A");
 
   const containerRef = React.useRef<HTMLDivElement>(null);
   const previousActiveElement = React.useRef<HTMLElement | null>(null);
@@ -96,6 +101,87 @@ export default function IndexDrawer({
     return () => window.removeEventListener("keydown", handleTab);
   }, []);
 
+  // Auto-assemble hypothesis when slots or connective change
+  const assembleHypothesis = (a: string, conn: string, b: string) => {
+    const parts = [a.trim(), conn, b.trim()].filter(Boolean);
+    return parts.join(" ");
+  };
+
+  const handleSlotAChange = (val: string) => {
+    setSlotA(val);
+    setHypothesis(assembleHypothesis(val, connective, slotB));
+  };
+
+  const handleSlotBChange = (val: string) => {
+    setSlotB(val);
+    setHypothesis(assembleHypothesis(slotA, connective, val));
+  };
+
+  const handleConnectiveChange = (conn: string) => {
+    setConnective(conn);
+    setHypothesis(assembleHypothesis(slotA, conn, slotB));
+  };
+
+  const insertPropToSlot = (prop: string, targetSlot: "A" | "B") => {
+    const label = CANON.proposition_labels[prop] || prop;
+    setPinnedFlashProp(prop);
+    setTimeout(() => setPinnedFlashProp(null), 600);
+    if (targetSlot === "A") {
+      handleSlotAChange(label);
+      setActiveSlotTarget("B");
+    } else {
+      handleSlotBChange(label);
+    }
+  };
+
+  const handlePropClickFromShelf = (prop: string) => {
+    const label = CANON.proposition_labels[prop] || prop;
+    setPinnedFlashProp(prop);
+    setTimeout(() => setPinnedFlashProp(null), 600);
+    if (!slotA) {
+      handleSlotAChange(label);
+      setActiveSlotTarget("B");
+    } else if (!slotB) {
+      handleSlotBChange(label);
+    } else {
+      insertPropToSlot(prop, activeSlotTarget);
+    }
+  };
+
+  // Check resonance against anchor truth claims (surface / foil / half)
+  const claimResonance = React.useMemo(() => {
+    const targetText = hypothesis || assembleHypothesis(slotA, connective, slotB);
+    if (!targetText || targetText.trim().length < 4) return null;
+    const clean = targetText.replace(/[\s,，.。!！?？\[\]]/g, "");
+
+    for (const truth of CANON.anchorTruths) {
+      const claims = [
+        { type: "surface" as const, claim: truth.surface_claim },
+        { type: "foil" as const, claim: truth.foil_claim },
+        { type: "half" as const, claim: truth.half_claim }
+      ];
+      for (const { type, claim } of claims) {
+        if (!claim) continue;
+        const cleanClaim = claim.replace(/[\s,，.。!！?？]/g, "");
+        if (clean.includes(cleanClaim) || cleanClaim.includes(clean)) {
+          return { truth, type, claim };
+        }
+        // Check 4-character n-gram overlap
+        let matchCount = 0;
+        for (let i = 0; i <= cleanClaim.length - 4; i++) {
+          const sub = cleanClaim.slice(i, i + 4);
+          if (clean.includes(sub)) {
+            matchCount++;
+          }
+        }
+        if (matchCount >= 2) {
+          return { truth, type, claim };
+        }
+      }
+    }
+    return null;
+  }, [hypothesis, slotA, connective, slotB]);
+
   // Derive truth state machine: unknown | encountered | suspected | believed
   const getTruthStatus = (truth: AnchorTruth): "unknown" | "encountered" | "suspected" | "believed" => {
     if (believedTruths.includes(truth.id)) return "believed";
@@ -127,13 +213,14 @@ export default function IndexDrawer({
   const isAlreadyBelieved = believedTruths.includes(selectedTruth.id);
 
   const handleSynthesize = async () => {
-    if (!hypothesis.trim() || !hasAllRequiredProps) return;
+    const finalHypothesis = hypothesis.trim() || assembleHypothesis(slotA, connective, slotB).trim();
+    if (!finalHypothesis || !hasAllRequiredProps) return;
     setLoading(true);
 
     try {
       const res = await clientCuratorSynthesize({
         truthId: selectedTruth.id,
-        hypothesisText: hypothesis,
+        hypothesisText: finalHypothesis,
         pinnedPropositions: collectedPropositions,
         slot: "auto"
       });
@@ -169,46 +256,6 @@ export default function IndexDrawer({
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const insertProp = (prop: string) => {
-    setPinnedFlashProp(prop);
-    setTimeout(() => setPinnedFlashProp(null), 600);
-    setHypothesis((prev) => (prev ? `${prev} [${prop}]` : `[${prop}]`));
-  };
-
-  const loadDraftHypothesis = () => {
-    if (selectedTruth.id === "T1") {
-      setHypothesis(
-        "Helix-7 上的信标并非母星求救信号，而是整台恒星计算机初始引导扇区的常驻握手载波与引导程序（Bootstrap Loader）。"
-      );
-    } else if (selectedTruth.id === "T2") {
-      setHypothesis(
-        "余烬星弧九颗星球构成分布式恒星计算机。窑（Kiln）担任能量总线互斥锁，玻璃果园（Glass Orchard）担任只读光存储矩阵（ROM）。"
-      );
-    } else if (selectedTruth.id === "T3") {
-      setHypothesis(
-        "咏井（Choir Well）圣歌为恒星计算机提供中央晶振时钟基频脉冲，针（Needle）尖塔阵列负责全域内存寻址与堆栈指针重定基底。"
-      );
-    } else if (selectedTruth.id === "T4") {
-      setHypothesis(
-        "400年前的灭绝是第一轮计算结束时的写回（Write-Back）操作。髓（Marrow）的生物湿件处理器与文明被坍缩编译为结果常数与残响。"
-      );
-    } else if (selectedTruth.id === "T5") {
-      setHypothesis(
-        "总账（Ledger）的错误日志与公证授权证实，记录员协议是中断第二轮点火的奇偶校验位机制，理解与认知即为停机钥匙。"
-      );
-    } else if (selectedTruth.id === "THidden") {
-      setHypothesis(
-        "晚星（Vesper）探针自己就是第9号奇偶校验位（Recorder-9）。前8代探针相继熔断，本次苏醒是终结自催化轮回的自我认知重逢。"
-      );
-    } else {
-      setHypothesis(
-        `针对【${selectedTruth.title}】的综合假说：通过 [${selectedTruth.required_propositions.join(
-          ", "
-        )}] 推演，证实其真正的计算角色与常数化事实。`
-      );
     }
   };
 
@@ -284,7 +331,7 @@ export default function IndexDrawer({
             </div>
 
             <div className="text-[11px] text-holo-muted mb-2 font-mono">
-              支持点击直接钉选，或拖拽卡片至假说输入框：
+              点击卡片填入两槽，或拖拽至槽位输入：
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
@@ -292,12 +339,14 @@ export default function IndexDrawer({
                 <div className="text-xs font-mono text-holo-muted p-6 text-center border border-dashed border-holo-cyan/15 rounded-sm my-auto">
                   <p className="mb-2">尚未从星球探索中提取命题。</p>
                   <p className="text-[11px] text-slate-400">
-                    前往 Helix-7 冷启台地与偶极天线阵列调查以归档线索。
+                    前往各星球冷启台地、锻炉、圣歌或遗迹调查以归档线索。
                   </p>
                 </div>
               ) : (
                 collectedPropositions.map((p, idx) => {
                   const isFlash = pinnedFlashProp === p;
+                  const label = CANON.proposition_labels[p] || p;
+
                   return (
                     <motion.div
                       key={idx}
@@ -305,28 +354,49 @@ export default function IndexDrawer({
                       onDragStart={(e: any) => {
                         setDraggedProp(p);
                         if (e.dataTransfer) {
-                          e.dataTransfer.setData("text/plain", `[${p}]`);
+                          e.dataTransfer.setData("text/plain", label);
                         }
                       }}
                       onDragEnd={() => setDraggedProp(null)}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => insertProp(p)}
-                      className={`p-3 rounded-sm cursor-grab active:cursor-grabbing transition-all text-xs font-mono group border ${
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                      onClick={() => handlePropClickFromShelf(p)}
+                      className={`p-2.5 sm:p-3 rounded-sm cursor-pointer transition-all text-xs font-mono group border ${
                         isFlash
-                          ? "bg-holo-amber/30 border-holo-amber shadow-holo-amber scale-105"
+                          ? "bg-holo-amber/30 border-holo-amber shadow-holo-amber scale-102"
                           : "bg-surface-dark/80 border-holo-cyan/20 hover:border-holo-cyan hover:shadow-holo-cyan"
                       }`}
                     >
-                      <div className="flex justify-between items-start mb-1">
-                        <span className="font-bold text-holo-cyan group-hover:text-holo-amber transition-colors">
-                          {p}
+                      <div className="flex justify-between items-start mb-1 gap-1">
+                        <span className="font-bold text-holo-cyan group-hover:text-holo-amber transition-colors leading-snug">
+                          {label}
                         </span>
-                        <Pin className="w-3 h-3 text-holo-muted group-hover:text-holo-cyan" />
+                        <Pin className="w-3 h-3 text-holo-muted group-hover:text-holo-cyan shrink-0 mt-0.5" />
                       </div>
-                      <div className="text-[10px] text-holo-muted flex items-center justify-between">
-                        <span>点击钉选 / 拖拽归档</span>
-                        <span className="text-[9px] text-holo-cyan/60 uppercase">PINNED</span>
+                      <div className="text-[10px] text-holo-muted flex items-center justify-between pt-1 border-t border-holo-cyan/10">
+                        <span className="font-mono text-[9px] text-slate-400 truncate max-w-[140px]">{p}</span>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              insertPropToSlot(p, "A");
+                            }}
+                            className="px-1.5 py-0.5 rounded bg-surface hover:bg-holo-cyan/20 text-[9px] text-holo-cyan border border-holo-cyan/30 transition-colors"
+                          >
+                            + 槽 A
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              insertPropToSlot(p, "B");
+                            }}
+                            className="px-1.5 py-0.5 rounded bg-surface hover:bg-holo-cyan/20 text-[9px] text-holo-cyan border border-holo-cyan/30 transition-colors"
+                          >
+                            + 槽 B
+                          </button>
+                        </div>
                       </div>
                     </motion.div>
                   );
@@ -346,7 +416,6 @@ export default function IndexDrawer({
               {CANON.anchorTruths.map((t) => {
                 const status = getTruthStatus(t);
                 const isSelected = selectedTruth.id === t.id;
-                const statusLvl = getStatusLevel(status);
 
                 return (
                   <motion.div
@@ -431,54 +500,214 @@ export default function IndexDrawer({
             </div>
           </div>
 
-          {/* Col 3: Synthesis Input & AI Evaluator */}
+          {/* Col 3: Two-Slot Causal Synthesis & AI Evaluator */}
           <div className="holo-panel p-4 sm:p-5 rounded-sm flex flex-col min-h-[300px] md:min-h-0 md:overflow-hidden border-holo-cyan/25">
             <div className="flex justify-between items-center border-b border-holo-cyan/15 pb-2.5 mb-3 text-xs font-mono font-bold text-holo-bright">
-              <span>综合假说陈述 // {selectedTruth.id}</span>
+              <span>两槽因果综合推演 // {selectedTruth.id}</span>
               <span className="text-holo-cyan text-[10px]">CURATOR ENGINE</span>
             </div>
 
-            <div className="flex-1 flex flex-col overflow-hidden">
-              <div className="flex justify-between items-center text-[11px] font-mono text-holo-muted mb-2">
-                <span>陈述你对该真相的理解：</span>
-                <button
-                  onClick={loadDraftHypothesis}
-                  disabled={!hasAllRequiredProps}
-                  className="min-h-[36px] text-[10px] text-holo-cyan hover:text-holo-amber disabled:opacity-30 disabled:hover:text-holo-cyan flex items-center gap-1 underline transition-colors px-1"
-                >
-                  <Lightbulb className="w-3 h-3" />
-                  <span>快速载入推论范例</span>
-                </button>
-              </div>
-
-              {/* Textarea with Drag & Drop Receptor */}
+            <div className="flex-1 flex flex-col overflow-y-auto pr-1">
+              {/* Slot A Container */}
               <div
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
                   const data = e.dataTransfer.getData("text/plain");
-                  if (data) {
-                    setHypothesis((prev) => (prev ? `${prev} ${data}` : data));
-                  }
+                  if (data) handleSlotAChange(data);
                 }}
-                className="relative"
+                className={`p-2.5 rounded-sm border mb-2 transition-all ${
+                  activeSlotTarget === "A"
+                    ? "bg-surface-dark/95 border-holo-cyan/50 shadow-sm"
+                    : "bg-surface-dark/70 border-holo-border"
+                }`}
               >
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="text-[11px] font-mono font-bold text-holo-cyan flex items-center gap-1.5 cursor-pointer">
+                    <span className="w-4 h-4 rounded-full bg-holo-cyan/20 text-holo-cyan flex items-center justify-center text-[10px] font-bold">
+                      A
+                    </span>
+                    <span>观察槽位 A (人话观察)</span>
+                  </label>
+                  {slotA && (
+                    <button
+                      type="button"
+                      onClick={() => handleSlotAChange("")}
+                      className="text-[10px] text-slate-400 hover:text-holo-amber font-mono"
+                    >
+                      清空
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  value={slotA}
+                  onFocus={() => setActiveSlotTarget("A")}
+                  onChange={(e) => handleSlotAChange(e.target.value)}
+                  placeholder="点击左侧或下方命题填入观察 A..."
+                  disabled={!hasAllRequiredProps && !isAlreadyBelieved}
+                  className="w-full bg-void/70 border border-holo-cyan/20 focus:border-holo-cyan rounded-sm px-2.5 py-1.5 text-xs font-mono text-holo-bright outline-none transition-all mb-1.5 disabled:opacity-40"
+                />
+                {collectedPropositions.length > 0 && (
+                  <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto pt-1">
+                    {collectedPropositions.map((p) => {
+                      const label = CANON.proposition_labels[p] || p;
+                      const isSelected = slotA === label;
+                      return (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => handleSlotAChange(label)}
+                          className={`text-[9px] px-1.5 py-0.5 rounded font-mono text-left truncate max-w-[200px] transition-all ${
+                            isSelected
+                              ? "bg-holo-cyan/30 text-holo-cyan border border-holo-cyan font-bold"
+                              : "bg-surface text-slate-300 border border-holo-border hover:border-holo-cyan/50 hover:text-holo-bright"
+                          }`}
+                          title={label}
+                        >
+                          + {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Connective Selector */}
+              <div className="flex items-center justify-between bg-surface-dark/80 px-3 py-1.5 rounded-sm border border-holo-cyan/20 mb-2">
+                <span className="text-[10px] font-mono text-holo-muted">因果连接词:</span>
+                <div className="flex items-center gap-1">
+                  {CONNECTIVES.map((conn) => {
+                    const isSelected = connective === conn;
+                    return (
+                      <button
+                        key={conn}
+                        type="button"
+                        onClick={() => handleConnectiveChange(conn)}
+                        className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold transition-all ${
+                          isSelected
+                            ? "bg-holo-amber/25 text-holo-amber border border-holo-amber shadow-holo-amber"
+                            : "bg-surface text-slate-400 border border-holo-border hover:border-holo-cyan hover:text-holo-bright"
+                        }`}
+                      >
+                        {conn}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Slot B Container */}
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const data = e.dataTransfer.getData("text/plain");
+                  if (data) handleSlotBChange(data);
+                }}
+                className={`p-2.5 rounded-sm border mb-2 transition-all ${
+                  activeSlotTarget === "B"
+                    ? "bg-surface-dark/95 border-holo-cyan/50 shadow-sm"
+                    : "bg-surface-dark/70 border-holo-border"
+                }`}
+              >
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className="text-[11px] font-mono font-bold text-holo-cyan flex items-center gap-1.5 cursor-pointer">
+                    <span className="w-4 h-4 rounded-full bg-holo-cyan/20 text-holo-cyan flex items-center justify-center text-[10px] font-bold">
+                      B
+                    </span>
+                    <span>观察槽位 B (人话观察)</span>
+                  </label>
+                  {slotB && (
+                    <button
+                      type="button"
+                      onClick={() => handleSlotBChange("")}
+                      className="text-[10px] text-slate-400 hover:text-holo-amber font-mono"
+                    >
+                      清空
+                    </button>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  value={slotB}
+                  onFocus={() => setActiveSlotTarget("B")}
+                  onChange={(e) => handleSlotBChange(e.target.value)}
+                  placeholder="点击左侧或下方命题填入观察 B..."
+                  disabled={!hasAllRequiredProps && !isAlreadyBelieved}
+                  className="w-full bg-void/70 border border-holo-cyan/20 focus:border-holo-cyan rounded-sm px-2.5 py-1.5 text-xs font-mono text-holo-bright outline-none transition-all mb-1.5 disabled:opacity-40"
+                />
+                {collectedPropositions.length > 0 && (
+                  <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto pt-1">
+                    {collectedPropositions.map((p) => {
+                      const label = CANON.proposition_labels[p] || p;
+                      const isSelected = slotB === label;
+                      return (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => handleSlotBChange(label)}
+                          className={`text-[9px] px-1.5 py-0.5 rounded font-mono text-left truncate max-w-[200px] transition-all ${
+                            isSelected
+                              ? "bg-holo-cyan/30 text-holo-cyan border border-holo-cyan font-bold"
+                              : "bg-surface text-slate-300 border border-holo-border hover:border-holo-cyan/50 hover:text-holo-bright"
+                          }`}
+                          title={label}
+                        >
+                          + {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Assembled Hypothesis Preview (Editable) */}
+              <div className="mb-2">
+                <div className="flex justify-between items-center text-[11px] font-mono text-holo-muted mb-1">
+                  <span className="flex items-center gap-1">
+                    <FileText className="w-3 h-3 text-holo-amber" />
+                    <span>拼装假说预览 (可直接微调编辑)：</span>
+                  </span>
+                  {(slotA || slotB) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHypothesis(assembleHypothesis(slotA, connective, slotB));
+                      }}
+                      className="text-[10px] text-holo-cyan hover:text-holo-amber flex items-center gap-1 transition-colors"
+                    >
+                      <RefreshCw className="w-2.5 h-2.5" />
+                      <span>对齐两槽</span>
+                    </button>
+                  )}
+                </div>
                 <textarea
                   value={hypothesis}
                   onChange={(e) => setHypothesis(e.target.value)}
                   placeholder={
                     hasAllRequiredProps
-                      ? "在此输入或拖拽命题... 例如：Helix-7 的信标并非求救信号，而是整台恒星计算机初始引导扇区的常驻握手载波与引导程序..."
+                      ? "选择上方槽位命题与因果连接词，或在此微调假说陈述..."
                       : `前置命题未集齐：还需收集 ${missingProps.length} 个必要命题 (${missingProps.join(", ")}) 才能开启综合推演。`
                   }
                   disabled={!hasAllRequiredProps && !isAlreadyBelieved}
-                  className={`w-full h-28 sm:h-32 bg-surface-dark/90 border disabled:opacity-40 p-3 text-xs font-mono text-holo-bright rounded-sm outline-none resize-none leading-relaxed transition-all mb-2 ${
-                    draggedProp
-                      ? "border-holo-cyan shadow-holo-cyan bg-holo-cyan/10"
-                      : "border-holo-cyan/20 focus:border-holo-amber"
-                  }`}
+                  className="w-full h-16 sm:h-20 bg-surface-dark/95 border border-holo-cyan/20 focus:border-holo-amber p-2 text-xs font-mono text-holo-bright rounded-sm outline-none resize-none leading-relaxed transition-all disabled:opacity-40"
                 />
               </div>
+
+              {/* Claim Resonance Hint (Optional Bonus) */}
+              {claimResonance && (
+                <div className="p-2 bg-holo-cyan/10 border border-holo-cyan/30 rounded-sm text-[11px] font-mono text-holo-cyan flex items-center gap-1.5 mb-2">
+                  <Sparkles className="w-3.5 h-3.5 text-holo-cyan shrink-0" />
+                  <span>
+                    {claimResonance.type === "surface"
+                      ? `✦ 观测共振：你的综合与【${claimResonance.truth.title.split("/")[0].trim()}】的观测记录吻合`
+                      : claimResonance.type === "foil"
+                      ? `✦ 线索回响：该推论触及【${claimResonance.truth.title.split("/")[0].trim()}】的表层传闻`
+                      : `✦ 局部印证：该推论与【${claimResonance.truth.title.split("/")[0].trim()}】的局部线索吻合`}
+                  </span>
+                </div>
+              )}
 
               {/* Required propositions status warning */}
               {!hasAllRequiredProps && !isAlreadyBelieved && (
@@ -490,6 +719,7 @@ export default function IndexDrawer({
                 </div>
               )}
 
+              {/* Synthesis Submit Button */}
               <button
                 onClick={handleSynthesize}
                 disabled={loading || !hypothesis.trim() || !hasAllRequiredProps}
@@ -498,7 +728,7 @@ export default function IndexDrawer({
                 {loading ? (
                   <div className="flex items-center gap-2">
                     <span className="w-3 h-3 rounded-full border-2 border-holo-amber border-t-transparent animate-spin" />
-                    <span>CURATOR 正在评估假说矩阵...</span>
+                    <span>CURATOR 正在评估因果假说矩阵...</span>
                   </div>
                 ) : !hasAllRequiredProps ? (
                   <>
@@ -513,12 +743,12 @@ export default function IndexDrawer({
                 )}
               </button>
 
-              {/* Evaluator Output Display with Astral Noir animations */}
+              {/* Evaluator Output Display */}
               <div className="flex-1 min-h-[100px] p-3.5 bg-surface-dark/95 border border-holo-cyan/20 rounded-sm overflow-y-auto text-xs font-mono leading-relaxed relative">
                 {loading && (
                   <div className="absolute inset-0 bg-void/80 flex flex-col items-center justify-center gap-2 p-4 text-center">
                     <div className="w-16 h-16 rounded-full border border-holo-cyan/40 border-t-holo-cyan animate-spin" />
-                    <span className="text-[11px] text-holo-cyan animate-pulse">正在进行语义嵌入校验与正典因果图比对...</span>
+                    <span className="text-[11px] text-holo-cyan animate-pulse">正在进行语义匹配与正典因果图比对...</span>
                   </div>
                 )}
 
@@ -585,7 +815,7 @@ export default function IndexDrawer({
                     <HelpCircle className="w-4 h-4 text-holo-cyan shrink-0" />
                     <span>
                       {hasAllRequiredProps
-                        ? "必要前置命题已集齐。请在上方陈述你对该真相的理解并提交评估。"
+                        ? "必要前置命题已集齐。请在上方两槽拼装因果推论并提交评估。"
                         : `请先在相关星球探索收集所需的前置命题（缺少：${missingProps.join(", ")}）。`}
                     </span>
                   </div>
