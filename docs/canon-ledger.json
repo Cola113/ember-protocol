@@ -868,21 +868,21 @@
     }
   ],
   "proposition_labels": {
-    "Helix.Beacon.Broadcasting": "",
-    "Helix.Signal.Unassigned": "",
-    "Kiln.Bus.Mutex": "",
-    "Orchard.ROM.Exhaustion": "",
-    "Choir.Hymn.IsClock": "",
-    "Ledger.Error.IsChecksum": "",
-    "Ledger.Protocol.RecorderKey": "",
-    "Needle.Pointer.Rebased": "",
-    "Marrow.God.IsProcess": "",
-    "Marrow.Bio.WriteBack": "",
-    "Cinder.Court.IsSandbox": "",
-    "BlindSun.Prohibition.CycleTwo": "",
-    "BlindSun.Director.Blindness": "",
-    "Interval.Core.Recorder9": "",
-    "Interval.Memory.Vesper": ""
+    "Helix.Beacon.Broadcasting": "信标从不求救，只确认交接班",
+    "Helix.Signal.Unassigned": "天线对准的航向，始终等不到一句应答",
+    "Kiln.Bus.Mutex": "总管两头只能择一开，无法同时供热",
+    "Orchard.ROM.Exhaustion": "大旱那年，整片晶林被天眼一次读完",
+    "Choir.Hymn.IsClock": "管风琴从未停歇，全星系按其音高对拍",
+    "Ledger.Error.IsChecksum": "病人临终念的数串，差分机里全有",
+    "Ledger.Protocol.RecorderKey": "卷轴写明：中断点火的不是器物，是理解",
+    "Needle.Pointer.Rebased": "激光测出的坐标，总比旧海图错开一格",
+    "Marrow.God.IsProcess": "肉食之神没有身体，只在神经里搏动",
+    "Marrow.Bio.WriteBack": "信徒未被吞噬，是狂喜中并入回响",
+    "Cinder.Court.IsSandbox": "壁炉后藏着一具不属于这宫廷的机关",
+    "BlindSun.Prohibition.CycleTwo": "视界镜被涂黑，是不让人再望向第二轮",
+    "BlindSun.Director.Blindness": "学者自愿饮下致盲药，只为封住双眼",
+    "Interval.Core.Recorder9": "插座正合你的尺寸，像等了你很久",
+    "Interval.Memory.Vesper": "记忆核心认得你，唤你一声晚星"
   },
   "planets": [
     {
