@@ -253,7 +253,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         text: "“听——你听见了吗？！第 440 赫兹，纯净的基频！是神明，在重水深处呼吸！钟摆每划过一次深渊海沟，满天的星，都跟着和一声！赞美这恒定的拍。”",
         choices: [
           {
-            text: "“俄尔甫斯大乐正。你那架钛合金管风琴，不是祭器——是恒星计算机的压电晶振。”",
+            text: "“俄尔甫斯大乐正。你那架钛合金管风琴，不是祭器——是为整座星系打拍子的机械钟。”",
             nextStep: 1,
           },
           {
@@ -270,7 +270,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 所谓肉身升天，是第一轮时钟同步把信徒一起写回了",
         choices: [
           {
-            text: "“圣歌一旦停，所有星球的因果节拍，全得错位。这，就是晶振的本分。”",
+            text: "“圣歌一旦停，所有星球的因果节拍，全得错位。这才是这架风琴的本分。”",
             nextStep: 3,
           },
         ],
@@ -282,7 +282,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         text: "“偏离？不可能……神明的拍，怎么会错？等等……440.000 赫兹……今天怎么成了 442.015？是谁，是谁在星系中央，拽动了神明的拍？！这跑调——跑得我心都乱了！”",
         choices: [
           {
-            text: "“是第二轮计算的自催化预热。它在硬超频，这台睡着的计算机。”",
+            text: "“是第二轮点火在强行拉快心跳。整座星系都在跟着它加速。”",
             nextStep: 3,
           },
         ],
@@ -291,10 +291,10 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Cantor 俄尔甫斯",
         speakerRole: "大乐正残响 · 跌坐在管风琴踏板前",
         avatarColor: "#38bdf8",
-        text: "“原来……我们唱了四百年的赞美诗，不过是这台钢铁巨兽的秒针，滴答、滴答。记录者，把这基频拿去吧。时钟要是注定要停——请让最后一个音，留在绝对的准音上。”",
+        text: "“原来……我们唱了四百年的赞美诗，不过是这台钢铁巨兽的秒针，滴答、滴答。记录者，把这定音拿去吧。乐声要是注定要停——请让最后一个音，留在绝对的准音上。”",
         propositionReward: {
           code: "Choir.Hymn.IsClock",
-          text: "Choir Well 圣歌即中央时钟基频晶振",
+          text: "管风琴从未停歇，全星系按其音高对拍",
         },
       },
     ],
@@ -305,7 +305,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
     npcId: "npc-valentine",
     name: "Archivist 瓦伦丁 (Valentine)",
     role: "高级公证员残响",
-    personality: "理性、强迫症、追求绝对哈希对齐",
+    personality: "理性、强迫症、追求绝对印鉴无误",
     speechRegister: "bureaucratic-legal",
     taboos: ["治愈", "意外", "算错了"],
     steps: [
@@ -313,14 +313,14 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Archivist 瓦伦丁",
         speakerRole: "高级公证员残响 · 哥特万卷大厅主审席上，指节敲着金盘",
         avatarColor: "#facc15",
-        text: "“编号 RECORDER-9，出示终审公证印章！兹据第七隔离病房呈报：‘灰墨热’仍在蔓延，所有检疫档案，须于三秒内完成卷宗哈希对齐。一字节错漏——即属背叛《公证法典》。盖章。快。”",
+        text: "“编号 RECORDER-9，出示终审公证印章！兹据第七隔离病房呈报：‘灰墨热’仍在蔓延，所有检疫档案，须于三秒内完成卷宗印鉴核验。一字节错漏——即属背叛《公证法典》。盖章。快。”",
         choices: [
           {
-            text: "“瓦伦丁公证员。灰墨热不是瘟疫——是系统校验和不一致，溢到了物理层。”",
+            text: "“瓦伦丁公证员。灰墨热不是瘟疫——是整座都市的账本被写穿了。”",
             nextStep: 1,
           },
           {
-            text: "“我是合法授权的终审记录官。来调阅系统错误日志。”",
+            text: "“我是合法授权的终审记录官。来调阅历代死难卷宗。”",
             nextStep: 2,
           },
         ],
@@ -333,7 +333,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 瘟疫叙事，被一行硬编码的错误日志，戳穿了",
         choices: [
           {
-            text: "“因为他们就是校验和层。计算一出错，错误日志，就写满了整座城。”",
+            text: "“因为这座城从一开始就是一座大账房。错算了一笔，死难就写满了整座城。”",
             nextStep: 3,
           },
         ],
@@ -345,7 +345,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         text: "“你的指令签名……核验通过。符合《公证法典》第一条第 9 款——‘当全域核验印鉴崩解，唯第 9 号记录员，得行使终审授权’。原来……四百年前我们签的那道隔离令，是一道封死整座星系的终审封印。”",
         choices: [
           {
-            text: "“交付终审授权卷轴、校验和命题。完成归档。”",
+            text: "“交付终审授权卷轴、灰墨命题。完成归档。”",
             nextStep: 3,
           },
         ],
@@ -354,10 +354,10 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Archivist 瓦伦丁",
         speakerRole: "高级公证员残响 · 郑重合上黄金差分机盖板",
         avatarColor: "#facc15",
-        text: "“没有一滴墨水是多余的——哪怕它记的，是系统崩溃。第 9 号记录员，授权卷轴、灰墨核验印鉴，归你了。去黑间隔，执行终审裁决。别让错误，在第二轮里无限递归。”",
+        text: "“没有一滴墨水是多余的——哪怕它记的，是系统崩溃。第 9 号记录员，授权卷轴、灰墨核验印鉴，归你了。去黑间隔，执行终审裁决。别让错误，在第二轮里一遍遍重蹈覆辙。”",
         propositionReward: {
           code: "Ledger.Error.IsChecksum",
-          text: "Ledger 灰墨热瘟疫实为系统校验和报错",
+          text: "病人临终念的数串，差分机里全有",
         },
       },
     ],
@@ -370,7 +370,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
     role: "末代领航员残响",
     personality: "骄傲、不屈、紧握失灵的陀螺仪",
     speechRegister: "nautical-heroic",
-    taboos: ["沉没", "盲目", "地址溢出"],
+    taboos: ["沉没", "盲目", "海图尽头"],
     steps: [
       {
         speaker: "Navigator 艾拉",
@@ -379,7 +379,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         text: "“舵抓紧，探针！电磁风暴要把对流层撕开了！我的‘远航者号’——只是暂时被磁极紊乱困住。等我校准这枚天顶陀螺，咱们就能冲出星弧！稳住，别慌。”",
         choices: [
           {
-            text: "“艾拉领航员。星空没变——变的是内存寻址指针的基底。”",
+            text: "“艾拉领航员。星空没变——变的是测绘仪对准的基准点。”",
             nextStep: 1,
           },
           {
@@ -392,11 +392,11 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Navigator 艾拉",
         speakerRole: "末代领航员残响 · 握紧发烫的磁陀螺",
         avatarColor: "#e0e7ff",
-        text: "“指针基底？什么胡话！我艾拉，星引行会最准的领航员，闭着眼都能算出母港方位！可是……为什么，不管我怎么转激光测距仪，这指针——永远指着海图之外的空白虚空（Out of Bounds）？！这海图上，不该有这种地方！”",
+        text: "“指针基底？什么胡话！我艾拉，星引行会最准的领航员，闭着眼都能算出母港方位！可是……为什么，不管我怎么转激光测距仪，这指针——永远指着海图之外的空白虚空？！这海图上，不该有这种地方！”",
         hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 一个越界指针，把她钉死在迷航的耻辱里",
         choices: [
           {
-            text: "“因为第一轮运算一结束，堆栈指针被整体 Rebase 到了零地址。”",
+            text: "“因为四百年前航线被整体重置了，所有指针都被扳回了起点。”",
             nextStep: 3,
           },
         ],
@@ -405,10 +405,10 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Navigator 艾拉",
         speakerRole: "末代领航员残响 · 望向残破的旗舰残骸",
         avatarColor: "#e0e7ff",
-        text: "“睡了四百年……难怪。难怪那些在无线电里喊我的水手，声音都像隔着好几重冰川……我们没有沉进深海——我们是被困在，一段错误的地址里了。对不对？”",
+        text: "“睡了四百年……难怪。难怪那些在无线电里喊我的水手，声音都像隔着好几重冰川……我们没有沉进深海——我们是被困在，一片被遗忘的荒海里了。对不对？”",
         choices: [
           {
-            text: "“用三轴激光测距仪，校正指针基底。把它，领回正轨。”",
+            text: "“用三轴激光测距仪，重新校正海图基底。把船领回正轨。”",
             nextStep: 3,
           },
         ],
@@ -417,10 +417,10 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Navigator 艾拉",
         speakerRole: "末代领航员残响 · 坦然将陀螺仪归零",
         avatarColor: "#e0e7ff",
-        text: "“大海本没有方向——除非你在星空里，插下一根针。针，现在正了。坐标，指向黑间隔。领航员艾拉，任务完成。记录者，把船，开出这片死寂的地址总线吧。”",
+        text: "“大海本没有方向——除非你在星空里，插下一根针。针，现在正了。坐标，指向黑间隔。领航员艾拉，任务完成。记录者，把船，开出这片死寂的迷航星域吧。”",
         propositionReward: {
           code: "Needle.Pointer.Rebased",
-          text: "Needle 寻址指针重定基底解除迷航",
+          text: "激光测出的坐标，总比旧海图错开一格",
         },
       },
     ],
