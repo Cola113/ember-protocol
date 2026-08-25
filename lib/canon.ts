@@ -76,6 +76,7 @@ export const CANON = {
   vessel: canonData.vessel,
   recorder: canonData.recorder,
   anchorTruths: canonData.anchor_truths as AnchorTruth[],
+  proposition_labels: ((canonData as any).proposition_labels || {}) as Record<string, string>,
   planets: canonData.planets as PlanetDef[],
   constitutions: (canonData as CanonLedgerData).constitutions
 };

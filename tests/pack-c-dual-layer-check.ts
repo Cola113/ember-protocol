@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { CANON_DIALOGUES } from "../lib/dialogues";
+import { CANON_DIALOGUES, NPCDialogueTree } from "../lib/dialogues";
 import {
   GLOBAL_FORBIDDEN_WORDS,
   PLANET_FORBIDDEN_WORDS,
@@ -61,6 +61,18 @@ const packCNpcs = [
   { id: "npc-nova", planet: "blind-sun" }
 ];
 
+function getDialogueSpokenContent(tree: NPCDialogueTree): string {
+  return tree.steps
+    .map((s) => [
+      s.text,
+      s.speakerRole,
+      s.hysteresisNote || "",
+      ...(s.choices?.map((c) => c.text) || []),
+    ])
+    .flat()
+    .join(" ");
+}
+
 for (const { id, planet } of packCNpcs) {
   const tree = CANON_DIALOGUES[id];
   assert.ok(tree, `Tree for ${id} must exist`);
@@ -103,14 +115,73 @@ for (const { id, planet } of packCNpcs) {
 }
 console.log();
 
-// 3. SurfaceStageView Surface Text Scan
-console.log("--- 3. Validating SurfaceStageView Surface Layer for Pack C & Hidden ---");
+// 3. Codex Gate Semantic Leak Checks (P0-1, P0-2, P0-3, P0-4)
+console.log("--- 3. Validating Codex Gate Semantic Leak Rules (P0-1 ~ P0-4) ---");
+
+// P0-1: Marrow / T4 semantic leaks
+const moiraSpoken = getDialogueSpokenContent(CANON_DIALOGUES["npc-moira"]);
+const marrowLeaks = ["并未消亡", "并联", "印刻进地骨", "没有神只有"];
+for (const leak of marrowLeaks) {
+  assert.ok(
+    !moiraSpoken.includes(leak),
+    `[P0-1 LEAK] Moira spoken dialogue contains semantic leak: "${leak}"`
+  );
+}
+
+// P0-2: Cinder Court / Julian leaks
+const julianSpoken = getDialogueSpokenContent(CANON_DIALOGUES["npc-julian"]);
+const julianLeaks = ["编造", "掩盖", "戏台", "提线木偶", "假象", "虚构"];
+for (const leak of julianLeaks) {
+  assert.ok(
+    !julianSpoken.includes(leak),
+    `[P0-2 LEAK] Julian spoken dialogue contains semantic leak: "${leak}"`
+  );
+}
+
+// P0-3: Blind Sun / Nova leaks
+const novaSpoken = getDialogueSpokenContent(CANON_DIALOGUES["npc-nova"]);
+const novaLeaks = ["DO NOT COMPLETE THE SECOND CYCLE", "烧尽宇宙", "吞噬物理法则"];
+for (const leak of novaLeaks) {
+  assert.ok(
+    !novaSpoken.includes(leak),
+    `[P0-3 LEAK] Nova spoken dialogue contains semantic leak: "${leak}"`
+  );
+}
+
+// P0-4: SurfaceStageView code scans
 const stageViewSource = readFileSync(
   join(process.cwd(), "components", "ui", "SurfaceStageView.tsx"),
   "utf-8"
 );
 
-// Verify hotspots exist and have dual-layer blocks
+// P0-1 in StageView
+assert.ok(!stageViewSource.includes("全星系的信徒并未消亡"), "[P0-1 LEAK in SurfaceStageView]");
+assert.ok(!stageViewSource.includes("印刻进地骨"), "[P0-1 LEAK in SurfaceStageView]");
+
+// P0-2 in StageView
+assert.ok(!stageViewSource.includes("掩盖在帷幕之后"), "[P0-2 LEAK in SurfaceStageView]");
+
+// P0-3 in StageView
+assert.ok(!stageViewSource.includes("OUTPUT[CYCLE_1]"), "[P0-3 LEAK in SurfaceStageView]");
+
+// P0-4 in StageView
+// Verify Recorder-01..08 is not in surface modal (outside isDecoded)
+const sarcophagusBlock = stageViewSource.slice(
+  stageViewSource.indexOf('activeModal.id === "hs-sarcophagus"'),
+  stageViewSource.indexOf('activeModal.id === "hs-vesper-mirror"')
+);
+const surfaceSarcophagus = sarcophagusBlock.split("{isDecoded &&")[0];
+assert.ok(!surfaceSarcophagus.includes("RECORDER-0"), "[P0-4 LEAK] Surface sarcophagus contains RECORDER-0X");
+assert.ok(!surfaceSarcophagus.includes("SOCKET_09"), "[P0-4 LEAK] Surface sarcophagus contains SOCKET_09");
+assert.ok(!surfaceSarcophagus.includes("熔断"), "[P0-4 LEAK] Surface sarcophagus contains 熔断");
+
+// Verify hotspot cards render human proposition labels
+assert.ok(stageViewSource.includes("CANON.proposition_labels"), "[P0-4] Hotspot cards must use proposition_labels");
+
+console.log("  [PASS] All 4 Codex Gate P0 semantic leak checks passed cleanly.\n");
+
+// 4. Hotspots Structure Scan
+console.log("--- 4. Validating SurfaceStageView Structure ---");
 const hotspots = [
   "hs-nerve-cluster",
   "hs-bio-matrix",

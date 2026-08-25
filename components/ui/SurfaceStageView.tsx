@@ -467,8 +467,10 @@ export default function SurfaceStageView({
                   [ENGAGE NODE]
                   <ArrowRight className="w-3.5 h-3.5" />
                 </span>
-                <span className="text-holo-muted text-[10px]">
-                  {hs.proposition ? hs.proposition : "ECHO DIALOGUE"}
+                <span className="text-holo-muted text-[10px] truncate max-w-[200px]">
+                  {hs.proposition
+                    ? (CANON.proposition_labels as Record<string, string>)[hs.proposition] || "PROPOSITION LEAD"
+                    : "ECHO DIALOGUE"}
                 </span>
               </div>
             </motion.div>
@@ -1282,7 +1284,7 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-nerve-cluster" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  搏动心室壁上的光敏神经突触簇。由密密麻麻的神经纤维与搏动血管编织而成的巨大网膜。探针轻触时，能感受到微弱但整齐划一的电脉冲律动——这尊神明没有躯体，唯有数以亿计的神经在同频震颤。
+                  搏动心室壁上的光敏神经突触簇。由密密麻麻的深红纤维与搏动血管编织而成的巨大网膜。探针轻触时，能感受到微弱但整齐划一的电节律——这尊神明没有躯体，唯有数以亿计的纤维在同频震颤。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-rose-500/30 rounded-sm space-y-2">
@@ -1291,7 +1293,7 @@ export default function SurfaceStageView({
                     SYNAPSE IMPULSE HARMONIC // 突触脉冲律动
                   </div>
                   <div className="text-[11px] text-slate-300 leading-normal">
-                    突触放电分析：“检测到全域神经纤维以极高同步率自发共振。全星系的信徒并未消亡，其感知全部并联在同一片搏动网络之中。”
+                    突触放电分析：“检测到深红纤维残留着微弱的电节律。原质神教的信徒曾在仪式中献出一切，唯有地心脉动至今未歇。”
                   </div>
                 </div>
 
@@ -1343,7 +1345,7 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-bio-matrix" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  硬化几丁质基板。地心深处冷却凝固的巨型甲壳与骨质结构。通过对基板注入微弱电流，能唤醒沉睡在几丁质纹路中的神经回响——四百年前，信徒们并非死于灾难，而是在狂喜中自愿将全部生命印刻进地骨。
+                  硬化几丁质基板。地心深处冷却凝固的巨型甲壳与骨质结构。通过对基板注入微弱电流，能唤醒沉睡在几丁质纹路中的古老共振——四百年前，信徒们在狂热中完成了最后的献祭与沉睡。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-rose-500/30 rounded-sm space-y-3">
@@ -1396,7 +1398,7 @@ export default function SurfaceStageView({
                   </div>
                 ) : (
                   <div className="p-3 bg-surface-dark/50 border border-holo-border rounded-sm text-holo-muted text-[11px]">
-                    提示：将生物刺激推至 90% 以上，触发基板中的共振残留响应。
+                    提示：将生物刺激推至 90% 以上，唤醒基板深处沉睡的仪式共振。
                   </div>
                 )}
 
@@ -1444,7 +1446,7 @@ export default function SurfaceStageView({
                     <div>MECHANISM_ID: SECRET_NICHE_7A</div>
                     <div>READING_STATUS: ENCLOSED_MONITOR_ARRAY</div>
                     <div className="text-purple-300">
-                      STATUS: &quot;机关读数极其精密，却与七大家族的族谱、恩怨毫无物理连系。整场宫廷鸩杀剧，仿佛只是为了将暗格掩盖在帷幕之后。&quot;
+                      STATUS: &quot;机关读数极其精密，且带有某种古老的监测特征，与七大家族的巴洛克宫廷风格迥异。它在此静静运转，似乎比整座宫殿还要古老。&quot;
                     </div>
                   </div>
                 </div>
@@ -1508,7 +1510,7 @@ export default function SurfaceStageView({
                       MIRROR SCRAPE PROGRESS (黑漆刮除度): {mirrorScrapedPercent}%
                     </span>
                     <span className={isMirrorCleared ? "text-holo-green font-bold" : "text-slate-400"}>
-                      {isMirrorCleared ? "【镜框绝笔铭文显现】" : "视界受阻 (TARGET: ≥80%)"}
+                      {isMirrorCleared ? "【镜框誓约显现】" : "视界受阻 (TARGET: ≥80%)"}
                     </span>
                   </div>
 
@@ -1523,7 +1525,7 @@ export default function SurfaceStageView({
 
                   {isMirrorCleared && (
                     <div className="bg-void p-3 rounded border border-holo-amber/40 font-mono text-xs text-holo-amber text-center tracking-widest uppercase font-bold animate-pulse">
-                      INSCRIPTION: &quot;DO NOT COMPLETE THE SECOND CYCLE&quot;
+                      INSCRIPTION: &quot;PROHIBITION SEALED // 终极禁令已封存&quot;
                     </div>
                   )}
                 </div>
@@ -1557,7 +1559,7 @@ export default function SurfaceStageView({
                   </div>
                 ) : (
                   <div className="p-3 bg-surface-dark/50 border border-holo-border rounded-sm text-holo-muted text-[11px]">
-                    提示：刮除 80% 以上的遮光黑漆，观测镜框上的绝笔指令。
+                    提示：刮除 80% 以上的遮光黑漆，观测镜框上封存的学者誓约。
                   </div>
                 )}
 
@@ -1592,7 +1594,7 @@ export default function SurfaceStageView({
                     SCHOLARS&apos; COVENANT // 学者誓词石碑
                   </div>
                   <div className="text-[11px] text-slate-300 leading-relaxed italic">
-                    “当求知者看清了终点，目光便成了最危险的引线。若我们继续注视星空，我们的清醒便会唤醒深渊的下一场大火。我们自愿饮下盲药，封住双眼，将长夜留给最后的守夜人。”
+                    “当求知者看清了终点，目光便成了危险的引线。学者们决意不再注视深空，以换取星弧永恒的宁静。我们自愿饮下盲药，封住双眼，将长夜留给最后的守夜人。”
                   </div>
                 </div>
 
@@ -1645,31 +1647,20 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-sarcophagus" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  镜像休眠舱阵列。排布着标注为 Recorder-01 至 Recorder-08 的八具金属座舱，全部已被强电流烧蚀为焦炭。唯有第九具座舱微微泛着冷蓝色的荧光，尺寸与你的机体分毫不差。
+                  深空祭台中央的休眠座舱列阵。数具古老的金属座舱整齐排布，大部分舱体已在漫长岁月中沉寂冷却。唯有中央的一具座舱微微泛着冷蓝色的荧光，接口尺寸与你的机体宛如孪生。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-slate-200/40 rounded-sm space-y-3">
                   <div className="flex justify-between items-center text-xs font-bold text-holo-bright">
                     <span className="flex items-center gap-1.5">
                       <Database className="w-3.5 h-3.5 text-holo-amber" />
-                      SARCOPHAGUS REGISTER // 休眠座舱阵列
+                      SARCOPHAGUS ARRAY // 座舱列阵共鸣
                     </span>
-                    <span className="text-holo-green">SOCKET_09: ALIGNED // 契合</span>
+                    <span className="text-holo-green">RESONANCE ACTIVE // 激活</span>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 text-[10px]">
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
-                      <div key={num} className="p-2 bg-void/80 border border-slate-700 rounded text-slate-500">
-                        RECORDER-0{num}: [BURNT OUT / 烧蚀]
-                      </div>
-                    ))}
-                    <div className="p-2 bg-holo-amber/20 border border-holo-amber rounded text-holo-bright font-bold">
-                      RECORDER-09: [ACTIVE // 晚星]
-                    </div>
-                  </div>
-
-                  <div className="text-[11px] text-slate-300 pt-1">
-                    识别结果：第九具座舱的接口与你的外壳严丝合缝，冰冷的凹槽在此静静等候了四百年。
+                  <div className="bg-void/80 p-3 rounded text-[11px] text-slate-300 border border-slate-700 leading-relaxed">
+                    识别结果：数具古老座舱在此静默沉睡，唯有中央座舱的凹槽与你的外壳严丝合缝，像是在此等候了许久。
                   </div>
                 </div>
 
