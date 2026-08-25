@@ -977,17 +977,17 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-organ" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  浸水大教堂管风琴音栓总控台。由数千根高密度钛合金音管构成，连接渊底重力阻尼器与恒星晶振发生器。
+                  浸水大教堂管风琴音栓总控台。由数千根高密度钛合金音管构成，连接渊底重力阻尼器与深海谐振钟摆——四百年来未曾停歇一个拍子。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-holo-cyan/20 rounded-sm space-y-3">
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-sky-300 font-bold flex items-center gap-1.5">
                       <Volume2 className="w-3.5 h-3.5" />
-                      OSCILLATOR FREQUENCY (晶振定频): {organPitchHz}.0 Hz
+                      管风琴音高 (ORGAN PITCH): {organPitchHz}.0 Hz
                     </span>
                     <span className={isOrganTuned ? "text-holo-green font-bold" : "text-holo-amber"}>
-                      {isOrganTuned ? "【恒星中央时钟基频锁定 · 442 Hz】" : "相位偏离 (TARGET: 442 Hz)"}
+                      {isOrganTuned ? "【442 Hz · 全星系对拍锁定】" : "音高偏离 (TARGET: 442 Hz)"}
                     </span>
                   </div>
 
@@ -1003,7 +1003,7 @@ export default function SurfaceStageView({
                   <div className="flex justify-between text-[10px] text-holo-muted">
                     <span>420 Hz (低频失锁)</span>
                     <span>440 Hz (表象神圣纯音)</span>
-                    <span>442 Hz (星系时钟基频)</span>
+                    <span>442 Hz (追不上的拍)</span>
                     <span>460 Hz (高频过热)</span>
                   </div>
                 </div>
@@ -1023,7 +1023,7 @@ export default function SurfaceStageView({
                   </div>
                 ) : (
                   <div className="p-3 bg-surface-dark/50 border border-holo-border rounded-sm text-holo-muted text-[11px]">
-                    提示：将音管分频滑块调准至 442 Hz（恒星计算机晶振基频），消除相位误差。
+                    提示：将管风琴音高调准至 442 Hz——那个全星系都在追、却总追不上的拍子。
                   </div>
                 )}
 
@@ -1050,7 +1050,7 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-difference-engine" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  公证中枢的巨型黄铜机械差分机。用于记录全星系七亿份公证卷宗与隔离报告的校验和（Checksum）。
+                  公证中枢的巨型黄铜差分机。用于记录全星系七亿份公证卷宗与隔离报告的核验印鉴——每一份末尾，都盖着一串谁也读不懂的灰墨数符。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-holo-amber/30 rounded-sm space-y-2">
@@ -1104,7 +1104,7 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-protocol-vault" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  主审官席位下方的终审授权卷轴保管库。封印着第一轮计算结束时由全星系签署的奇偶校验权限协议。
+                  主审官席位下方的终审授权卷轴保管库。封印着第一轮结束时由全星系联署的终审封印——传说唯有第 9 号记录员，得行使终审授权。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-holo-amber/30 rounded-sm space-y-2">
@@ -1152,7 +1152,7 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-parallax-laser" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  天顶指北针尖塔的三轴激光测距仪。通过向盲日日食边缘发射视差基准光束，重新定位星系内存寻址指针。
+                  天顶指北针尖塔的三轴激光测距仪。通过向盲日日食边缘发射视差基准光束，重新校准星图的坐标基底——可无论怎么调，测出的坐标总比旧海图错开一格。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-indigo-500/30 rounded-sm space-y-3">
@@ -1162,7 +1162,7 @@ export default function SurfaceStageView({
                       PARALLAX THETA (视差基底角): {needleTheta}°
                     </span>
                     <span className={isNeedleLocked ? "text-holo-green font-bold" : "text-indigo-400"}>
-                      {isNeedleLocked ? "【指针基底对齐 · 128° REBASED】" : "寻址越界 (TARGET: 128°)"}
+                      {isNeedleLocked ? "【坐标基底对齐 · 128° REBASED】" : "坐标越界 (TARGET: 128°)"}
                     </span>
                   </div>
 
@@ -1197,7 +1197,7 @@ export default function SurfaceStageView({
                   </div>
                 ) : (
                   <div className="p-3 bg-surface-dark/50 border border-holo-border rounded-sm text-holo-muted text-[11px]">
-                    提示：将测距仪视差角度调整至 128°，利用盲日边缘折射校正指针基底。
+                    提示：将测距仪视差角度调整至 128°，利用盲日边缘折射校正坐标基底。
                   </div>
                 )}
 

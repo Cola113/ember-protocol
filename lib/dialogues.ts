@@ -266,7 +266,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Cantor 俄尔甫斯",
         speakerRole: "大乐正残响 · 神情骤然警觉狂热",
         avatarColor: "#38bdf8",
-        text: "“亵渎！圣歌，是深渊唱诗班献给造物主的纯音！四百年前，三千个唱诗童子，在神圣和弦里步入海沟，肉身升天——你怎么敢，怎么敢说那是……电路的时钟脉冲？！”",
+        text: "“亵渎！圣歌，是深渊唱诗班献给造物主的纯音！四百年前，三千个唱诗童子，在神圣和弦里步入海沟，肉身升天——你怎么敢，怎么敢说那是……什么冰冷的机器节拍？！”",
         hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 所谓肉身升天，是第一轮时钟同步把信徒一起写回了",
         choices: [
           {
@@ -279,7 +279,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Cantor 俄尔甫斯",
         speakerRole: "大乐正残响 · 抚摸着颤动的定频音叉",
         avatarColor: "#38bdf8",
-        text: "“偏离？不可能……神明的拍，怎么会错？等等……440.000 赫兹……今天怎么成了 442.015？是谁，是谁在星系中央，拽动了时钟分频器？！这跑调——跑得我心都乱了！”",
+        text: "“偏离？不可能……神明的拍，怎么会错？等等……440.000 赫兹……今天怎么成了 442.015？是谁，是谁在星系中央，拽动了神明的拍？！这跑调——跑得我心都乱了！”",
         choices: [
           {
             text: "“是第二轮计算的自催化预热。它在硬超频，这台睡着的计算机。”",
@@ -313,7 +313,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Archivist 瓦伦丁",
         speakerRole: "高级公证员残响 · 哥特万卷大厅主审席上，指节敲着金盘",
         avatarColor: "#facc15",
-        text: "“编号 RECORDER-9，出示终审公证印章！兹据第七隔离病房呈报：‘灰墨热’仍在蔓延，所有检疫档案，须于三秒内完成 SHA-256 校验和对齐。一字节错漏——即属背叛《公证法典》。盖章。快。”",
+        text: "“编号 RECORDER-9，出示终审公证印章！兹据第七隔离病房呈报：‘灰墨热’仍在蔓延，所有检疫档案，须于三秒内完成卷宗哈希对齐。一字节错漏——即属背叛《公证法典》。盖章。快。”",
         choices: [
           {
             text: "“瓦伦丁公证员。灰墨热不是瘟疫——是系统校验和不一致，溢到了物理层。”",
@@ -329,7 +329,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Archivist 瓦伦丁",
         speakerRole: "高级公证员残响 · 疯狂翻动羊皮纸卷轴与磁带",
         avatarColor: "#facc15",
-        text: "“荒谬！八万名法官与抄写员，倒在墨水池里，尸身满布黑斑！你看这每一份死亡诊断书……等等。为什么——为什么每一份的末尾，死者吐出的临终遗言，全是‘ERR_CHECKSUM_FAIL_0x9F’？一字不差？这不符合流行病学！”",
+        text: "“荒谬！八万名法官与抄写员，倒在墨水池里，尸身满布黑斑！你看这每一份死亡诊断书……等等。为什么——为什么每一份的末尾，死者吐出的临终遗言，全是同一串谁也读不懂的灰墨数符——ERR_0x9F？一字不差？这不符合流行病学！”",
         hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 瘟疫叙事，被一行硬编码的错误日志，戳穿了",
         choices: [
           {
@@ -342,7 +342,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Archivist 瓦伦丁",
         speakerRole: "高级公证员残响 · 仔细端详 Vesper 的校验印章",
         avatarColor: "#facc15",
-        text: "“你的指令签名……核验通过。符合《公证法典》第一条第 9 款——‘当全域校验和崩溃，唯第 9 校验位，得行使终审授权’。原来……四百年前我们签的那道隔离令，是整座星系的异常中断处理函数。”",
+        text: "“你的指令签名……核验通过。符合《公证法典》第一条第 9 款——‘当全域核验印鉴崩解，唯第 9 号记录员，得行使终审授权’。原来……四百年前我们签的那道隔离令，是一道封死整座星系的终审封印。”",
         choices: [
           {
             text: "“交付终审授权卷轴、校验和命题。完成归档。”",
@@ -354,7 +354,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Archivist 瓦伦丁",
         speakerRole: "高级公证员残响 · 郑重合上黄金差分机盖板",
         avatarColor: "#facc15",
-        text: "“没有一滴墨水是多余的——哪怕它记的，是系统崩溃。第 9 号记录员，授权卷轴、错误校验和，归你了。去黑间隔，执行终审裁决。别让错误，在第二轮里无限递归。”",
+        text: "“没有一滴墨水是多余的——哪怕它记的，是系统崩溃。第 9 号记录员，授权卷轴、灰墨核验印鉴，归你了。去黑间隔，执行终审裁决。别让错误，在第二轮里无限递归。”",
         propositionReward: {
           code: "Ledger.Error.IsChecksum",
           text: "Ledger 灰墨热瘟疫实为系统校验和报错",
@@ -392,7 +392,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Navigator 艾拉",
         speakerRole: "末代领航员残响 · 握紧发烫的磁陀螺",
         avatarColor: "#e0e7ff",
-        text: "“指针基底？什么胡话！我艾拉，星引行会最准的领航员，闭着眼都能算出母港方位！可是……为什么，不管我怎么转激光测距仪，这指针——永远指着内存之外的空白虚空（Out of Bounds）？！这海图上，不该有这种地方！”",
+        text: "“指针基底？什么胡话！我艾拉，星引行会最准的领航员，闭着眼都能算出母港方位！可是……为什么，不管我怎么转激光测距仪，这指针——永远指着海图之外的空白虚空（Out of Bounds）？！这海图上，不该有这种地方！”",
         hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 一个越界指针，把她钉死在迷航的耻辱里",
         choices: [
           {
