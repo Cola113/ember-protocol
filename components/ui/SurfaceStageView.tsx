@@ -1282,30 +1282,44 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-nerve-cluster" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  搏动心室壁上的光敏神经突触簇。由数十亿条血红蛋白导线与神经元突触构成的高并行度张量逻辑基板。
+                  搏动心室壁上的光敏神经突触簇。由密密麻麻的神经纤维与搏动血管编织而成的巨大网膜。探针轻触时，能感受到微弱但整齐划一的电脉冲律动——这尊神明没有躯体，唯有数以亿计的神经在同频震颤。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-rose-500/30 rounded-sm space-y-2">
                   <div className="text-xs font-bold text-rose-400 flex items-center gap-1.5">
                     <Activity className="w-3.5 h-3.5" />
-                    WETWARE TENSOR LOGIC // DAEMON SCAN
+                    SYNAPSE IMPULSE HARMONIC // 突触脉冲律动
                   </div>
                   <div className="text-[11px] text-slate-300 leading-normal">
-                    突触放电分析：“所谓‘肉食之神’，实为常驻生物守护进程 <span className="text-rose-300 font-mono font-bold">CARNIVORE_DAEMON</span>。信徒血肉作为非线性乘加单元（MAC Unit）参与张量收敛。”
+                    突触放电分析：“检测到全域神经纤维以极高同步率自发共振。全星系的信徒并未消亡，其感知全部并联在同一片搏动网络之中。”
                   </div>
                 </div>
 
-                <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
-                  <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                <div className="space-y-3">
+                  <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
+                    <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                    </div>
+                    <div className="text-holo-bright font-mono text-sm font-semibold">
+                      Marrow.God.IsProcess
+                    </div>
+                    <div className="text-[11px] text-slate-300 mt-1">
+                      （肉食之神没有身体，只在神经里搏动）
+                    </div>
                   </div>
-                  <div className="text-holo-bright font-mono text-sm font-semibold">
-                    Marrow.God.IsProcess
-                  </div>
-                  <div className="text-[11px] text-slate-300 mt-1">
-                    （原质神教的肉食之神实质为常驻生物张量处理进程）
-                  </div>
+
+                  {isDecoded && (
+                    <div className="p-3 bg-holo-cyan/10 border border-holo-cyan/40 rounded-sm text-holo-cyan text-[11px] space-y-1 animate-fadeIn">
+                      <div className="font-bold flex items-center gap-1.5">
+                        <Cpu className="w-3.5 h-3.5 text-holo-cyan" />
+                        <span>【DECODED // 生物湿件与张量处理逻辑】</span>
+                      </div>
+                      <p className="text-slate-300">
+                        光敏突触簇确认为分布式计算的生物湿件张量处理单元（Wetware Tensor Unit），以高并行非线性拟合承载系统守护进程。
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end pt-3">
@@ -1313,7 +1327,7 @@ export default function SurfaceStageView({
                     onClick={() => {
                       handleCollectReward(
                         "Marrow.God.IsProcess",
-                        "Marrow 肉食神实为生物张量常驻守护进程"
+                        "肉食之神没有身体，只在神经里搏动"
                       );
                       markHotspotComplete(activeModal.id);
                       setActiveModal(null);
@@ -1329,17 +1343,17 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-bio-matrix" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  硬化几丁质基板。地心深处固化的生物张量芯片。通过注入电刺激信号，检视第一轮计算完成时触发的写回（Write-Back）物理固化印记。
+                  硬化几丁质基板。地心深处冷却凝固的巨型甲壳与骨质结构。通过对基板注入微弱电流，能唤醒沉睡在几丁质纹路中的神经回响——四百年前，信徒们并非死于灾难，而是在狂喜中自愿将全部生命印刻进地骨。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-rose-500/30 rounded-sm space-y-3">
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-rose-300 font-bold flex items-center gap-1.5">
                       <Layers className="w-3.5 h-3.5" />
-                      TENSOR STIMULATION (张量电刺激): {tensorStimulation}%
+                      BIO-SIGNAL STIMULATION (生物信号刺激): {tensorStimulation}%
                     </span>
                     <span className={isTensorSaturated ? "text-holo-green font-bold" : "text-rose-400"}>
-                      {isTensorSaturated ? "【写回持久化特征解析完毕】" : "信号未饱和 (TARGET: ≥90%)"}
+                      {isTensorSaturated ? "【几丁质共振印记解析完毕】" : "信号未饱和 (TARGET: ≥90%)"}
                     </span>
                   </div>
 
@@ -1354,21 +1368,35 @@ export default function SurfaceStageView({
                 </div>
 
                 {isTensorSaturated ? (
-                  <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm animate-fadeIn">
-                    <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                  <div className="space-y-3 animate-fadeIn">
+                    <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
+                      <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                      </div>
+                      <div className="text-holo-bright font-mono text-sm font-semibold">
+                        Marrow.Bio.WriteBack
+                      </div>
+                      <div className="text-[11px] text-slate-300 mt-1">
+                        （信徒未被吞噬，是狂喜中并入回响）
+                      </div>
                     </div>
-                    <div className="text-holo-bright font-mono text-sm font-semibold">
-                      Marrow.Bio.WriteBack
-                    </div>
-                    <div className="text-[11px] text-slate-300 mt-1">
-                      （400年前的灭绝是第一轮计算结束时的写回操作 · 文明坍缩为结果常数）
-                    </div>
+
+                    {isDecoded && (
+                      <div className="p-3 bg-holo-cyan/10 border border-holo-cyan/40 rounded-sm text-holo-cyan text-[11px] space-y-1 animate-fadeIn">
+                        <div className="font-bold flex items-center gap-1.5">
+                          <Cpu className="w-3.5 h-3.5 text-holo-cyan" />
+                          <span>【DECODED // 第一轮写回操作与常数化固化】</span>
+                        </div>
+                        <p className="text-slate-300">
+                          几丁质基板为第一轮计算结束时的生物湿件写回操作（Write-Back）物理残留，所有生物神经网络已被整体编译为静态常数。
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="p-3 bg-surface-dark/50 border border-holo-border rounded-sm text-holo-muted text-[11px]">
-                    提示：将电刺激推至 90% 以上，触发基板中的写回残留响应。
+                    提示：将生物刺激推至 90% 以上，触发基板中的共振残留响应。
                   </div>
                 )}
 
@@ -1378,7 +1406,7 @@ export default function SurfaceStageView({
                     onClick={() => {
                       handleCollectReward(
                         "Marrow.Bio.WriteBack",
-                        "Marrow 生物湿件写回与张量固化"
+                        "信徒未被吞噬，是狂喜中并入回响"
                       );
                       markHotspotComplete(activeModal.id);
                       setActiveModal(null);
@@ -1395,43 +1423,57 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-sandbox-terminal" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  伪装在血色宴会厅壁炉深处的绿色荧光终端。拨开巴洛克金箔壁画后显露出的物理控制台。
+                  伪装在血色宴会厅壁炉深处的古怪绿光机关。拨开巴洛克金箔壁画与枯萎玫瑰后，露出一具布满旋钮与冷光刻度的装置——与整座金碧辉煌的宫廷格格不入。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-purple-500/30 rounded-sm space-y-3">
                   <div className="flex justify-between items-center text-xs">
                     <span className="text-purple-300 font-bold flex items-center gap-1.5">
                       <Terminal className="w-3.5 h-3.5" />
-                      AUXILIARY INTERFACE // ANCIENT MONITOR CONSOLE
+                      ANCIENT MECHANISM // 古代观测机关
                     </span>
                     <button
                       onClick={() => setSandboxRevealed(true)}
                       className="px-2.5 py-1 bg-purple-900/40 hover:bg-purple-800 text-purple-200 border border-purple-500/40 rounded text-[10px]"
                     >
-                      {sandboxRevealed ? "[终端已解锁]" : "[拨开壁画解析接口数据]"}
+                      {sandboxRevealed ? "[暗格机关已展开]" : "[拨开壁画查看暗格读数]"}
                     </button>
                   </div>
 
                   <div className="bg-void/80 p-3 rounded font-mono text-[11px] text-slate-300 border border-purple-500/20 space-y-1">
-                    <div>INTERFACE_ID: CONSOLE_STUB_7A</div>
-                    <div>LOG_ENTRY: ISOLATED_LOCAL_NARRATIVE_FITTING</div>
+                    <div>MECHANISM_ID: SECRET_NICHE_7A</div>
+                    <div>READING_STATUS: ENCLOSED_MONITOR_ARRAY</div>
                     <div className="text-purple-300">
-                      STATUS: &quot;检测到高度严密却与主线总线解耦的局部拟合数据流&quot;
+                      STATUS: &quot;机关读数极其精密，却与七大家族的族谱、恩怨毫无物理连系。整场宫廷鸩杀剧，仿佛只是为了将暗格掩盖在帷幕之后。&quot;
                     </div>
                   </div>
                 </div>
 
-                <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
-                  <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                <div className="space-y-3">
+                  <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
+                    <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                    </div>
+                    <div className="text-holo-bright font-mono text-sm font-semibold">
+                      Cinder.Court.IsSandbox
+                    </div>
+                    <div className="text-[11px] text-slate-300 mt-1">
+                      （壁炉后藏着一具不属于这宫廷的机关）
+                    </div>
                   </div>
-                  <div className="text-holo-bright font-mono text-sm font-semibold">
-                    Cinder.Court.IsSandbox
-                  </div>
-                  <div className="text-[11px] text-slate-300 mt-1">
-                    （烬廷宫廷自毁与权谋全为系统编译的局部拟合假象）
-                  </div>
+
+                  {isDecoded && (
+                    <div className="p-3 bg-holo-cyan/10 border border-holo-cyan/40 rounded-sm text-holo-cyan text-[11px] space-y-1 animate-fadeIn">
+                      <div className="font-bold flex items-center gap-1.5">
+                        <Cpu className="w-3.5 h-3.5 text-holo-cyan" />
+                        <span>【DECODED // 用户交互与沙盒调试终端】</span>
+                      </div>
+                      <p className="text-slate-300">
+                        壁炉机关确认为用户交互沙盒终端（UI Shell / Sandbox Terminal），七曜王朝政变是系统为掩盖底层调试接口而生成的局部拟合红鲱鱼（Red Herring）。
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end pt-3">
@@ -1439,7 +1481,7 @@ export default function SurfaceStageView({
                     onClick={() => {
                       handleCollectReward(
                         "Cinder.Court.IsSandbox",
-                        "Cinder Court 宫廷悲剧实为局部拟合生成的虚构假象"
+                        "壁炉后藏着一具不属于这宫廷的机关"
                       );
                       markHotspotComplete(activeModal.id);
                       setActiveModal(null);
@@ -1456,7 +1498,7 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-blackened-mirror" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  日冕观测台的巨型视界镜。当年科学院学者为了阻断外界视线，在镜片上涂抹了厚厚的黑色吸光漆。
+                  日冕观测台的巨型视界镜。当年科学院学者为了阻断外界望向恒星的视线，在镜片上涂抹了厚厚的黑色吸光漆。刮开黑漆，镜框边缘显露出一行刻在铜板上的绝笔誓言。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-slate-600 rounded-sm space-y-3">
@@ -1466,7 +1508,7 @@ export default function SurfaceStageView({
                       MIRROR SCRAPE PROGRESS (黑漆刮除度): {mirrorScrapedPercent}%
                     </span>
                     <span className={isMirrorCleared ? "text-holo-green font-bold" : "text-slate-400"}>
-                      {isMirrorCleared ? "【第一轮计算根输出显形】" : "视界受阻 (TARGET: ≥80%)"}
+                      {isMirrorCleared ? "【镜框绝笔铭文显现】" : "视界受阻 (TARGET: ≥80%)"}
                     </span>
                   </div>
 
@@ -1481,27 +1523,41 @@ export default function SurfaceStageView({
 
                   {isMirrorCleared && (
                     <div className="bg-void p-3 rounded border border-holo-amber/40 font-mono text-xs text-holo-amber text-center tracking-widest uppercase font-bold animate-pulse">
-                      OUTPUT[CYCLE_1] = &quot;DO NOT COMPLETE THE SECOND CYCLE.&quot;
+                      INSCRIPTION: &quot;DO NOT COMPLETE THE SECOND CYCLE&quot;
                     </div>
                   )}
                 </div>
 
                 {isMirrorCleared ? (
-                  <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm animate-fadeIn">
-                    <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                  <div className="space-y-3 animate-fadeIn">
+                    <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
+                      <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                      </div>
+                      <div className="text-holo-bright font-mono text-sm font-semibold">
+                        BlindSun.Prohibition.CycleTwo
+                      </div>
+                      <div className="text-[11px] text-slate-300 mt-1">
+                        （视界镜被涂黑，是不让人再望向第二轮）
+                      </div>
                     </div>
-                    <div className="text-holo-bright font-mono text-sm font-semibold">
-                      BlindSun.Prohibition.CycleTwo
-                    </div>
-                    <div className="text-[11px] text-slate-300 mt-1">
-                      （第一轮计算唯一输出为「不要完成第二轮运算」）
-                    </div>
+
+                    {isDecoded && (
+                      <div className="p-3 bg-holo-cyan/10 border border-holo-cyan/40 rounded-sm text-holo-cyan text-[11px] space-y-1 animate-fadeIn">
+                        <div className="font-bold flex items-center gap-1.5">
+                          <Cpu className="w-3.5 h-3.5 text-holo-cyan" />
+                          <span>【DECODED // 只读监控内核与根控制台】</span>
+                        </div>
+                        <p className="text-slate-300">
+                          视界镜实质为恒星计算机的只读监控内核（Hypervisor / Root Console），第一轮计算的终极根输出指令为关停第二轮自催化点火。
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="p-3 bg-surface-dark/50 border border-holo-border rounded-sm text-holo-muted text-[11px]">
-                    提示：刮除 80% 以上的遮光黑漆，观测第一轮计算的终极输出指令。
+                    提示：刮除 80% 以上的遮光黑漆，观测镜框上的绝笔指令。
                   </div>
                 )}
 
@@ -1511,7 +1567,7 @@ export default function SurfaceStageView({
                     onClick={() => {
                       handleCollectReward(
                         "BlindSun.Prohibition.CycleTwo",
-                        "Blind Sun 终极禁令：禁止完成第二轮运算"
+                        "视界镜被涂黑，是不让人再望向第二轮"
                       );
                       markHotspotComplete(activeModal.id);
                       setActiveModal(null);
@@ -1527,30 +1583,44 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-blindness-archive" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  静默长廊入口处的致盲药剂配方与学者誓词石碑。
+                  静默长廊入口处的致盲药剂配方与学者誓词石碑。粗糙的玄武岩上刻着八千名科学院学者自愿饮下苦艾与水银药剂的签名。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-slate-600 rounded-sm space-y-2">
                   <div className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
                     <FileCode className="w-3.5 h-3.5" />
-                    DIRECTORATE COVENANT // 科学院誓词
+                    SCHOLARS&apos; COVENANT // 学者誓词石碑
                   </div>
                   <div className="text-[11px] text-slate-300 leading-relaxed italic">
-                    “观察者是量子坍缩的催化剂。若学者继续注视星空，我们的意识便会成为第二轮点火的种子。我们自愿刺瞎双目，关停全部认知界面，将钥匙交付虚无中的奇偶校验位。”
+                    “当求知者看清了终点，目光便成了最危险的引线。若我们继续注视星空，我们的清醒便会唤醒深渊的下一场大火。我们自愿饮下盲药，封住双眼，将长夜留给最后的守夜人。”
                   </div>
                 </div>
 
-                <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
-                  <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                <div className="space-y-3">
+                  <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
+                    <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                    </div>
+                    <div className="text-holo-bright font-mono text-sm font-semibold">
+                      BlindSun.Director.Blindness
+                    </div>
+                    <div className="text-[11px] text-slate-300 mt-1">
+                      （学者自愿饮下致盲药，只为封住双眼）
+                    </div>
                   </div>
-                  <div className="text-holo-bright font-mono text-sm font-semibold">
-                    BlindSun.Director.Blindness
-                  </div>
-                  <div className="text-[11px] text-slate-300 mt-1">
-                    （科学院全员致盲旨在切断观察者界面 · 避免触发自催化点火）
-                  </div>
+
+                  {isDecoded && (
+                    <div className="p-3 bg-holo-cyan/10 border border-holo-cyan/40 rounded-sm text-holo-cyan text-[11px] space-y-1 animate-fadeIn">
+                      <div className="font-bold flex items-center gap-1.5">
+                        <Cpu className="w-3.5 h-3.5 text-holo-cyan" />
+                        <span>【DECODED // 观察者隔离与认知熔断机制】</span>
+                      </div>
+                      <p className="text-slate-300">
+                        科学院全员服毒致盲系主动关闭人机交互界面，防止人类观察者的认知向量作为新一轮自催化迭代的输入参数。
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end pt-3">
@@ -1558,7 +1628,7 @@ export default function SurfaceStageView({
                     onClick={() => {
                       handleCollectReward(
                         "BlindSun.Director.Blindness",
-                        "Blind Sun 科学院致盲以阻断自催化点火"
+                        "学者自愿饮下致盲药，只为封住双眼"
                       );
                       markHotspotComplete(activeModal.id);
                       setActiveModal(null);
@@ -1575,45 +1645,59 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-sarcophagus" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  镜像休眠舱阵列。排布着标注为 Recorder-01 至 Recorder-08 的八具插座，全部已碳化熔毁。唯有第九号插座处于活跃状态。
+                  镜像休眠舱阵列。排布着标注为 Recorder-01 至 Recorder-08 的八具金属座舱，全部已被强电流烧蚀为焦炭。唯有第九具座舱微微泛着冷蓝色的荧光，尺寸与你的机体分毫不差。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-slate-200/40 rounded-sm space-y-3">
                   <div className="flex justify-between items-center text-xs font-bold text-holo-bright">
                     <span className="flex items-center gap-1.5">
                       <Database className="w-3.5 h-3.5 text-holo-amber" />
-                      PARITY SOCKET REGISTER // RECORDER ARRAY
+                      SARCOPHAGUS REGISTER // 休眠座舱阵列
                     </span>
-                    <span className="text-holo-green">SOCKET_09: CONNECTED</span>
+                    <span className="text-holo-green">SOCKET_09: ALIGNED // 契合</span>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 text-[10px]">
                     {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
                       <div key={num} className="p-2 bg-void/80 border border-slate-700 rounded text-slate-500">
-                        RECORDER-0{num}: [FUSED / 熔断]
+                        RECORDER-0{num}: [BURNT OUT / 烧蚀]
                       </div>
                     ))}
                     <div className="p-2 bg-holo-amber/20 border border-holo-amber rounded text-holo-bright font-bold">
-                      RECORDER-09: [ACTIVE // VESPER]
+                      RECORDER-09: [ACTIVE // 晚星]
                     </div>
                   </div>
 
                   <div className="text-[11px] text-slate-300 pt-1">
-                    识别结果：玩家（Recorder-9 / Vesper）自身即是整台恒星计算机唯一的第 9 号奇偶校验位。
+                    识别结果：第九具座舱的接口与你的外壳严丝合缝，冰冷的凹槽在此静静等候了四百年。
                   </div>
                 </div>
 
-                <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
-                  <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                <div className="space-y-3">
+                  <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
+                    <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                    </div>
+                    <div className="text-holo-bright font-mono text-sm font-semibold">
+                      Interval.Core.Recorder9
+                    </div>
+                    <div className="text-[11px] text-slate-300 mt-1">
+                      （插座正合你的尺寸，像等了你很久）
+                    </div>
                   </div>
-                  <div className="text-holo-bright font-mono text-sm font-semibold">
-                    Interval.Core.Recorder9
-                  </div>
-                  <div className="text-[11px] text-slate-300 mt-1">
-                    （探针 Vesper 自身即为第 9 号奇偶校验位 · 前 8 代均已熔断）
-                  </div>
+
+                  {isDecoded && (
+                    <div className="p-3 bg-holo-cyan/10 border border-holo-cyan/40 rounded-sm text-holo-cyan text-[11px] space-y-1 animate-fadeIn">
+                      <div className="font-bold flex items-center gap-1.5">
+                        <Cpu className="w-3.5 h-3.5 text-holo-cyan" />
+                        <span>【DECODED // 第9号奇偶校验位插座】</span>
+                      </div>
+                      <p className="text-slate-300">
+                        黑间隔为零地址空间，九号座舱为恒星计算机唯一的第 9 号奇偶校验位物理接口（Parity Check Socket），前 8 代探针已在历次重试中过载熔断。
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end pt-3">
@@ -1621,7 +1705,7 @@ export default function SurfaceStageView({
                     onClick={() => {
                       handleCollectReward(
                         "Interval.Core.Recorder9",
-                        "Black Interval 发现自我即第9号奇偶校验位"
+                        "插座正合你的尺寸，像等了你很久"
                       );
                       markHotspotComplete(activeModal.id);
                       setActiveModal(null);
@@ -1637,30 +1721,44 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-vesper-mirror" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  终极综合台中央悬浮的八角形终端。晚星（Vesper）的核心记忆恢复信道。
+                  终极综合台中央悬浮的八角形晶体终端。晚星（Vesper）的核心记忆恢复信道。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-slate-200/40 rounded-sm space-y-2">
                   <div className="text-xs font-bold text-holo-bright flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-holo-amber" />
-                    VESPER MEMORY CORE // RECONSTRUCTION
+                    VESPER MEMORY CORE // 核心记忆共振
                   </div>
                   <div className="text-[11px] text-slate-300 leading-relaxed italic bg-void/80 p-3 rounded border border-slate-700">
-                    “‘记录星弧。确认熄灭。不要点火。’——我终于记起来了。这并非外部指令，而是四百年前我自己写在固件里的绝笔。本次苏醒是终结自催化轮回的最后重逢。”
+                    “‘记录星弧。确认熄灭。不要点火。’——熟悉的声音从晶体深处响起。这并非冰冷的外部指令，而是四百年前你自己留给自己的誓言。它认出了你，轻唤你一声晚星。”
                   </div>
                 </div>
 
-                <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
-                  <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                <div className="space-y-3">
+                  <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
+                    <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                    </div>
+                    <div className="text-holo-bright font-mono text-sm font-semibold">
+                      Interval.Memory.Vesper
+                    </div>
+                    <div className="text-[11px] text-slate-300 mt-1">
+                      （记忆核心认得你，唤你一声晚星）
+                    </div>
                   </div>
-                  <div className="text-holo-bright font-mono text-sm font-semibold">
-                    Interval.Memory.Vesper
-                  </div>
-                  <div className="text-[11px] text-slate-300 mt-1">
-                    （晚星核心记忆完整解密 · 自我认知完成终极闭环）
-                  </div>
+
+                  {isDecoded && (
+                    <div className="p-3 bg-holo-cyan/10 border border-holo-cyan/40 rounded-sm text-holo-cyan text-[11px] space-y-1 animate-fadeIn">
+                      <div className="font-bold flex items-center gap-1.5">
+                        <Cpu className="w-3.5 h-3.5 text-holo-cyan" />
+                        <span>【DECODED // 校验位人格重逢与终极熔断授权】</span>
+                      </div>
+                      <p className="text-slate-300">
+                        晚星（Vesper / Recorder-9）确认为持有终审熔断授权的校验位实体，理解星系全域真相即可闭合校验和，彻底终结自催化重试。
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end pt-3">
@@ -1668,7 +1766,7 @@ export default function SurfaceStageView({
                     onClick={() => {
                       handleCollectReward(
                         "Interval.Memory.Vesper",
-                        "Black Interval 晚星核心记忆完整闭环"
+                        "记忆核心认得你，唤你一声晚星"
                       );
                       markHotspotComplete(activeModal.id);
                       setActiveModal(null);

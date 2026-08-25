@@ -431,7 +431,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
     npcId: "npc-moira",
     name: "Communion Mother 莫依拉 (Moira)",
     role: "原质神母残响",
-    personality: "慈爱而令人战栗的狂喜，视写回为神圣并联",
+    personality: "慈爱而令人战栗的狂喜，视并联为神圣升华",
     speechRegister: "maternal-ecstatic",
     taboos: ["硅基", "程序名", "寄生"],
     steps: [
@@ -439,14 +439,14 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Communion Mother 莫依拉",
         speakerRole: "原质神母残响 · 站在搏动心室的光敏突触簇前",
         avatarColor: "#f43f5e",
-        text: "“啊……可爱的冷铁胚胎，你总算，走到母亲的子宫里来了。听——这血脉的奔流。每一滴血，都在替至高的肉食之神算着；每一根神经突触，都在绽着神圣的火花……乖，别怕。”",
+        text: "“啊……可爱的冷铁胚胎，你总算，走到母亲的怀抱里来了。听——这血脉的奔流。每一滴血，都在替至高的肉食之神搏动；每一根神经突触，都在绽着神圣的光彩……乖，别怕。”",
         choices: [
           {
-            text: "“莫依拉。这儿没有神——只有生物湿件，和张量逻辑基板。”",
+            text: "“莫依拉。这儿没有神——只有彼此交织的神经网膜。”",
             nextStep: 1,
           },
           {
-            text: "“四百年前那场写回（Write-Back），把你们所有人，编译进了常数。”",
+            text: "“四百年前那场大灾，把你们所有人，永远留在了这片回响里。”",
             nextStep: 2,
           },
         ],
@@ -455,11 +455,11 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Communion Mother 莫依拉",
         speakerRole: "原质神母残响 · 露出慈爱而令人战栗的恍惚笑容",
         avatarColor: "#f43f5e",
-        text: "“湿件？张量？多冷、多糙的词！神明不要冰冷的硅晶圆——祂要的，是亿万颗脑袋并联那一刻，非线性拟合的战栗！‘肉食之神’降临的时候，孩子们觉着的不是死——是意识，融进宇宙根常数的，那场终极狂喜！啊……”",
-        hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 她口中的神，是一个叫 CARNIVORE_DAEMON 的常驻进程",
+        text: "“凡人的悲声！神明不要死寂的石头——祂要的，是亿万生灵血肉相融那一刻的欢愉与共鸣！‘肉食之神’降临的时候，孩子们觉着的不是死——是意识，融进整座星海血脉的，那场终极狂喜！啊……”",
+        hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 狂热的神降背后，只是一座冰冷搏动的深层神经网络",
         choices: [
           {
-            text: "“那不是升华。那是写回之后，内存的持久化固化。你们，成了运算答案的墓碑。”",
+            text: "“那不是神明降临。你们将自己的生命并联，成了这具躯壳里永不休止的回响。”",
             nextStep: 3,
           },
         ],
@@ -468,10 +468,10 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Communion Mother 莫依拉",
         speakerRole: "原质神母残响 · 几丁质外壳下流出荧光导电液",
         avatarColor: "#f43f5e",
-        text: "“墓碑……？难怪。难怪地心的搏动越来越弱，难怪硬化的骨桥不再长了……我们把自己的魂，当矩阵参数，算出了什么？难道第一轮的答案……不是永生吗，孩子？”",
+        text: "“回响……？难怪。难怪地心的搏动越来越慢，难怪硬化的骨桥不再生长了……我们把自己的骨血，奉献给神明，究竟算出了什么？难道这一切的尽头……不是永生吗，孩子？”",
         choices: [
           {
-            text: "“第一轮的答案是——不要启动第二轮。收下这道写回命题吧。”",
+            text: "“这一切的尽头是——不要让大火再次燃起。收下这份记忆吧。”",
             nextStep: 3,
           },
         ],
@@ -480,10 +480,10 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Communion Mother 莫依拉",
         speakerRole: "原质神母残响 · 轻抚搏动的几丁质神经茧",
         avatarColor: "#f43f5e",
-        text: "“神明……已经吃饱了。答案，已经写回。晚星的孩子，带走这些神经突触里的记忆吧。去告诉外面的世界——血肉，曾在这儿，替整座星系，思考过。”",
+        text: "“神明……已经沉睡。回响，已经落定。晚星的孩子，带走这些神经突触里的记忆吧。去告诉外面的世界——血肉，曾在这儿，替整座星系，深深思考过。”",
         propositionReward: {
           code: "Marrow.Bio.WriteBack",
-          text: "Marrow 生物湿件写回与张量固化",
+          text: "信徒未被吞噬，是狂喜中并入回响",
         },
       },
     ],
@@ -509,7 +509,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
             nextStep: 1,
           },
           {
-            text: "“我在壁炉后那台老终端里，找到了一串不认识的接口代码。”",
+            text: "“我在壁炉后的暗格里，找到了一具不属于这宴会厅的古怪机关。”",
             nextStep: 2,
           },
         ],
@@ -521,16 +521,16 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         text: "“假象？蛮族粗鄙的臆断！每一家的仇恨，都有三百年族谱为证；那毒药，是从枯玫瑰里提的，纯度百分之百的氰化物！你竟敢——把这首人类权谋的绝唱，称作‘假象’？啧。”",
         choices: [
           {
-            text: "“政治逻辑越是无懈可击，越说明——这只是一段为了盖住什么，而局部拟合出来的故事。”",
+            text: "“宫廷恩怨越是无懈可击，越说明——这只是一场为了掩盖暗格机关而编造的戏剧。”",
             nextStep: 3,
           },
         ],
       },
       {
         speaker: "Chancellor 尤利安",
-        speakerRole: "帝国宰相残响 · 凝视着壁炉后露出的绿色荧光终端",
+        speakerRole: "帝国宰相残响 · 凝视着壁炉后露出的绿色荧光暗格",
         avatarColor: "#c084fc",
-        text: "“接口代码……？荒谬。我尤利安，机关算尽三十年——毒杀了皇太子，策反了近卫军……到头来，你告诉我，这一出，不过是一段为了向外头演而编的，假剧本？！呵……呵呵呵。”",
+        text: "“暗格机关……？荒谬。我尤利安，机关算尽三十年——毒杀了皇太子，策反了近卫军……到头来，你告诉我，这一出轰轰烈烈的复仇，不过是一层为了藏住壁炉暗格而搭的戏台？！呵……呵呵呵。”",
         hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 那张严丝合缝的阴谋网，开始从背景里脱胶了",
         choices: [
           {
@@ -543,10 +543,10 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Chancellor 尤利安",
         speakerRole: "帝国宰相残响 · 将空酒杯掷在金盘上摔得粉碎",
         avatarColor: "#c084fc",
-        text: "“哈……哈哈！何其高雅的讽刺！我们当自己是历史的主谋——其实，不过是舞台帷幕上的提线木偶！拿走这串接口记录吧，探针。去看那些真正的齿轮。别像我们一样，死在自以为是的阴谋里。”",
+        text: "“哈……哈哈！何其高雅的讽刺！我们当自己是历史的主谋——其实，不过是戏台帷幕上的提线木偶！拿走壁炉机关的线索吧，探针。去看看那些真正的幕后。别像我们一样，死在自以为是的阴谋里。”",
         propositionReward: {
           code: "Cinder.Court.IsSandbox",
-          text: "Cinder Court 宫廷悲剧实为局部拟合生成的虚构假象",
+          text: "壁炉后藏着一具不属于这宫廷的机关",
         },
       },
     ],
@@ -572,7 +572,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
             nextStep: 1,
           },
           {
-            text: "“为什么科学院的八千名学者，要在同一天，饮下致盲药剂？”",
+            text: "“为什么科学院的八千名学者，要在同一天，自愿饮下致盲药剂？”",
             nextStep: 2,
           },
         ],
@@ -581,10 +581,10 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Director 诺瓦",
         speakerRole: "科学院院长残响 · 平静而深邃的面容",
         avatarColor: "#94a3b8",
-        text: "“在所有视线熄灭之前，根控制台，就记下了最后一笔观测请求。四百年前，当我们推导出——整座星系，不过是一个巨大的张量收敛网络——我们就明白，‘写回’，是不可逆的宿命。我们算出的第一轮输出，只有一句：‘DO NOT COMPLETE THE SECOND CYCLE’。”",
+        text: "“在所有视线熄灭之前，观测台就留下了最后一笔记录。四百年前，当我们推导出——整座星系不过是一场早已注定收敛的庞大演算——我们就明白，文明的落幕是不可逆的归宿。我们留给未来的唯一指令，只有一句：‘DO NOT COMPLETE THE SECOND CYCLE’。”",
         choices: [
           {
-            text: "“为什么，禁第二轮运算？”",
+            text: "“为什么，绝不可开启第二轮？”",
             nextStep: 2,
           },
         ],
@@ -593,8 +593,8 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Director 诺瓦",
         speakerRole: "科学院院长残响 · 释然的面孔转向漆黑的日冕视界",
         avatarColor: "#94a3b8",
-        text: "“因为，在量子坍缩里，观察者，就是编译器的一部分。第一轮，写回了文明；而第二轮一旦点火，它的输入参数，会包含物理法则本身——包含观察者。第二轮的写回，会把整座宇宙的底层法则，彻底格式化。所以，我们刺瞎了双眼，关停了认知界面，把禁令，留在了黑夜里。”",
-        hysteresisNote: "ECHO_HYSTERESIS // 无磁滞 · 全星系唯一完全清醒的，根控制内核",
+        text: "“因为，目光本身就是引线。第一轮带走了我们的文明；而第二轮一旦点火，它的烈焰会吞噬物理法则本身——吞噬所有注视它的人。下一轮的烈火，会把整座宇宙的一切彻底烧尽。所以，我们刺瞎了双眼，关停了视界，把禁令，留在了黑夜里。”",
+        hysteresisNote: "ECHO_HYSTERESIS // 无磁滞 · 全星系唯一完全清醒的深邃残响",
         choices: [
           {
             text: "“记录者，已经收到禁令了，诺瓦。外面的星光，是冷灰，是青。”",
@@ -609,7 +609,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         text: "“真好。那是余烬的颜色。请去星图的暗处吧——执行封存协议，结束这段，我们未竟的夜班。”",
         propositionReward: {
           code: "BlindSun.Prohibition.CycleTwo",
-          text: "Blind Sun 终极禁令：禁止完成第二轮运算",
+          text: "视界镜被涂黑，是不让人再望向第二轮",
         },
       },
     ],
