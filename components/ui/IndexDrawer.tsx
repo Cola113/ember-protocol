@@ -31,7 +31,7 @@ interface IndexDrawerProps {
 
 interface EvalResult {
   truth_id?: string;
-  verdict: "passed" | "partial" | "failed" | "believed" | "suspected";
+  verdict: "passed" | "partial" | "failed";
   coverage_score: number;
   consistency_score: number;
   coherence_score?: number;
@@ -760,7 +760,7 @@ export default function IndexDrawer({
                   <div>
                     <div
                       className={`flex flex-wrap items-center justify-between gap-2 font-bold mb-2 ${
-                        evalResult.verdict === "passed" || evalResult.verdict === "believed"
+                        evalResult.verdict === "passed"
                           ? "text-holo-green"
                           : evalResult.status === "rejected" || evalResult.verdict === "failed"
                           ? "text-holo-red"
@@ -768,14 +768,14 @@ export default function IndexDrawer({
                       }`}
                     >
                       <div className="flex items-center gap-1.5">
-                        {evalResult.verdict === "passed" || evalResult.verdict === "believed" ? (
+                        {evalResult.verdict === "passed" ? (
                           <CheckCircle className="w-4 h-4 text-holo-green" />
                         ) : (
                           <AlertCircle className="w-4 h-4" />
                         )}
                         <span>
                           SYNTHESIS VERDICT:{" "}
-                          {evalResult.verdict === "passed" || evalResult.verdict === "believed"
+                          {evalResult.verdict === "passed"
                             ? "PASSED (BELIEVED)"
                             : evalResult.status === "rejected"
                             ? "REJECTED (HARD GATE)"

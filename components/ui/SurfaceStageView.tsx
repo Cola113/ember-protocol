@@ -1075,7 +1075,7 @@ export default function SurfaceStageView({
                     onClick={() => {
                       handleCollectReward(
                         "Choir.Hymn.IsClock",
-                        "Choir Well 圣歌即中央时钟基频晶振"
+                        "管风琴从未停歇，全星系按其音高对拍"
                       );
                       markHotspotComplete(activeModal.id);
                       setActiveModal(null);
@@ -1095,22 +1095,24 @@ export default function SurfaceStageView({
                   公证中枢的巨型黄铜差分机。用于记录全星系七亿份公证卷宗与隔离报告的核验印鉴——每一份末尾，都盖着一串谁也读不懂的灰墨数符。
                 </p>
 
-                <div className="p-4 bg-surface-dark/90 border border-holo-amber/30 rounded-sm space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-holo-amber">
-                    <span className="flex items-center gap-1.5">
-                      <Cpu className="w-3.5 h-3.5" />
-                      DIFFERENCE ENGINE // ERROR REGISTER DUMP
-                    </span>
-                    <span className="text-holo-red">CHECKSUM_MISMATCH</span>
-                  </div>
-                  <div className="bg-void/80 p-3 rounded font-mono text-[11px] text-slate-300 border border-holo-amber/20 space-y-1">
-                    <div>[0x00A0] HASH_CALCULATED: 0x9F8B2C... FAIL</div>
-                    <div>[0x00A1] REG_OVERFLOW: 400-YEAR HYSTERESIS ERROR</div>
-                    <div className="text-holo-amber font-bold">
-                      [0x00A2] EPIDEMIC_NARRATIVE_DECODED: &quot;灰墨热并非病毒，乃逻辑校验和溢出&quot;
+                {isDecoded && (
+                  <div className="p-4 bg-surface-dark/90 border border-holo-amber/30 rounded-sm space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold text-holo-amber">
+                      <span className="flex items-center gap-1.5">
+                        <Cpu className="w-3.5 h-3.5" />
+                        DIFFERENCE ENGINE // ERROR REGISTER DUMP
+                      </span>
+                      <span className="text-holo-red">CHECKSUM_MISMATCH</span>
+                    </div>
+                    <div className="bg-void/80 p-3 rounded font-mono text-[11px] text-slate-300 border border-holo-amber/20 space-y-1">
+                      <div>[0x00A0] HASH_CALCULATED: 0x9F8B2C... FAIL</div>
+                      <div>[0x00A1] REG_OVERFLOW: 400-YEAR HYSTERESIS ERROR</div>
+                      <div className="text-holo-amber font-bold">
+                        [0x00A2] EPIDEMIC_NARRATIVE_DECODED: &quot;灰墨热并非病毒，乃逻辑校验和溢出&quot;
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
                 <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
                   <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
@@ -1171,7 +1173,7 @@ export default function SurfaceStageView({
                     onClick={() => {
                       handleCollectReward(
                         "Ledger.Protocol.RecorderKey",
-                        "Ledger 记录员协议为奇偶校验授权机制"
+                        "卷轴写明：中断点火的不是器物，是理解"
                       );
                       markHotspotComplete(activeModal.id);
                       setActiveModal(null);

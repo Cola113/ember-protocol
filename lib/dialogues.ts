@@ -242,7 +242,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
     npcId: "npc-orpheus",
     name: "Cantor 俄尔甫斯 (Orpheus)",
     role: "大乐正残响",
-    personality: "狂热、敏锐、对相位差极度执着",
+    personality: "狂热、敏锐、对走音极度执着",
     speechRegister: "liturgical-musical",
     taboos: ["寂静", "无神", "程序"],
     steps: [
@@ -257,7 +257,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
             nextStep: 1,
           },
           {
-            text: "“我听见你引擎里的相位差了。你的圣歌，正在偏离基频。”",
+            text: "“我听见你的圣歌走音了——它正在偏离那个全星系都在追的拍子。”",
             nextStep: 2,
           },
         ],
@@ -267,7 +267,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speakerRole: "大乐正残响 · 神情骤然警觉狂热",
         avatarColor: "#38bdf8",
         text: "“亵渎！圣歌，是深渊唱诗班献给造物主的纯音！四百年前，三千个唱诗童子，在神圣和弦里步入海沟，肉身升天——你怎么敢，怎么敢说那是……什么冰冷的机器节拍？！”",
-        hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 所谓肉身升天，是第一轮时钟同步把信徒一起写回了",
+        hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 所谓肉身升天，是整座教堂随那一声终章沉进了更深的海",
         choices: [
           {
             text: "“圣歌一旦停，所有星球的因果节拍，全得错位。这才是这架风琴的本分。”",
@@ -330,7 +330,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speakerRole: "高级公证员残响 · 疯狂翻动羊皮纸卷轴与磁带",
         avatarColor: "#facc15",
         text: "“荒谬！八万名法官与抄写员，倒在墨水池里，尸身满布黑斑！你看这每一份死亡诊断书……等等。为什么——为什么每一份的末尾，死者吐出的临终遗言，全是同一串谁也读不懂的灰墨数符——ERR_0x9F？一字不差？这不符合流行病学！”",
-        hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 瘟疫叙事，被一行硬编码的错误日志，戳穿了",
+        hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 瘟疫叙事，被一行谁也读不懂的灰墨数符，戳穿了",
         choices: [
           {
             text: "“因为这座城从一开始就是一座大账房。错算了一笔，死难就写满了整座城。”",
@@ -392,8 +392,8 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Navigator 艾拉",
         speakerRole: "末代领航员残响 · 握紧发烫的磁陀螺",
         avatarColor: "#e0e7ff",
-        text: "“指针基底？什么胡话！我艾拉，星引行会最准的领航员，闭着眼都能算出母港方位！可是……为什么，不管我怎么转激光测距仪，这指针——永远指着海图之外的空白虚空？！这海图上，不该有这种地方！”",
-        hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 一个越界指针，把她钉死在迷航的耻辱里",
+        text: "“基准点？什么胡话！我艾拉，星引行会最准的领航员，闭着眼都能算出母港方位！可是……为什么，不管我怎么转激光测距仪，这指针——永远指着海图之外的空白虚空？！这海图上，不该有这种地方！”",
+        hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 一道总差一格的坐标，把她钉死在迷航的耻辱里",
         choices: [
           {
             text: "“因为四百年前航线被整体重置了，所有指针都被扳回了起点。”",

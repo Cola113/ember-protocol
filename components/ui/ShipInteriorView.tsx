@@ -289,12 +289,12 @@ export default function ShipInteriorView({
                 <>
                   <p>
                     测绘探针 *ISV Threshold* 已校准至余烬星弧（Ember Spur）坐标系。
-                    当前可探测到 9 颗作者星球与多条跨星总线回路。
+                    星弧之上九座世界沉默着，信标与遗迹仍在低语。
                   </p>
                   <p className="text-holo-cyan">
-                    - 螺旋-7 (Helix-7)：已完成引导扇区握手<br />
-                    - 窑 (Kiln)：侦测到高能互斥热核信号<br />
-                    - 玻璃果园 (Glass Orchard)：侦测到只读光干涉条纹
+                    - 螺旋-7 (Helix-7)：信标仍在持续广播<br />
+                    - 窑 (Kiln)：地脉分流的争端未熄<br />
+                    - 玻璃果园 (Glass Orchard)：晶林大旱的遗迹静默
                   </p>
                 </>
               )}
