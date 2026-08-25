@@ -47,7 +47,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
             nextStep: 1,
           },
           {
-            text: "“信标频率 1420.405 MHz。那不是巡逻艇信道，是引导扇区的握手载波。”",
+            text: "“信标频率 1420.405 MHz。那不是巡逻艇信道，是一直没有回音的空频。”",
             nextStep: 2,
           },
         ],
@@ -73,11 +73,11 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Surveyor-01 塔基",
         speakerRole: "初级测绘员残响 · 盯着‘待分配’灯，嘴唇发白",
         avatarColor: "#38bdf8",
-        text: "“引导……代码？不可能。第三舰队的公文上，明明盖着母港的红印……为什么‘待分配’的灯一直在闪？冷启台地的风，怎么吹不散这层电离雾？这……这不在规程里。”",
+        text: "“没有回音？不可能。第三舰队的公文上，明明盖着母港的红印……为什么‘待分配’的灯一直在闪？冷启台地的风，怎么吹不散这层电离雾？这……这不在规程里。”",
         hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 规程出现了它解释不了的裂隙",
         choices: [
           {
-            text: "“因为这不是求援信标，塔基。它在等整台恒星计算机开机——等的是星系，不是舰队。”",
+            text: "“因为这不是求援信标，塔基。它在等待全星系的第一声应答——等的是星系，不是舰队。”",
             nextStep: 3,
           },
         ],
@@ -89,7 +89,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         text: "“……如果他们真不在了，那我这四百年的班……到底是在等谁来换？记录者，拿走这个频率吧。别让天线停下——至少让它觉得，还有人在听。”",
         propositionReward: {
           code: "Helix.Beacon.Broadcasting",
-          text: "Helix-7 校准信标常驻引导广播",
+          text: "信标从不求救，只确认交接班",
         },
       },
     ],
@@ -108,14 +108,14 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Forge-Master 沃坎",
         speakerRole: "老锻造师残响 · 气动铆枪直指来客，火星从齿缝里喷",
         avatarColor: "#fb923c",
-        text: "“站住！哪派的细作？高炉派，还是地脉派那条狗？！别碰我的总线阀门！这九座高炉是熔火同盟的命——烧干地核，老子也绝不松电源母线半寸！”",
+        text: "“站住！哪派的细作？高炉派，还是地脉派那条狗？！别碰我的分流闸门！这九座高炉是熔火同盟的命——烧干地核，老子也绝不松主蒸汽管半寸！”",
         choices: [
           {
-            text: "“我是 Recorder-9。来确认能量总线、互斥锁的状态。”",
+            text: "“我是 Recorder-9。来确认管线分流与闸门的状态。”",
             nextStep: 1,
           },
           {
-            text: "“仗早打完了，沃坎。这地方不是兵工厂——是恒星计算机的电源总线。”",
+            text: "“仗早打完了，沃坎。这地方不是兵工厂——整座星系的熔炉四百年前就停了。”",
             nextStep: 2,
           },
         ],
@@ -124,10 +124,10 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Forge-Master 沃坎",
         speakerRole: "老锻造师残响 · 仰头狂笑，笑出金属杂音",
         avatarColor: "#fb923c",
-        text: "“总线？！哈！哈哈哈哈！高炉派那群杂碎，把三号闸门焊死了——他们要把热量全抽去给咏井那帮神棍灌水！想让整座山冻成冰坨！只要我沃坎还有一口气，互斥锁——别想！”",
+        text: "“停了？！哈！哈哈哈哈！高炉派那群杂碎，把三号闸门焊死了——他们要把热量全抽去给咏井那帮神棍灌水！想让整座山冻成冰坨！只要我沃坎还有一口气，分流闸门——别想！”",
         choices: [
           {
-            text: "“这不是派系打仗，沃坎。是两组没法并发的硬件指令，在抢总线。”",
+            text: "“这不是派系在争地热，沃坎。是两座炉膛从一开始就没法同时灌满。”",
             nextStep: 2,
           },
         ],
@@ -136,7 +136,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Forge-Master 沃坎",
         speakerRole: "老锻造师残响 · 铁钳砸在冷却管上，火星溅了一地",
         avatarColor: "#fb923c",
-        text: "“指令？！我三个儿子，死在冷却池里——你跟我说那是‘指令’？！我们在打一炉能飞出星弧的无尽引擎！只要……只要再等下一炉铜水出炉……再等一炉……”",
+        text: "“灌不满？！我三个儿子，死在冷却池里——你跟我说那是‘灌不满’？！我们在打一炉能飞出星弧的无尽引擎！只要……只要再等下一炉铜水出炉……再等一炉……”",
         hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 他守的炉子，四百年前就凉透了",
         choices: [
           {
@@ -144,7 +144,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
             nextStep: 3,
           },
           {
-            text: "“把互斥锁合上吧。别让短路的电流，把剩下的一切烧成死灰。”",
+            text: "“把闸门合上吧。别让空转的蒸汽，把剩下的一切化为死灰。”",
             nextStep: 3,
           },
         ],
@@ -153,10 +153,10 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Forge-Master 沃坎",
         speakerRole: "老锻造师残响 · 凝视着凝固的黑曜石熔池",
         avatarColor: "#fb923c",
-        text: "“……炉火早凉了？难怪……老子拉了四百年风箱，手心一直是冷的。记录员，互斥锁，合上吧。火要是注定要灭——至少让它灭得像块淬过的硬钢。”",
+        text: "“……炉火早凉了？难怪……老子拉了四百年风箱，手心一直是冷的。记录员，把闸门锁死吧。火要是注定要灭——至少让它灭得像块淬过的硬钢。”",
         propositionReward: {
           code: "Kiln.Bus.Mutex",
-          text: "Kiln 总线互斥锁与硬件总线控制权",
+          text: "总管两头只能择一开，无法同时供热",
         },
       },
     ],
@@ -182,7 +182,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
             nextStep: 1,
           },
           {
-            text: "“我要调取果园深处的，只读数据矩阵。”",
+            text: "“我要探查果园深处，那些被封存的光之记忆。”",
             nextStep: 2,
           },
         ],
@@ -203,10 +203,10 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Keeper 塞勒涅",
         speakerRole: "守林人残响 · 身形化作微弱光粒涟漪",
         avatarColor: "#a7f3d0",
-        text: "“矩阵……你是说晶格深处那些条纹？只许看，不许改的。谁要是想擦它一笔……整座林子，就会一下子白得刺眼……白得，把眼睛烧掉那种。”",
+        text: "“记忆……你是说晶格深处那些条纹？只许看，不许改的。谁要是想擦它一笔……整座林子，就会一下子白得刺眼……白得，把眼睛烧掉那种。”",
         choices: [
           {
-            text: "“四百年前那场大旱……其实是一次全区只读读取，读过头了。对吗？”",
+            text: "“四百年前那场大旱……其实是天上的巨眼在一瞬间把所有光都看尽了。对吗？”",
             nextStep: 3,
           },
         ],
@@ -215,11 +215,11 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         speaker: "Keeper 塞勒涅",
         speakerRole: "守林人残响 · 身躯在极光折射下半透明消散",
         avatarColor: "#a7f3d0",
-        text: "“大旱……不是缺水。大旱是，天空睁开了一只很大的眼睛。一秒钟——就读完了整座林子，十亿年的光。所有的果子，一齐熟透、脱落，写进一本我们看不懂的大书里。从那天起，我们就没有明天了。”",
-        hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 她终于承认，只读光存被全区读尽了（Read-Out Exhaustion）",
+        text: "“大旱……不是缺水。大旱是，天空睁开了一只很大的眼睛。一秒钟——就看完了整座林子，十亿年的光。所有的果子，一齐熟透、脱落，写进一本我们看不懂的大书里。从那天起，我们就没有明天了。”",
+        hysteresisNote: "ECHO_HYSTERESIS // 磁滞推演中 · 她终于承认，整片晶林的光芒被一次看尽了",
         choices: [
           {
-            text: "“把果园的 ROM 耗尽命题，钉进索引。”",
+            text: "“将晶林光芒一次看尽的真相，钉入索引。”",
             nextStep: 4,
           },
         ],
@@ -231,7 +231,7 @@ export const CANON_DIALOGUES: Record<string, NPCDialogueTree> = {
         text: "“收下这段光的残迹吧，记录者。等你走的时候……替我看一眼外面的星空，是不是也跟这儿一样，冻成了永远的透亮。”",
         propositionReward: {
           code: "Orchard.ROM.Exhaustion",
-          text: "Glass Orchard 全区只读存储读取耗尽",
+          text: "大旱那年，整片晶林被天眼一次读完",
         },
       },
     ],

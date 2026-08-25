@@ -691,9 +691,9 @@
       "code": "TRUTH_BEACON",
       "title": "信号 / The Beacon",
       "summary": "Helix-7 上的信标并非求救信号，而是整台恒星计算机初始引导扇区的常驻广播与握手载波。",
-      "surface_claim": "",
-      "foil_claim": "",
-      "half_claim": "",
+      "surface_claim": "信标从不求救，只等星海第一声应答",
+      "foil_claim": "信标只是求援信号，巡逻艇即将到达",
+      "half_claim": "信标确实未曾停歇，但只是故障余响",
       "primary_planet": "helix-7",
       "required_propositions": [
         "Helix.Beacon.Broadcasting",
@@ -720,9 +720,9 @@
       "code": "TRUTH_COMPUTE",
       "title": "计算 / The Distributed Machine",
       "summary": "余烬星弧不是普通的星系，而是一台分布式恒星计算机。窑担任能量总线互斥锁，玻璃果园担任只读光存储矩阵。",
-      "surface_claim": "",
-      "foil_claim": "",
-      "half_claim": "",
+      "surface_claim": "总管无法同时供热，晶林被天眼看尽",
+      "foil_claim": "两派为争地热内战，晶林毁于大旱",
+      "half_claim": "供热确实无法兼顾，但只是铜管老旧",
       "primary_planet": "kiln",
       "required_propositions": [
         "Kiln.Bus.Mutex",
@@ -965,7 +965,7 @@
           "hotspots": [
             {
               "id": "hs-bus-valve",
-              "name": "双向互斥阀",
+              "name": "断裂总管分流阀",
               "type": "operate",
               "proposition": "Kiln.Bus.Mutex"
             }

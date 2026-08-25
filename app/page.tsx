@@ -60,6 +60,15 @@ export default function HomePage() {
     [believedTruths]
   );
 
+  // Derive decoded planets from believed truths' primary_planet fields
+  const decodedPlanetIds = useMemo(
+    () =>
+      CANON.anchorTruths
+        .filter((t) => believedTruths.includes(t.id))
+        .map((t) => t.primary_planet),
+    [believedTruths]
+  );
+
   // Canonical gating: all 6 truths (T1-T5 + THidden) must be believed to enter resolution protocols
   const canResolveEnding = useMemo(
     () =>
@@ -325,6 +334,7 @@ export default function HomePage() {
               collectedPropositions={collectedPropositions}
               completedHotspotIds={completedHotspotIds}
               onCompleteHotspot={handleCompleteHotspot}
+              isDecoded={decodedPlanetIds.includes(selectedPlanet.id)}
             />
           </motion.div>
         )}

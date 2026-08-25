@@ -42,6 +42,7 @@ interface SurfaceStageViewProps {
   collectedPropositions: string[];
   completedHotspotIds?: string[];
   onCompleteHotspot?: (hotspotId: string) => void;
+  isDecoded?: boolean;
 }
 
 type Hotspot = LandingSite["hotspots"][number];
@@ -142,6 +143,7 @@ export default function SurfaceStageView({
   collectedPropositions,
   completedHotspotIds = [],
   onCompleteHotspot,
+  isDecoded = false,
 }: SurfaceStageViewProps) {
   const [activeModal, setActiveModal] = useState<Hotspot | null>(null);
   const [dialogueStep, setDialogueStep] = useState(0);
@@ -690,7 +692,7 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-antenna-panel" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  50米偶极天线阵列的物理对齐舵。手动旋转方向角，以对齐星弧未分配信道（Carrier 1420.405 MHz）。
+                  50米偶极天线阵列的物理对齐舵。手动旋转方向角，以对齐深空中未标记的频段（1420.405 MHz）。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-holo-cyan/20 rounded-sm space-y-3">
@@ -700,7 +702,7 @@ export default function SurfaceStageView({
                       ANTENNA AZIMUTH (天线方位角): {antennaAzimuth}°
                     </span>
                     <span className={isAntennaAligned ? "text-holo-green font-bold" : "text-holo-amber"}>
-                      {isAntennaAligned ? "【载波信道锁定 · LOCK 180°】" : "信道偏离 (TARGET: 180°)"}
+                      {isAntennaAligned ? "【信道锁定 · LOCK 180°】" : "信道偏离 (TARGET: 180°)"}
                     </span>
                   </div>
 
@@ -721,21 +723,35 @@ export default function SurfaceStageView({
                 </div>
 
                 {isAntennaAligned ? (
-                  <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm animate-fadeIn">
-                    <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                  <div className="space-y-3 animate-fadeIn">
+                    <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
+                      <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                      </div>
+                      <div className="text-holo-bright font-mono text-sm font-semibold">
+                        Helix.Signal.Unassigned
+                      </div>
+                      <div className="text-[11px] text-slate-300 mt-1">
+                        （螺旋-7 偶极天线对准深空，捕获到无人认领的恒定频段）
+                      </div>
                     </div>
-                    <div className="text-holo-bright font-mono text-sm font-semibold">
-                      Helix.Signal.Unassigned
-                    </div>
-                    <div className="text-[11px] text-slate-300 mt-1">
-                      （螺旋-7 捕获到星弧总线中未分配的处理信号载波）
-                    </div>
+
+                    {isDecoded && (
+                      <div className="p-3 bg-holo-cyan/10 border border-holo-cyan/40 rounded-sm text-holo-cyan text-[11px] space-y-1 animate-fadeIn">
+                        <div className="font-bold flex items-center gap-1.5">
+                          <Cpu className="w-3.5 h-3.5 text-holo-cyan" />
+                          <span>【DECODED // 引导总线重定向】</span>
+                        </div>
+                        <p className="text-slate-300">
+                          天线阵列将引导扇区载波 (Carrier 1420.405 MHz) 投射至星弧全域，等待分布式计算节点响应。
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="p-3 bg-surface-dark/50 border border-holo-border rounded-sm text-holo-muted text-[11px]">
-                    提示：将上方天线方位角滑块拖拽调整至 180°（对准星弧深空），以捕获未分配载波。
+                    提示：将上方天线方位角滑块拖拽调整至 180°（对准星弧深空），以捕获未分配频段。
                   </div>
                 )}
 
@@ -745,7 +761,7 @@ export default function SurfaceStageView({
                     onClick={() => {
                       handleCollectReward(
                         "Helix.Signal.Unassigned",
-                        "Helix-7 偶极天线捕获未分配信号"
+                        "天线对准的航向，始终等不到一句应答"
                       );
                       markHotspotComplete(activeModal.id);
                       setActiveModal(null);
@@ -762,14 +778,14 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-beacon" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  探针光学传感器对信标 HB-0701 进行波形解析。该信标自 400 年前大停滞起便在此发射恒定载波。
+                  探针光学传感器对信标 HB-0701 进行波形解析。该信标自 400 年前大停滞起便在此发射恒定无线电信号。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-holo-cyan/20 rounded-sm">
                   <div className="flex justify-between text-[11px] text-holo-cyan font-bold mb-2">
                     <span className="flex items-center gap-1.5">
                       <Radio className="w-3.5 h-3.5" />
-                      CARRIER WAVE SPECTRUM // 1420.405 MHz
+                      SIGNAL SPECTRUM // 1420.405 MHz
                     </span>
                     <span className="text-holo-green font-bold">SIGNAL LOCK: 99.8%</span>
                   </div>
@@ -783,21 +799,35 @@ export default function SurfaceStageView({
                     ))}
                   </div>
                   <div className="text-[11px] text-slate-400 mt-2">
-                    特征分析：周期无调制衰减，非求救脉冲（SOS），符合【初始引导扇区 Bootstrap Loader】握手信号特征。
+                    特征分析：周期无调制衰减，非求救信号（SOS），持续等待星系交接应答。
                   </div>
                 </div>
 
-                <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
-                  <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                <div className="space-y-3">
+                  <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
+                    <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                    </div>
+                    <div className="text-holo-bright font-mono text-sm font-semibold">
+                      Helix.Beacon.Broadcasting
+                    </div>
+                    <div className="text-[11px] text-slate-300 mt-1">
+                      （螺旋-7 校准信标四百年来持续广播，从未发出求援脉冲）
+                    </div>
                   </div>
-                  <div className="text-holo-bright font-mono text-sm font-semibold">
-                    Helix.Beacon.Broadcasting
-                  </div>
-                  <div className="text-[11px] text-slate-300 mt-1">
-                    （螺旋-7 信标持续发射初始载波，未曾中断）
-                  </div>
+
+                  {isDecoded && (
+                    <div className="p-3 bg-holo-cyan/10 border border-holo-cyan/40 rounded-sm text-holo-cyan text-[11px] space-y-1 animate-fadeIn">
+                      <div className="font-bold flex items-center gap-1.5">
+                        <Cpu className="w-3.5 h-3.5 text-holo-cyan" />
+                        <span>【DECODED // 恒星计算机冷启动引导扇区】</span>
+                      </div>
+                      <p className="text-slate-300">
+                        HB-0701 常驻广播确认为星弧冷启动引导扇区握手载波 (Bootstrap Loader / BIOS)。
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end pt-3">
@@ -805,7 +835,7 @@ export default function SurfaceStageView({
                     onClick={() => {
                       handleCollectReward(
                         "Helix.Beacon.Broadcasting",
-                        "Helix-7 校准信标常驻引导广播"
+                        "信标从不求救，只确认交接班"
                       );
                       markHotspotComplete(activeModal.id);
                       setActiveModal(null);
@@ -822,13 +852,13 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-bus-valve" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  窑（Kiln）地脉深处断裂总管的超导双向互斥阀。两派曾为此大打出手，实则是能量总线（Bus Mutex）在争抢唯一定时器控制权。
+                  窑（Kiln）地脉深处断裂总管的分流控制台。高炉派与地脉派曾为此殊死火并，但这根总管在物理上从来无法向两端同时通热。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-holo-cyan/20 rounded-sm space-y-3">
                   <div className="text-xs font-bold text-holo-cyan flex items-center gap-1.5">
                     <Flame className="w-3.5 h-3.5 text-holo-amber" />
-                    BUS MUTEX ROUTING CONTROLLER
+                    CONDUIT ROUTING CONTROLLER // 地脉分流管道控制台
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
@@ -840,8 +870,8 @@ export default function SurfaceStageView({
                           : "bg-surface border-holo-border text-slate-400"
                       }`}
                     >
-                      <div className="font-bold text-xs">通道 A: 高炉主总线</div>
-                      <div className="text-[10px] text-holo-muted">High-Furnace Conduit</div>
+                      <div className="font-bold text-xs">通道 A: 高炉主管道</div>
+                      <div className="text-[10px] text-holo-muted">High-Furnace Main Conduit</div>
                     </button>
 
                     <button
@@ -852,23 +882,37 @@ export default function SurfaceStageView({
                           : "bg-surface border-holo-border text-slate-400"
                       }`}
                     >
-                      <div className="font-bold text-xs">互斥态: 硬件总线互斥锁</div>
-                      <div className="text-[10px] text-holo-muted">Mutex Protocol Active</div>
+                      <div className="font-bold text-xs">分流态: 管道单向分流锁定</div>
+                      <div className="text-[10px] text-holo-muted">Single-Conduit Divert Active</div>
                     </button>
                   </div>
                 </div>
 
-                <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
-                  <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                <div className="space-y-3">
+                  <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
+                    <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                    </div>
+                    <div className="text-holo-bright font-mono text-sm font-semibold">
+                      Kiln.Bus.Mutex
+                    </div>
+                    <div className="text-[11px] text-slate-300 mt-1">
+                      （窑的地脉与熔炉内战本质上是两路管道无法同时供热）
+                    </div>
                   </div>
-                  <div className="text-holo-bright font-mono text-sm font-semibold">
-                    Kiln.Bus.Mutex
-                  </div>
-                  <div className="text-[11px] text-slate-300 mt-1">
-                    （窑的地脉与熔炉内战本质上是总线互斥协议竞争）
-                  </div>
+
+                  {isDecoded && (
+                    <div className="p-3 bg-holo-cyan/10 border border-holo-cyan/40 rounded-sm text-holo-cyan text-[11px] space-y-1 animate-fadeIn">
+                      <div className="font-bold flex items-center gap-1.5">
+                        <Cpu className="w-3.5 h-3.5 text-holo-cyan" />
+                        <span>【DECODED // 能量总线与硬件互斥锁】</span>
+                      </div>
+                      <p className="text-slate-300">
+                        断裂总管实质为恒星计算机的电源分配总线，其双向分流结构为保证时钟安全的硬件互斥锁 (Bus Mutex)。
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end pt-3">
@@ -876,7 +920,7 @@ export default function SurfaceStageView({
                     onClick={() => {
                       handleCollectReward(
                         "Kiln.Bus.Mutex",
-                        "Kiln 总线互斥锁与硬件总线控制权"
+                        "总管两头只能择一开，无法同时供热"
                       );
                       markHotspotComplete(activeModal.id);
                       setActiveModal(null);
@@ -893,7 +937,7 @@ export default function SurfaceStageView({
             {activeModal.id === "hs-readhead-lens" && (
               <div className="space-y-4 text-xs font-mono text-slate-300 leading-relaxed">
                 <p>
-                  深坑物镜读头控制台。这是一台埋藏在晶体树根系中央的巨型光学物镜。通过调整仰角与棱镜折射率，解析森林晶格中的干涉条纹。
+                  深坑物镜读头控制台。这是一台埋藏在晶体树根系中央的巨型光学物镜。通过调整仰角与棱镜折射率，解析森林石英果实中的光线干涉条纹。
                 </p>
 
                 <div className="p-4 bg-surface-dark/90 border border-holo-cyan/20 rounded-sm space-y-3">
@@ -936,21 +980,35 @@ export default function SurfaceStageView({
                 </div>
 
                 {isLensFocused ? (
-                  <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm animate-fadeIn">
-                    <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                  <div className="space-y-3 animate-fadeIn">
+                    <div className="p-4 bg-holo-amber/10 border-l-4 border-holo-amber rounded-sm">
+                      <div className="text-holo-amber font-bold text-xs flex items-center gap-1.5 mb-1">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>EXTRACTED PROPOSITION // 提取可钉选命题</span>
+                      </div>
+                      <div className="text-holo-bright font-mono text-sm font-semibold">
+                        Orchard.ROM.Exhaustion
+                      </div>
+                      <div className="text-[11px] text-slate-300 mt-1">
+                        （物镜投射出整片晶林光芒在同一瞬间被照亮、看尽的干涉条纹）
+                      </div>
                     </div>
-                    <div className="text-holo-bright font-mono text-sm font-semibold">
-                      Orchard.ROM.Exhaustion
-                    </div>
-                    <div className="text-[11px] text-slate-300 mt-1">
-                      （物镜投射出全区只读数据读取耗尽条纹 · ROM 矩阵无法擦写）
-                    </div>
+
+                    {isDecoded && (
+                      <div className="p-3 bg-holo-cyan/10 border border-holo-cyan/40 rounded-sm text-holo-cyan text-[11px] space-y-1 animate-fadeIn">
+                        <div className="font-bold flex items-center gap-1.5">
+                          <Cpu className="w-3.5 h-3.5 text-holo-cyan" />
+                          <span>【DECODED // 历史数据只读光存储矩阵】</span>
+                        </div>
+                        <p className="text-slate-300">
+                          玻璃果园为恒星计算机的 ROM 矩阵，大旱是一次性完成的全区只读数据读取耗尽 (Read-Out Exhaustion)。
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="p-3 bg-surface-dark/50 border border-holo-border rounded-sm text-holo-muted text-[11px]">
-                    提示：调整物镜俯仰角至 68° 并提高棱镜折射率至 1.60 以上，聚焦地面只读干涉图谱。
+                    提示：调整物镜俯仰角至 68° 并提高棱镜折射率至 1.60 以上，聚焦地面干涉图谱。
                   </div>
                 )}
 
@@ -960,7 +1018,7 @@ export default function SurfaceStageView({
                     onClick={() => {
                       handleCollectReward(
                         "Orchard.ROM.Exhaustion",
-                        "Glass Orchard 全区只读存储读取耗尽"
+                        "大旱那年，整片晶林被天眼一次读完"
                       );
                       markHotspotComplete(activeModal.id);
                       setActiveModal(null);
