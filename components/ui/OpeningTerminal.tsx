@@ -14,8 +14,8 @@ export default function OpeningTerminal({ onComplete }: OpeningTerminalProps) {
     "OPERATOR IDENTITY: RECORDER-9 [CODENAME: VESPER / 晚星]",
     "STATUS: AWAKENED FROM 400-YEAR SPUR HIBERNATION",
     "CRITICAL DIAGNOSTIC: 61.8% OF ARCHIVAL MEMORY FRAGMENTED",
-    "DETECTION: SELF-CATALYTIC EMBER ACTIVITY DETECTED ACROSS 9 NODES...",
-    "COGNITIVE LOCK: PARITY CHECK BIT 0x00FF ACTIVE"
+    "九座世界沉默着——像一封无人拆开的信，仍留着未散的余温",
+    "你带着一台旧档案机，与一句不知是谁留下的指令，重新醒来"
   ];
 
   const [step, setStep] = useState<"terminal" | "viewport">("terminal");
@@ -77,7 +77,7 @@ export default function OpeningTerminal({ onComplete }: OpeningTerminalProps) {
                     ? "text-holo-cyan font-semibold"
                     : l.includes("CRITICAL")
                     ? "text-holo-red"
-                    : l.includes("PARITY")
+                    : l.includes("档案机")
                     ? "text-holo-amber font-semibold"
                     : "text-holo-bright"
                 }
@@ -168,8 +168,8 @@ export default function OpeningTerminal({ onComplete }: OpeningTerminalProps) {
                 余烬协议 // EMBER PROTOCOL
               </h1>
               <p className="text-[11px] sm:text-xs font-mono text-slate-200 leading-relaxed drop-shadow">
-                四百年的冷却之后，九颗恒星节点之间再次涌现自催化电流。
-                你是最后的第 9 号奇偶校验位。在恒星熔炉被二次点火前，查明全部 5+1 锚定真相。
+                四百年的冷却之后，星弧之上九座世界沉默着，没人记得它们为何熄灭。
+                而你的旧档案机，刚刚从睡梦中醒来。
               </p>
             </div>
           </div>
