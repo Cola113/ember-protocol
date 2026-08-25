@@ -1076,7 +1076,7 @@ export default function SurfaceStageView({
                       Choir.Hymn.IsClock
                     </div>
                     <div className="text-[11px] text-slate-300 mt-1">
-                      （深海圣歌本质为中央时钟发生器与压电晶振的同步脉冲）
+                      （管风琴从未停歇，全星系按其音高对拍）
                     </div>
                   </div>
                 ) : (
@@ -1137,7 +1137,7 @@ export default function SurfaceStageView({
                     Ledger.Error.IsChecksum
                   </div>
                   <div className="text-[11px] text-slate-300 mt-1">
-                    （总账都市的灰墨热实质为分布式计算累积的校验和报错）
+                    （病人临终念的数串，差分机里全有）
                   </div>
                 </div>
 
@@ -1146,7 +1146,7 @@ export default function SurfaceStageView({
                     onClick={() => {
                       handleCollectReward(
                         "Ledger.Error.IsChecksum",
-                        "Ledger 灰墨热瘟疫实为系统校验和报错"
+                        "病人临终念的数串，差分机里全有"
                       );
                       markHotspotComplete(activeModal.id);
                       setActiveModal(null);
@@ -1171,7 +1171,7 @@ export default function SurfaceStageView({
                     NOTARY PROTOCOL // PARITY LOCK AUTHORIZATION
                   </div>
                   <div className="text-[11px] text-slate-300 leading-normal">
-                    卷轴条款：“记录员（Recorder）非物理调查工具，乃终止自催化点火之奇偶校验位插座。通关之钥匙非实体，乃记录者之认知与理解。”
+                    卷轴条款：“当全域核验印鉴崩解，唯第 9 号记录员，得行使终审授权——中断点火的不是器物，是理解。”
                   </div>
                 </div>
 
@@ -1184,7 +1184,7 @@ export default function SurfaceStageView({
                     Ledger.Protocol.RecorderKey
                   </div>
                   <div className="text-[11px] text-slate-300 mt-1">
-                    （记录员协议是熔断自催化点火的校验机制 · 理解即钥匙）
+                    （卷轴写明：中断点火的不是器物，是理解）
                   </div>
                 </div>
 
@@ -1250,7 +1250,7 @@ export default function SurfaceStageView({
                       Needle.Pointer.Rebased
                     </div>
                     <div className="text-[11px] text-slate-300 mt-1">
-                      （寻址指针重定基底 · 消除越界空指针错误）
+                      （激光测出的坐标，总比旧海图错开一格）
                     </div>
                   </div>
                 ) : (
@@ -1265,7 +1265,7 @@ export default function SurfaceStageView({
                     onClick={() => {
                       handleCollectReward(
                         "Needle.Pointer.Rebased",
-                        "Needle 寻址指针重定基底解除迷航"
+                        "激光测出的坐标，总比旧海图错开一格"
                       );
                       markHotspotComplete(activeModal.id);
                       setActiveModal(null);

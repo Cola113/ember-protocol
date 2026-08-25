@@ -2,13 +2,13 @@
   "anchor_truths": [
     {
       "id": "T1",
-      "surface_claim": "这座灯塔不是在求救，它在等待整座星系回应。",
-      "foil_claim": "母舰只是迟到了，灯塔仍在等待救援。",
-      "half_claim": "灯塔确实在广播，但它只是故障后重复的旧求救。"
+      "surface_claim": "信标从不求救，只等星海第一声应答",
+      "foil_claim": "信标只是求援信号，巡逻艇即将到达",
+      "half_claim": "信标确实未曾停歇，但只是故障余响"
     }
   ],
   "proposition_labels": {
-    "Helix.Beacon.Broadcasting": "灯塔四百年来从未停止广播",
-    "Helix.Signal.Unassigned": "这段信号没有任何接收者认领"
+    "Helix.Beacon.Broadcasting": "信标从不求救，只确认交接班",
+    "Helix.Signal.Unassigned": "天线对准的航向，始终等不到一句应答"
   }
 }
