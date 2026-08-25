@@ -1,6 +1,6 @@
 import { CANON } from "@/lib/canon";
 import { deriveTruthStates, type TruthStatus } from "@/lib/storage/stores";
-import { salienceForPlayerState } from "./salience";
+import { salienceForPlayerState, type TruthSalience } from "./salience";
 
 export interface NextStepHint {
   id: string;
@@ -8,9 +8,14 @@ export interface NextStepHint {
   planetLabel: string;
   siteLabel?: string;
   text: string;
-  priority: number; // 3: suspected (ready for INDEX), 2: encountered, 1: unlocked unknown, 0: empty/idle
+  priority: number; // 4: ending, 3: suspected (ready for INDEX), 2: encountered, 1: unlocked unknown, 0: idle
+  salienceWeight: number; // Salience weight derived from salienceForPlayerState (2.2, 1.8, 1.0, 0.55, 0)
   status: TruthStatus | "ending" | "idle";
   actionType: "index" | "explore" | "dialogue" | "resolution";
+}
+
+export interface NextStepOptions {
+  forceIdle?: boolean;
 }
 
 /**
@@ -200,6 +205,22 @@ export const NEXT_STEP_PROTOCOL_TABLE = Object.freeze({
       actionType: "dialogue" as const
     }
   },
+  cinder_court: {
+    unlocked: {
+      planetLabel: "烬廷",
+      siteLabel: "血色宴会厅",
+      text: "七曜贵族宴会旧案未明——在血色宴会厅调查壁炉后隐秘陈设",
+      actionType: "explore" as const
+    }
+  },
+  blind_sun: {
+    unlocked: {
+      planetLabel: "盲日",
+      siteLabel: "日冕观测台",
+      text: "日食环星研究所陷入死寂——前往日冕观测台会见诺瓦院长",
+      actionType: "dialogue" as const
+    }
+  },
   THidden: {
     suspected: {
       planetLabel: "黑间隔",
@@ -245,16 +266,56 @@ export const NEXT_STEP_PROTOCOL_TABLE = Object.freeze({
 });
 
 /**
+ * Compute the set of all unlocked planet IDs based on believed truths in Canon.
+ */
+export function getUnlockedPlanetIds(believedTruths: readonly string[]): Set<string> {
+  const unlocked = new Set<string>(["helix-7"]);
+  for (const truth of CANON.anchorTruths) {
+    if (believedTruths.includes(truth.id)) {
+      for (const p of truth.unlocked_planets) {
+        unlocked.add(p);
+      }
+    }
+  }
+  return unlocked;
+}
+
+/**
  * Derive deterministic, fiction-interior next-step hints from player progress.
  *
- * Parallel Rule (窑/果园并列):
- * When multiple truths or companion planets can be advanced concurrently,
- * returns multiple distinct hints so the UI can render them side-by-side without forcing a choice.
+ * Salience Integration:
+ * - Computes salience weights via `salienceForPlayerState`.
+ * - Truths with highest salience weights (suspected = 2.2, encountered = 1.8) take precedence.
+ * - Unlocked exploratory paths (weight = 1.0) respect the complete Canon unlock graph
+ *   (including companion/red-herring planets Cinder Court and Blind Sun).
+ * - Parallel Rule (窑/果园并列 / 其它并列):
+ *   When multiple truths or companion planets can be advanced concurrently,
+ *   returns multiple distinct hints side-by-side without forcing a choice.
+ * - Idle / Empty State:
+ *   Reachable when explicitly requested, or when all available leads are complete.
  */
 export function deriveNextStepHints(
   collectedPropositions: readonly string[],
-  believedTruths: readonly string[]
+  believedTruths: readonly string[],
+  options?: NextStepOptions
 ): NextStepHint[] {
+  // 0. Explicit idle request
+  if (options?.forceIdle) {
+    const emptyCfg = NEXT_STEP_PROTOCOL_TABLE.idle.empty;
+    return [
+      {
+        id: "idle-empty",
+        planetLabel: emptyCfg.planetLabel,
+        siteLabel: emptyCfg.siteLabel,
+        text: emptyCfg.text,
+        priority: 0,
+        salienceWeight: 0,
+        status: "idle",
+        actionType: emptyCfg.actionType
+      }
+    ];
+  }
+
   // 1. All anchor truths believed -> Full canon resolution ready
   if (
     CANON.anchorTruths.length > 0 &&
@@ -268,43 +329,57 @@ export function deriveNextStepHints(
         siteLabel: endCfg.siteLabel,
         text: endCfg.text,
         priority: 4,
+        salienceWeight: 2.2,
         status: "ending",
         actionType: endCfg.actionType
       }
     ];
   }
 
+  // 2. Compute truth states and salience map
   const truthStates = deriveTruthStates(collectedPropositions, believedTruths);
+  const salienceMap = salienceForPlayerState({ truthStates });
   const propSet = new Set(collectedPropositions);
+  const unlockedPlanets = getUnlockedPlanetIds(believedTruths);
 
-  // 2. High priority (3): Suspected truths (all propositions gathered, ready for INDEX synthesis)
-  const suspectedHints: NextStepHint[] = [];
-  for (const truth of CANON.anchorTruths) {
-    if (truthStates[truth.id] === "suspected") {
-      const cfg = (NEXT_STEP_PROTOCOL_TABLE as any)[truth.id]?.suspected;
-      if (cfg) {
+  // Group candidate truths by salience weight
+  const activeSaliences: TruthSalience[] = CANON.anchorTruths
+    .map((t) => salienceMap[t.id])
+    .filter((s): s is TruthSalience => Boolean(s && !s.connected));
+
+  // 3. Highest Salience (Weight 2.2, Suspected): all propositions gathered, ready for INDEX
+  const suspectedSaliences = activeSaliences.filter((s) => s.status === "suspected" && s.weight >= 2.0);
+  if (suspectedSaliences.length > 0) {
+    const suspectedHints: NextStepHint[] = [];
+    for (const salience of suspectedSaliences) {
+      const truth = CANON.anchorTruths.find((t) => t.id === salience.truthId);
+      const cfg = (NEXT_STEP_PROTOCOL_TABLE as any)[salience.truthId]?.suspected;
+      if (cfg && truth) {
         suspectedHints.push({
-          id: `${truth.id}-suspected`,
+          id: `${salience.truthId}-suspected`,
           planetId: truth.primary_planet,
           planetLabel: cfg.planetLabel,
           siteLabel: cfg.siteLabel,
           text: cfg.text,
           priority: 3,
+          salienceWeight: salience.weight,
           status: "suspected",
           actionType: cfg.actionType
         });
       }
     }
-  }
-  if (suspectedHints.length > 0) {
-    return suspectedHints;
+    if (suspectedHints.length > 0) {
+      return suspectedHints;
+    }
   }
 
-  // 3. Medium priority (2): Encountered truths (partially collected, missing 1 proposition)
-  const encounteredHints: NextStepHint[] = [];
-  for (const truth of CANON.anchorTruths) {
-    if (truthStates[truth.id] === "encountered") {
-      if (truth.id === "T1") {
+  // 4. Medium Salience (Weight 1.8, Encountered): partially collected
+  const encounteredSaliences = activeSaliences.filter((s) => s.status === "encountered" && s.weight >= 1.5);
+  if (encounteredSaliences.length > 0) {
+    const encounteredHints: NextStepHint[] = [];
+    for (const salience of encounteredSaliences) {
+      const truthId = salience.truthId;
+      if (truthId === "T1") {
         const hasBeacon = propSet.has("Helix.Beacon.Broadcasting");
         const cfg = hasBeacon
           ? NEXT_STEP_PROTOCOL_TABLE.T1.encountered_missing_antenna
@@ -316,10 +391,11 @@ export function deriveNextStepHints(
           siteLabel: cfg.siteLabel,
           text: cfg.text,
           priority: 2,
+          salienceWeight: salience.weight,
           status: "encountered",
           actionType: cfg.actionType
         });
-      } else if (truth.id === "T2") {
+      } else if (truthId === "T2") {
         const hasKiln = propSet.has("Kiln.Bus.Mutex");
         const cfg = hasKiln
           ? NEXT_STEP_PROTOCOL_TABLE.T2.encountered_missing_orchard
@@ -331,10 +407,11 @@ export function deriveNextStepHints(
           siteLabel: cfg.siteLabel,
           text: cfg.text,
           priority: 2,
+          salienceWeight: salience.weight,
           status: "encountered",
           actionType: cfg.actionType
         });
-      } else if (truth.id === "T3") {
+      } else if (truthId === "T3") {
         const hasChoir = propSet.has("Choir.Hymn.IsClock");
         const cfg = hasChoir
           ? NEXT_STEP_PROTOCOL_TABLE.T3.encountered_missing_needle
@@ -346,10 +423,11 @@ export function deriveNextStepHints(
           siteLabel: cfg.siteLabel,
           text: cfg.text,
           priority: 2,
+          salienceWeight: salience.weight,
           status: "encountered",
           actionType: cfg.actionType
         });
-      } else if (truth.id === "T4") {
+      } else if (truthId === "T4") {
         const hasNerve = propSet.has("Marrow.God.IsProcess");
         const cfg = hasNerve
           ? NEXT_STEP_PROTOCOL_TABLE.T4.encountered_missing_matrix
@@ -361,10 +439,11 @@ export function deriveNextStepHints(
           siteLabel: cfg.siteLabel,
           text: cfg.text,
           priority: 2,
+          salienceWeight: salience.weight,
           status: "encountered",
           actionType: cfg.actionType
         });
-      } else if (truth.id === "T5") {
+      } else if (truthId === "T5") {
         const hasDiff = propSet.has("Ledger.Error.IsChecksum");
         const cfg = hasDiff
           ? NEXT_STEP_PROTOCOL_TABLE.T5.encountered_missing_vault
@@ -376,10 +455,11 @@ export function deriveNextStepHints(
           siteLabel: cfg.siteLabel,
           text: cfg.text,
           priority: 2,
+          salienceWeight: salience.weight,
           status: "encountered",
           actionType: cfg.actionType
         });
-      } else if (truth.id === "THidden") {
+      } else if (truthId === "THidden") {
         const hasCore = propSet.has("Interval.Core.Recorder9");
         const cfg = hasCore
           ? NEXT_STEP_PROTOCOL_TABLE.THidden.encountered_core_only
@@ -391,36 +471,43 @@ export function deriveNextStepHints(
           siteLabel: cfg.siteLabel,
           text: cfg.text,
           priority: 2,
+          salienceWeight: salience.weight,
           status: "encountered",
           actionType: cfg.actionType
         });
       }
     }
-  }
-  if (encounteredHints.length > 0) {
-    return encounteredHints;
+    if (encounteredHints.length > 0) {
+      return encounteredHints;
+    }
   }
 
-  // 4. Exploratory / Unlocked unknown paths (Priority 1)
+  // 5. Exploratory / Unlocked Unknown Paths (Weight 1.0, Priority 1)
+  // Derive parallel hints based on the full Canon unlock graph
+  const exploratoryHints: NextStepHint[] = [];
+
   // Stage 1: T1 unknown (Initial game start at Helix-7)
   if (!believedTruths.includes("T1")) {
     const cfg = NEXT_STEP_PROTOCOL_TABLE.T1.unlocked_initial;
-    return [
-      {
-        id: "T1-unlocked",
-        planetId: "helix-7",
-        planetLabel: cfg.planetLabel,
-        siteLabel: cfg.siteLabel,
-        text: cfg.text,
-        priority: 1,
-        status: "unknown",
-        actionType: cfg.actionType
-      }
-    ];
+    const s = salienceMap["T1"];
+    exploratoryHints.push({
+      id: "T1-unlocked",
+      planetId: "helix-7",
+      planetLabel: cfg.planetLabel,
+      siteLabel: cfg.siteLabel,
+      text: cfg.text,
+      priority: 1,
+      salienceWeight: s ? s.weight : 1.0,
+      status: "unknown",
+      actionType: cfg.actionType
+    });
+    return exploratoryHints;
   }
 
-  // Stage 2: T1 believed -> T2 unlocked (窑 / 果园 并列两句)
+  // Stage 2: T1 believed -> T2 unlocked (Kiln & Glass Orchard in parallel)
   if (!believedTruths.includes("T2")) {
+    const s = salienceMap["T2"];
+    const weight = s ? s.weight : 1.0;
     const cfgKiln = NEXT_STEP_PROTOCOL_TABLE.T2.unlocked_kiln;
     const cfgOrchard = NEXT_STEP_PROTOCOL_TABLE.T2.unlocked_orchard;
     return [
@@ -431,6 +518,7 @@ export function deriveNextStepHints(
         siteLabel: cfgKiln.siteLabel,
         text: cfgKiln.text,
         priority: 1,
+        salienceWeight: weight,
         status: "unknown",
         actionType: cfgKiln.actionType
       },
@@ -441,14 +529,17 @@ export function deriveNextStepHints(
         siteLabel: cfgOrchard.siteLabel,
         text: cfgOrchard.text,
         priority: 1,
+        salienceWeight: weight,
         status: "unknown",
         actionType: cfgOrchard.actionType
       }
     ];
   }
 
-  // Stage 3: T2 believed -> T3 unlocked (咏井 / 针 并列两句)
+  // Stage 3: T2 believed -> T3 unlocked (Choir-Well & Needle in parallel)
   if (!believedTruths.includes("T3")) {
+    const s = salienceMap["T3"];
+    const weight = s ? s.weight : 1.0;
     const cfgChoir = NEXT_STEP_PROTOCOL_TABLE.T3.unlocked_choir;
     const cfgNeedle = NEXT_STEP_PROTOCOL_TABLE.T3.unlocked_needle;
     return [
@@ -459,6 +550,7 @@ export function deriveNextStepHints(
         siteLabel: cfgChoir.siteLabel,
         text: cfgChoir.text,
         priority: 1,
+        salienceWeight: weight,
         status: "unknown",
         actionType: cfgChoir.actionType
       },
@@ -469,62 +561,106 @@ export function deriveNextStepHints(
         siteLabel: cfgNeedle.siteLabel,
         text: cfgNeedle.text,
         priority: 1,
+        salienceWeight: weight,
         status: "unknown",
         actionType: cfgNeedle.actionType
       }
     ];
   }
 
-  // Stage 4: T3 believed -> T4 (Marrow) and T5 (Ledger) both unlocked
-  const parallelUnlocked: NextStepHint[] = [];
+  // Stage 4: T3 believed -> T4 (Marrow) and T5 (Ledger) unlocked
   if (!believedTruths.includes("T4")) {
+    const s = salienceMap["T4"];
     const cfgT4 = NEXT_STEP_PROTOCOL_TABLE.T4.unlocked_initial;
-    parallelUnlocked.push({
+    exploratoryHints.push({
       id: "T4-unlocked",
       planetId: "marrow",
       planetLabel: cfgT4.planetLabel,
       siteLabel: cfgT4.siteLabel,
       text: cfgT4.text,
       priority: 1,
+      salienceWeight: s ? s.weight : 1.0,
       status: "unknown",
       actionType: cfgT4.actionType
     });
   }
+
   if (!believedTruths.includes("T5")) {
+    const s = salienceMap["T5"];
     const cfgT5 = NEXT_STEP_PROTOCOL_TABLE.T5.unlocked_initial;
-    parallelUnlocked.push({
+    exploratoryHints.push({
       id: "T5-unlocked",
       planetId: "ledger",
       planetLabel: cfgT5.planetLabel,
       siteLabel: cfgT5.siteLabel,
       text: cfgT5.text,
       priority: 1,
+      salienceWeight: s ? s.weight : 1.0,
       status: "unknown",
       actionType: cfgT5.actionType
     });
   }
-  if (parallelUnlocked.length > 0) {
-    return parallelUnlocked;
+
+  // Stage 4 companion: T4 believed -> Cinder Court (烬廷, Red Herring) unlocked
+  if (
+    unlockedPlanets.has("cinder-court") &&
+    !propSet.has("Cinder.Court.IsSandbox")
+  ) {
+    const cfgCinder = NEXT_STEP_PROTOCOL_TABLE.cinder_court.unlocked;
+    exploratoryHints.push({
+      id: "cinder-unlocked",
+      planetId: "cinder-court",
+      planetLabel: cfgCinder.planetLabel,
+      siteLabel: cfgCinder.siteLabel,
+      text: cfgCinder.text,
+      priority: 1,
+      salienceWeight: 1.0,
+      status: "unknown",
+      actionType: cfgCinder.actionType
+    });
   }
 
-  // Stage 5: T5 believed -> THidden unlocked
-  if (!believedTruths.includes("THidden")) {
+  // Stage 5 companion: T5 believed -> Blind Sun (盲日) unlocked
+  if (
+    unlockedPlanets.has("blind-sun") &&
+    (!propSet.has("BlindSun.Prohibition.CycleTwo") || !propSet.has("BlindSun.Director.Blindness"))
+  ) {
+    const cfgBlindSun = NEXT_STEP_PROTOCOL_TABLE.blind_sun.unlocked;
+    exploratoryHints.push({
+      id: "blind-sun-unlocked",
+      planetId: "blind-sun",
+      planetLabel: cfgBlindSun.planetLabel,
+      siteLabel: cfgBlindSun.siteLabel,
+      text: cfgBlindSun.text,
+      priority: 1,
+      salienceWeight: 1.0,
+      status: "unknown",
+      actionType: cfgBlindSun.actionType
+    });
+  }
+
+  // Stage 5: T5 believed -> THidden (Black Interval) unlocked
+  if (unlockedPlanets.has("black-interval") && !believedTruths.includes("THidden")) {
+    const s = salienceMap["THidden"];
     const cfgTHidden = NEXT_STEP_PROTOCOL_TABLE.THidden.unlocked_initial;
-    return [
-      {
-        id: "THidden-unlocked",
-        planetId: "black-interval",
-        planetLabel: cfgTHidden.planetLabel,
-        siteLabel: cfgTHidden.siteLabel,
-        text: cfgTHidden.text,
-        priority: 1,
-        status: "unknown",
-        actionType: cfgTHidden.actionType
-      }
-    ];
+    exploratoryHints.push({
+      id: "THidden-unlocked",
+      planetId: "black-interval",
+      planetLabel: cfgTHidden.planetLabel,
+      siteLabel: cfgTHidden.siteLabel,
+      text: cfgTHidden.text,
+      priority: 1,
+      salienceWeight: s ? s.weight : 1.0,
+      status: "unknown",
+      actionType: cfgTHidden.actionType
+    });
   }
 
-  // 5. Empty State (空态)
+  if (exploratoryHints.length > 0) {
+    return exploratoryHints;
+  }
+
+  // 6. Reachable Empty State (空态)
   const emptyCfg = NEXT_STEP_PROTOCOL_TABLE.idle.empty;
   return [
     {
@@ -533,6 +669,7 @@ export function deriveNextStepHints(
       siteLabel: emptyCfg.siteLabel,
       text: emptyCfg.text,
       priority: 0,
+      salienceWeight: 0,
       status: "idle",
       actionType: emptyCfg.actionType
     }

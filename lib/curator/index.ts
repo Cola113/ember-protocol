@@ -29,8 +29,10 @@ export {
 } from "./context";
 export {
   deriveNextStepHints,
+  getUnlockedPlanetIds,
   NEXT_STEP_PROTOCOL_TABLE,
   GLOBAL_FORBIDDEN_WORDS,
   PLANET_FORBIDDEN_WORDS,
-  type NextStepHint
+  type NextStepHint,
+  type NextStepOptions
 } from "./next-step";

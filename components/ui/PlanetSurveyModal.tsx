@@ -104,7 +104,7 @@ export default function PlanetSurveyModal({
       animate={{ opacity: 1, x: 0, scale: 1 }}
       exit={{ opacity: 0, x: 50, scale: 0.98 }}
       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className="absolute top-16 inset-x-3 bottom-4 sm:top-20 sm:bottom-16 sm:inset-x-auto sm:right-8 sm:w-full sm:max-w-md holo-panel p-4 sm:p-6 rounded-sm z-40 flex flex-col pointer-events-auto border-holo-cyan/40 shadow-2xl outline-none"
+      className="absolute top-24 inset-x-3 bottom-4 sm:top-28 sm:bottom-16 sm:inset-x-auto sm:right-8 sm:w-full sm:max-w-md holo-panel p-4 sm:p-6 rounded-sm z-50 flex flex-col pointer-events-auto border-holo-cyan/40 shadow-2xl outline-none"
     >
       {/* Header */}
       <div className="flex justify-between items-start border-b border-holo-cyan/15 pb-3 mb-3 sm:mb-4">

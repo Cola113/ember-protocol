@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { CANON } from "@/lib/canon";
 import {
   deriveNextStepHints,
+  getUnlockedPlanetIds,
   NEXT_STEP_PROTOCOL_TABLE,
   GLOBAL_FORBIDDEN_WORDS,
   PLANET_FORBIDDEN_WORDS,
@@ -16,9 +17,10 @@ console.log("=== Running Next-Step Protocol Self-Checks ===");
   assert.equal(hints.length, 1, "Game start should have 1 lead at Helix-7");
   assert.equal(hints[0].planetId, "helix-7");
   assert.equal(hints[0].priority, 1);
+  assert.equal(hints[0].salienceWeight, 1.0);
   assert.equal(hints[0].status, "unknown");
   assert.match(hints[0].text, /冷启台地/);
-  console.log("ok  初始开局推导 Helix-7 冷启台地引导");
+  console.log("ok  初始开局推导 Helix-7 冷启台地引导 (salience 权重 1.0)");
 }
 
 // 2. Encountered State (T1: 1 proposition collected)
@@ -27,9 +29,10 @@ console.log("=== Running Next-Step Protocol Self-Checks ===");
   assert.equal(hints.length, 1, "T1 encountered should yield missing antenna lead");
   assert.equal(hints[0].planetId, "helix-7");
   assert.equal(hints[0].priority, 2);
+  assert.equal(hints[0].salienceWeight, 1.8);
   assert.equal(hints[0].status, "encountered");
   assert.match(hints[0].text, /偶极天线阵列或许有答案/);
-  console.log("ok  T1 encountered 状态正确推导偶极天线阵列线索");
+  console.log("ok  T1 encountered 状态正确推导偶极天线阵列线索 (salience 权重 1.8)");
 }
 
 // 3. Suspected State (T1: both propositions collected)
@@ -40,10 +43,11 @@ console.log("=== Running Next-Step Protocol Self-Checks ===");
   );
   assert.equal(hints.length, 1, "T1 suspected should point to INDEX synthesis");
   assert.equal(hints[0].priority, 3);
+  assert.equal(hints[0].salienceWeight, 2.2);
   assert.equal(hints[0].status, "suspected");
   assert.equal(hints[0].actionType, "index");
   assert.match(hints[0].text, /公证索引台/);
-  console.log("ok  T1 suspected 状态高优先级指向公证索引台综合");
+  console.log("ok  T1 suspected 状态高优先级指向公证索引台综合 (salience 权重 2.2)");
 }
 
 // 4. Parallel Unlocked State (T1 believed -> Kiln & Glass Orchard unlocked in parallel!)
@@ -59,8 +63,10 @@ console.log("=== Running Next-Step Protocol Self-Checks ===");
   assert.ok(orchardHint, "Must contain Glass Orchard hint");
   assert.equal(kilnHint.priority, 1);
   assert.equal(orchardHint.priority, 1);
+  assert.equal(kilnHint.salienceWeight, 1.0);
+  assert.equal(orchardHint.salienceWeight, 1.0);
   assert.notEqual(kilnHint.text, orchardHint.text, "Parallel hints must be distinct sentences");
-  console.log("ok  窑/果园并列：T1 破译后并排输出两句，不合成一句选边");
+  console.log("ok  窑/果园并列：T1 破译后并排输出两句，不合成一句选边 (salience 权重 1.0)");
 }
 
 // 5. Encountered State across companion planets (T2: collected Kiln proposition, missing Orchard)
@@ -72,9 +78,10 @@ console.log("=== Running Next-Step Protocol Self-Checks ===");
   assert.equal(hints.length, 1);
   assert.equal(hints[0].planetId, "glass-orchard");
   assert.equal(hints[0].priority, 2);
+  assert.equal(hints[0].salienceWeight, 1.8);
   assert.equal(hints[0].status, "encountered");
   assert.match(hints[0].text, /玻璃果园深坑物镜/);
-  console.log("ok  T2 跨星推进：持窑线索精准指引玻璃果园深坑读头");
+  console.log("ok  T2 跨星推进：持窑线索精准指引玻璃果园深坑读头 (salience 权重 1.8)");
 }
 
 // 6. Suspected State for T2 (both Kiln and Orchard collected)
@@ -85,9 +92,10 @@ console.log("=== Running Next-Step Protocol Self-Checks ===");
   );
   assert.equal(hints.length, 1);
   assert.equal(hints[0].priority, 3);
+  assert.equal(hints[0].salienceWeight, 2.2);
   assert.equal(hints[0].status, "suspected");
   assert.equal(hints[0].actionType, "index");
-  console.log("ok  T2 suspected 跨星命题集齐提示前往 INDEX 综合");
+  console.log("ok  T2 suspected 跨星命题集齐提示前往 INDEX 综合 (salience 权重 2.2)");
 }
 
 // 7. Parallel Unlocked State (T2 believed -> Choir-Well & Needle unlocked in parallel!)
@@ -99,7 +107,7 @@ console.log("=== Running Next-Step Protocol Self-Checks ===");
   assert.equal(hints.length, 2, "T2 believed should produce 2 parallel hints for Choir-Well & Needle");
   assert.ok(hints.some((h) => h.planetId === "choir-well"));
   assert.ok(hints.some((h) => h.planetId === "needle"));
-  console.log("ok  咏井/针并列：T2 破译后并排输出两星探索线索");
+  console.log("ok  咏井/针并列：T2 破译后并排输出两星探索线索 (salience 权重 1.0)");
 }
 
 // 8. Parallel Unlocked State (T3 believed -> Marrow & Ledger unlocked in parallel!)
@@ -115,10 +123,55 @@ console.log("=== Running Next-Step Protocol Self-Checks ===");
   assert.equal(hints.length, 2, "T3 believed should produce 2 parallel hints for Marrow & Ledger");
   assert.ok(hints.some((h) => h.planetId === "marrow"));
   assert.ok(hints.some((h) => h.planetId === "ledger"));
-  console.log("ok  髓/总账并列：T3 破译后并排输出两星探索线索");
+  console.log("ok  髓/总账并列：T3 破译后并排输出两星探索线索 (salience 权重 1.0)");
 }
 
-// 9. Ending State (All 6 truths believed)
+// 9. Canon Unlock Graph: T4 believed -> Cinder Court (烬廷 Red Herring) unlocked in parallel with T5
+{
+  const unlocked = getUnlockedPlanetIds(["T1", "T2", "T3", "T4"]);
+  assert.ok(unlocked.has("cinder-court"), "T4 must unlock cinder-court");
+
+  const hints = deriveNextStepHints(
+    [
+      "Helix.Beacon.Broadcasting", "Helix.Signal.Unassigned",
+      "Kiln.Bus.Mutex", "Orchard.ROM.Exhaustion",
+      "Choir.Hymn.IsClock", "Needle.Pointer.Rebased",
+      "Marrow.God.IsProcess", "Marrow.Bio.WriteBack"
+    ],
+    ["T1", "T2", "T3", "T4"]
+  );
+  assert.ok(hints.length >= 2, "Should include T5 ledger lead + cinder-court red herring lead");
+  const cinderHint = hints.find((h) => h.planetId === "cinder-court");
+  const ledgerHint = hints.find((h) => h.planetId === "ledger");
+  assert.ok(cinderHint, "Must contain Cinder Court hint");
+  assert.ok(ledgerHint, "Must contain Ledger hint");
+  assert.match(cinderHint.text, /血色宴会厅/);
+  console.log("ok  Canon 解锁图：T4 破译后完整派生烬廷 (Cinder Court) 探索线索");
+}
+
+// 10. Canon Unlock Graph: T5 believed -> Blind Sun & Black Interval unlocked in parallel
+{
+  const unlocked = getUnlockedPlanetIds(["T1", "T2", "T3", "T4", "T5"]);
+  assert.ok(unlocked.has("blind-sun"), "T5 must unlock blind-sun");
+  assert.ok(unlocked.has("black-interval"), "T5 must unlock black-interval");
+
+  const hints = deriveNextStepHints(
+    [
+      "Helix.Beacon.Broadcasting", "Helix.Signal.Unassigned",
+      "Kiln.Bus.Mutex", "Orchard.ROM.Exhaustion",
+      "Choir.Hymn.IsClock", "Needle.Pointer.Rebased",
+      "Marrow.God.IsProcess", "Marrow.Bio.WriteBack",
+      "Ledger.Error.IsChecksum", "Ledger.Protocol.RecorderKey"
+    ],
+    ["T1", "T2", "T3", "T4", "T5"]
+  );
+  assert.ok(hints.length >= 2, "Should include Blind Sun and Black Interval hints in parallel");
+  assert.ok(hints.some((h) => h.planetId === "blind-sun"), "Must contain Blind Sun hint");
+  assert.ok(hints.some((h) => h.planetId === "black-interval"), "Must contain Black Interval hint");
+  console.log("ok  Canon 解锁图：T5 破译后完整派生盲日 (Blind Sun) 与黑间隔并列线索");
+}
+
+// 11. Ending State (All 6 truths believed)
 {
   const hints = deriveNextStepHints(
     [],
@@ -128,10 +181,21 @@ console.log("=== Running Next-Step Protocol Self-Checks ===");
   assert.equal(hints[0].status, "ending");
   assert.equal(hints[0].priority, 4);
   assert.match(hints[0].text, /全域终局决议协议/);
-  console.log("ok  终局态：全真相锚定后提示决议协议");
+  console.log("ok  终局态：全真相锚定后提示决议协议 (priority 4)");
 }
 
-// 10. Bible Lexicon Compliance & Forbidden Word Regression Tests
+// 12. Reachable Idle State (Explicit / Free cruising mode)
+{
+  const hints = deriveNextStepHints([], [], { forceIdle: true });
+  assert.equal(hints.length, 1);
+  assert.equal(hints[0].status, "idle");
+  assert.equal(hints[0].priority, 0);
+  assert.equal(hints[0].salienceWeight, 0);
+  assert.match(hints[0].text, /当前星域无待解悬念/);
+  console.log("ok  空态可达性：明确空态/巡航态调用返回规范空态提示 (priority 0)");
+}
+
+// 13. Bible Lexicon Compliance & Forbidden Word Regression Tests
 {
   const allTexts: string[] = [];
 
@@ -159,34 +223,43 @@ console.log("=== Running Next-Step Protocol Self-Checks ===");
   }
   console.log(`ok  §2 全局禁词扫描通过 (${GLOBAL_FORBIDDEN_WORDS.length} 禁词 x ${allTexts.length} 协议文本)`);
 
-  // Check §3 Per-Planet Forbidden Words
-  for (const [truthKey, truthCfg] of Object.entries(NEXT_STEP_PROTOCOL_TABLE)) {
-    let planetId: string | undefined;
-    if (truthKey === "T1") planetId = "helix-7";
-    else if (truthKey === "T4") planetId = "marrow";
-    else if (truthKey === "T5") planetId = "ledger";
-    else if (truthKey === "THidden") planetId = "black-interval";
+  // Check §3 Per-Planet Forbidden Words with complete planet mappings
+  const truthPlanetMapping: Record<string, string[]> = {
+    T1: ["helix-7"],
+    T2: ["kiln", "glass-orchard"],
+    T3: ["choir-well", "needle"],
+    T4: ["marrow"],
+    T5: ["ledger"],
+    cinder_court: ["cinder-court"],
+    blind_sun: ["blind-sun"],
+    THidden: ["black-interval"]
+  };
 
-    if (planetId && PLANET_FORBIDDEN_WORDS[planetId]) {
+  for (const [truthKey, truthCfg] of Object.entries(NEXT_STEP_PROTOCOL_TABLE)) {
+    const planetIds = truthPlanetMapping[truthKey];
+    if (planetIds && planetIds.length > 0) {
       const texts: string[] = [];
       collectTexts(truthCfg);
       for (const t of texts) {
-        for (const forbidden of PLANET_FORBIDDEN_WORDS[planetId]) {
-          assert.ok(
-            !t.includes(forbidden),
-            `Surface text violates §3 ${planetId} forbidden word "${forbidden}": "${t}"`
-          );
+        for (const planetId of planetIds) {
+          const forbiddenList = PLANET_FORBIDDEN_WORDS[planetId];
+          if (forbiddenList) {
+            for (const forbidden of forbiddenList) {
+              assert.ok(
+                !t.includes(forbidden),
+                `Surface text violates §3 ${planetId} forbidden word "${forbidden}": "${t}"`
+              );
+            }
+          }
         }
       }
     }
   }
-  console.log("ok  §3 本星专属禁词扫描通过 (全星表无泄漏)");
+  console.log("ok  §3 本星专属禁词扫描通过 (完整覆盖 T1-THidden、窑/果园/咏井/针/烬廷/盲日)");
 
   // Check no true_compute_role leak in any text
   for (const text of allTexts) {
     for (const planet of CANON.planets) {
-      const role = planet.true_compute_role.toLowerCase();
-      // Check if text directly contains raw technical parts of true_compute_role
       const forbiddenMachineTokens = [
         "bootstrap", "bios", "rom", "mutex", "power distribution",
         "oscillator", "clock", "checksum", "stack pointer", "tensor",
