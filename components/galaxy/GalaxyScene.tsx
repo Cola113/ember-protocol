@@ -890,7 +890,7 @@ function TruthDashboardOverlay({
   const progressPercent = Math.round((decodedTruthsCount / totalTruths) * 100);
 
   return (
-    <div className="absolute top-16 sm:top-20 left-2.5 sm:left-6 z-30 pointer-events-auto max-w-[calc(100vw-20px)] sm:max-w-xs">
+    <div className="absolute top-28 sm:top-32 left-2.5 sm:left-6 z-30 pointer-events-auto max-w-[calc(100vw-20px)] sm:max-w-xs">
       <div className="holo-panel rounded-sm border border-holo-cyan/30 p-2.5 sm:p-3.5 shadow-2xl backdrop-blur-md">
         {/* Dashboard Header / Toggle */}
         <div

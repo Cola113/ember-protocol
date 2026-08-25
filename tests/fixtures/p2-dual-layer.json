@@ -1,0 +1,14 @@
+{
+  "anchor_truths": [
+    {
+      "id": "T1",
+      "surface_claim": "信标从不求救，只等星海第一声应答",
+      "foil_claim": "信标只是求援信号，巡逻艇即将到达",
+      "half_claim": "信标确实未曾停歇，但只是故障余响"
+    }
+  ],
+  "proposition_labels": {
+    "Helix.Beacon.Broadcasting": "信标从不求救，只确认交接班",
+    "Helix.Signal.Unassigned": "天线对准的航向，始终等不到一句应答"
+  }
+}

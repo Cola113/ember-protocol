@@ -7,6 +7,9 @@ export interface AnchorTruth {
   code: string;
   title: string;
   summary: string;
+  surface_claim?: string;
+  foil_claim?: string;
+  half_claim?: string;
   primary_planet: string;
   required_propositions: string[];
   keywords: string[];
@@ -61,6 +64,7 @@ export interface CanonLedgerData {
     residual_directive: string;
   };
   anchor_truths: AnchorTruth[];
+  proposition_labels?: Record<string, string>;
   planets: PlanetDef[];
   /** The only constitution mount: docs/canon-ledger.json -> constitutions[planet_id]. */
   constitutions: Record<string, Constitution>;
@@ -72,6 +76,7 @@ export const CANON = {
   vessel: canonData.vessel,
   recorder: canonData.recorder,
   anchorTruths: canonData.anchor_truths as AnchorTruth[],
+  proposition_labels: ((canonData as any).proposition_labels || {}) as Record<string, string>,
   planets: canonData.planets as PlanetDef[],
   constitutions: (canonData as CanonLedgerData).constitutions
 };

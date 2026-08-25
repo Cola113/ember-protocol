@@ -60,6 +60,15 @@ export default function HomePage() {
     [believedTruths]
   );
 
+  // Derive decoded planets from believed truths' primary_planet fields
+  const decodedPlanetIds = useMemo(
+    () =>
+      CANON.anchorTruths
+        .filter((t) => believedTruths.includes(t.id))
+        .map((t) => t.primary_planet),
+    [believedTruths]
+  );
+
   // Canonical gating: all 6 truths (T1-T5 + THidden) must be believed to enter resolution protocols
   const canResolveEnding = useMemo(
     () =>
@@ -238,6 +247,8 @@ export default function HomePage() {
             emberCycleSecondsLeft={emberCycleSecondsLeft}
             believedTruthsCount={believedTruths.length}
             totalTruthsCount={CANON.anchorTruths.length}
+            collectedPropositions={collectedPropositions}
+            believedTruths={believedTruths}
           />
         )}
 
@@ -249,7 +260,7 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.3 }}
-            className="absolute top-16 sm:top-20 right-3 sm:right-8 z-40 pointer-events-none"
+            className="absolute top-28 sm:top-32 right-3 sm:right-8 z-50 pointer-events-none"
           >
             <div className="holo-panel border border-holo-cyan px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-sm shadow-holo-cyan flex items-center gap-2 sm:gap-2.5 bg-surface-dark/95 backdrop-blur-md text-xs font-mono">
               <span className="w-2 h-2 rounded-full bg-holo-cyan animate-ping shrink-0" />
@@ -258,7 +269,7 @@ export default function HomePage() {
                   <span>⚡ 星图拓扑已改写 // STAR CHART REWRITTEN</span>
                 </div>
                 <div className="text-holo-bright text-[10px] sm:text-[11px] mt-0.5">
-                  【{rewriteToast.title}】计算节点已并联接入总线
+                  【{rewriteToast.title}】星图改写完成——新的航路已点亮
                 </div>
               </div>
             </div>
@@ -323,6 +334,7 @@ export default function HomePage() {
               collectedPropositions={collectedPropositions}
               completedHotspotIds={completedHotspotIds}
               onCompleteHotspot={handleCompleteHotspot}
+              isDecoded={decodedPlanetIds.includes(selectedPlanet.id)}
             />
           </motion.div>
         )}
@@ -348,6 +360,7 @@ export default function HomePage() {
               onNewGame={handleNewGame}
               elapsedSeconds={elapsedSeconds}
               emberCycleSecondsLeft={emberCycleSecondsLeft}
+              isDecoded={decodedPlanetIds.length >= 5 || believedTruths.length >= 5}
             />
           </motion.div>
         )}
