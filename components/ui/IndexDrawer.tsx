@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { CANON, AnchorTruth } from "@/lib/canon";
 import {
   ArrowLeft,
@@ -213,8 +213,12 @@ export default function IndexDrawer({
   const isAlreadyBelieved = believedTruths.includes(selectedTruth.id);
 
   const handleSynthesize = async () => {
+    const usingSlots = hypothesis.trim() === "";
     const finalHypothesis = hypothesis.trim() || assembleHypothesis(slotA, connective, slotB).trim();
-    if (!finalHypothesis || !hasAllRequiredProps) return;
+    // 两槽门：走槽位拼装时要求两槽非空（防止残缺句如"并非 插座正合你尺寸"）；
+    // 直接编辑完整假说时由玩家自行控制内容
+    const bothSlotsFilled = slotA.trim() !== "" && slotB.trim() !== "";
+    if (!finalHypothesis || (usingSlots && !bothSlotsFilled) || !hasAllRequiredProps) return;
     setLoading(true);
 
     try {
