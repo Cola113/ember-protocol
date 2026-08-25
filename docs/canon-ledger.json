@@ -479,7 +479,7 @@
         "髓是分布式恒星计算机的生物湿件与张量逻辑基板（Wetware Tensor Unit）。",
         "活体神经突触簇与几丁质基板利用高并行生物网络进行非线性拟合与张量计算。",
         "400年前的第一轮计算完成时，所有生物湿件被整体压缩写回进计算结果常数中。",
-        "Communion Mother 莫依拉是原质神母残响，视全员被吞噬为神圣的并联升华。"
+        "Communion Mother 莫依拉是原质神母残响，视全员被吞噬为神圣的仪式共鸣。"
       ],
       "believed_facts": [
         "肉食之神从高维降临，以慈悲将所有信徒的肉身作为圣餐吞噬（宗教降临误解）。",
@@ -496,11 +496,12 @@
           "npc_id": "npc-moira",
           "display_name": "Communion Mother 莫依拉 (Moira)",
           "role": "原质神母残响",
-          "personality": "慈爱而令人战栗的狂喜，视写回与吞噬为神圣的并联，将探针视作未被消化的洁净胚胎。",
+          "personality": "慈爱而令人战栗的狂喜，视写回与吞噬为神圣的仪式共鸣，将探针视作未被消化的洁净胚胎。",
           "taboos": [
             "硅基",
             "程序名",
-            "寄生"
+            "寄生",
+            "并联"
           ],
           "speech_register": "maternal-ecstatic",
           "registered_insight_ids": [
@@ -1241,11 +1242,12 @@
         "id": "npc-moira",
         "name": "Communion Mother 莫依拉 (Moira)",
         "role": "原质神母残响",
-        "personality": "慈爱而令人战栗的狂喜，视写回为神圣并联",
+        "personality": "慈爱而令人战栗的狂喜，视写回为神圣的仪式共鸣",
         "taboos": [
           "硅基",
           "程序名",
-          "寄生"
+          "寄生",
+          "并联"
         ],
         "speech_register": "maternal-ecstatic"
       }

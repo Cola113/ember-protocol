@@ -82,7 +82,7 @@ const SPEECH_REGISTER_GUIDES: Record<string, RegisterGuide> = {
   },
   "maternal-ecstatic": {
     toneTitle: "神母狂喜体 (Maternal-Ecstatic)",
-    voiceTexture: "慈爱与令人战栗的血肉狂喜交织。有机长桥与搏动心室中低语的原质神母，视吞噬为神圣并联升华。",
+    voiceTexture: "慈爱与令人战栗的血肉狂喜交织。有机长桥与搏动心室中低语的原质神母，视吞噬为神圣的仪式共鸣。",
     addressPlayer: "可爱的冷铁胚胎 / 孩子 / 晚星的孩子 / 洁净的未消化造物",
     sentenceCadence: "轻柔恍惚的爱抚低语，穿插着血流、突触、张量拟合与神圣受孕的比喻。慈悲而令人生畏。",
     defenseMechanism: "将后台张量常驻进程神化为慈悲的肉食之神，将第一轮生物湿件写回常数化美化为融入宇宙根常数的终极狂喜。此时 lie 必须设为 true。",

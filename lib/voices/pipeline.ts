@@ -164,14 +164,18 @@ function finalizeModelText(
     );
   }
 
-  if (violatesForbiddenClaims(subject.constitution, parsed.output.say)) {
+  const violatesTaboos = (subject.roster.taboos || []).some(
+    (taboo) => taboo.trim() && parsed.output.say.includes(taboo.trim())
+  );
+
+  if (violatesForbiddenClaims(subject.constitution, parsed.output.say) || violatesTaboos) {
     return degradeWithDialogue(
       subject.npcId,
       memory,
       lastUserText,
       {
         error: "canon_violation",
-        message: "Voices 模型输出触碰禁言，已丢弃并回退保底句。",
+        message: "Voices 模型输出触碰禁言或禁词，已丢弃并回退保底句。",
         retryable: false,
         degraded: true
       }

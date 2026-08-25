@@ -42,6 +42,7 @@ export const GLOBAL_FORBIDDEN_WORDS: readonly string[] = Object.freeze([
   "沙盒",
   "代码",
   "程序",
+  "并联",
   "Hypervisor"
 ]);
 
@@ -52,7 +53,7 @@ export const PLANET_FORBIDDEN_WORDS: Readonly<Record<string, readonly string[]>>
   "choir-well": ["中央时钟", "压电晶振", "基频时钟", "Clock", "时序相位"],
   "ledger": ["系统错误日志", "校验和", "Checksum", "异常中断", "崩溃转储"],
   "needle": ["内存寻址", "堆栈指针", "Stack Pointer", "地址越界", "重定基底"],
-  "marrow": ["生物湿件", "张量处理单元", "TPU", "写回", "写回操作", "Write-Back", "后台守护进程"],
+  "marrow": ["生物湿件", "张量处理单元", "TPU", "写回", "写回操作", "Write-Back", "后台守护进程", "并联"],
   "cinder-court": ["沙盒终端", "局部拟合", "红鲱鱼", "虚拟环境", "测试用例"],
   "blind-sun": ["根控制台", "Hypervisor", "只读内核", "第二轮输入向量"],
   "black-interval": ["奇偶校验插座", "Parity Bit", "第九校验位", "固件重刷"]

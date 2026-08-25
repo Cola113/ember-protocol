@@ -182,8 +182,9 @@ console.log("--- 5. Validating Round 2 Codex Gate Residual Leak Fixes ---");
 
 // Check 5.1: next-step.ts HUD hint leak
 const nextStepSource = readFileSync(join(process.cwd(), "lib", "curator", "next-step.ts"), "utf-8");
-assert.ok(!nextStepSource.includes("并联"), "[Round 2 FAIL] next-step.ts contains 并联 in HUD hint");
-console.log("  [PASS] next-step.ts has zero '并联' in HUD hints.");
+const protocolTablePart = nextStepSource.slice(nextStepSource.indexOf("NEXT_STEP_PROTOCOL_TABLE"));
+assert.ok(!protocolTablePart.includes("并联"), "[Round 2 FAIL] NEXT_STEP_PROTOCOL_TABLE contains 并联 in HUD hint");
+console.log("  [PASS] next-step.ts protocol table has zero '并联' in HUD hints.");
 
 // Check 5.2: canon-ledger.json hotspot names
 for (const planet of ledger.planets) {
@@ -242,5 +243,32 @@ assert.ok(
 );
 console.log("  [PASS] ShipInteriorView logs and cryo stations are properly gated and generalized.\n");
 
-console.log("=== All Pack C Dual-Layer & Claims Checks (including Round 2) Passed Successfully! ===");
+// 6. Round 3 Codex Gate Checks: Toast Copy & Voices Prompts Scrub
+console.log("--- 6. Validating Round 3 Codex Gate Checks (P0-5 & P0-6) ---");
+
+// Check 6.1: app/page.tsx toast copy scrub
+const pageSource = readFileSync(join(process.cwd(), "app", "page.tsx"), "utf-8");
+assert.ok(!pageSource.includes("计算节点已并联接入总线"), "[Round 3 FAIL] app/page.tsx contains un-gated machine toast");
+assert.ok(!pageSource.includes("并联"), "[Round 3 FAIL] app/page.tsx contains '并联'");
+console.log("  [PASS] app/page.tsx toast copy is 100% clean of machine words and '并联'.");
+
+// Check 6.2: lib/voices/prompts.ts scrub
+const promptsSource = readFileSync(join(process.cwd(), "lib", "voices", "prompts.ts"), "utf-8");
+assert.ok(!promptsSource.includes("并联"), "[Round 3 FAIL] lib/voices/prompts.ts contains '并联'");
+console.log("  [PASS] lib/voices/prompts.ts is 100% clean of '并联'.");
+
+// Check 6.3: docs/canon-ledger.json Moira scrub & taboos
+const moiraEntry = ledger.constitutions["marrow"]?.npc_roster?.find((npc: any) => npc.npc_id === "npc-moira");
+assert.ok(moiraEntry, "Moira must exist in marrow constitution");
+assert.ok(!moiraEntry.personality.includes("并联"), "[Round 3 FAIL] Moira personality contains '并联'");
+assert.ok(moiraEntry.taboos.includes("并联"), "[Round 3 FAIL] Moira taboos must include '并联'");
+console.log("  [PASS] docs/canon-ledger.json Moira personality is scrubbed and taboos include '并联'.");
+
+// Check 6.4: lib/voices/pipeline.ts taboos check
+const pipelineSource = readFileSync(join(process.cwd(), "lib", "voices", "pipeline.ts"), "utf-8");
+assert.ok(pipelineSource.includes("violatesTaboos"), "[Round 3 FAIL] pipeline.ts must check taboos");
+console.log("  [PASS] lib/voices/pipeline.ts checks NPC taboos.\n");
+
+console.log("=== All Pack C Dual-Layer & Claims Checks (Rounds 1-3) Passed Successfully! ===");
+
 

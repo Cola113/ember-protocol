@@ -269,7 +269,7 @@ export default function HomePage() {
                   <span>⚡ 星图拓扑已改写 // STAR CHART REWRITTEN</span>
                 </div>
                 <div className="text-holo-bright text-[10px] sm:text-[11px] mt-0.5">
-                  【{rewriteToast.title}】计算节点已并联接入总线
+                  【{rewriteToast.title}】星图改写完成——新的航路已点亮
                 </div>
               </div>
             </div>
