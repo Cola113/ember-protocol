@@ -172,32 +172,30 @@ console.log("=== Running Next-Step Protocol Self-Checks ===");
   console.log("ok  Canon 解锁图：T5 破译后完整派生盲日 (Blind Sun) 与黑间隔并列线索");
 }
 
-// 11. Ending State (All 6 truths believed)
+// 11. Natural Idle & Empty State (Natural invocation without forceIdle when all truths believed)
 {
   const hints = deriveNextStepHints(
     [],
     ["T1", "T2", "T3", "T4", "T5", "THidden"]
   );
-  assert.equal(hints.length, 1);
-  assert.equal(hints[0].status, "ending");
-  assert.equal(hints[0].priority, 4);
-  assert.match(hints[0].text, /全域终局决议协议/);
-  console.log("ok  终局态：全真相锚定后提示决议协议 (priority 4)");
+  assert.equal(hints.length, 0, "When all truths are believed, deriveNextStepHints naturally returns empty array []");
+  console.log("ok  终局巡航态：全真相破译后推导函数自然返回空数组 []");
+
+  // Verify HUD level consumption
+  const renderedHints = hints.length > 0 ? hints : [buildIdleHint()];
+  assert.equal(renderedHints.length, 1);
+  assert.equal(renderedHints[0].status, "idle");
+  assert.equal(renderedHints[0].priority, 0);
+  assert.equal(renderedHints[0].salienceWeight, 0);
+  assert.match(renderedHints[0].text, /当前星域无待解悬念/);
+  console.log("ok  HUD 空态自然渲染：推导空数组在自然调用链下正确呈现巡航文案 (priority 0)");
 }
 
-// 12. Reachable Idle State (Explicit & Fallback)
+// 12. Explicit Idle Option Verification
 {
-  const idleHint = buildIdleHint();
-  assert.equal(idleHint.status, "idle");
-  assert.equal(idleHint.priority, 0);
-  assert.equal(idleHint.salienceWeight, 0);
-
   const forcedHints = deriveNextStepHints([], [], { forceIdle: true });
-  assert.equal(forcedHints.length, 1);
-  assert.equal(forcedHints[0].status, "idle");
-  assert.equal(forcedHints[0].priority, 0);
-  assert.match(forcedHints[0].text, /当前星域无待解悬念/);
-  console.log("ok  空态可达性：明确空态/巡航态调用返回规范空态提示 (priority 0)");
+  assert.equal(forcedHints.length, 0);
+  console.log("ok  显式空态选项：forceIdle 正确输出空数组 []");
 }
 
 // 13. Bible Lexicon Compliance & Forbidden Word Regression Tests

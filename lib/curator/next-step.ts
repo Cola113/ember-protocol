@@ -281,7 +281,7 @@ export function getUnlockedPlanetIds(believedTruths: readonly string[]): Set<str
 }
 
 /**
- * Helper to build the canonical idle hint.
+ * Helper to build the canonical idle hint for HUD empty-state rendering.
  */
 export function buildIdleHint(): NextStepHint {
   const emptyCfg = NEXT_STEP_PROTOCOL_TABLE.idle.empty;
@@ -300,46 +300,29 @@ export function buildIdleHint(): NextStepHint {
 /**
  * Derive deterministic, fiction-interior next-step hints from player progress.
  *
- * Salience Integration:
- * - Computes salience weights via `salienceForPlayerState`.
+ * Natural Idle & Empty State Design:
+ * - When all anchor truths are believed (or no actionable tasks remain),
+ *   returns an empty array `[]`.
+ * - The consumer (HudHeader) renders `buildIdleHint()` upon receiving `[]`.
  * - Truths with highest salience weights (suspected = 2.2, encountered = 1.8) take precedence.
- * - Unlocked exploratory paths (weight = 1.0) respect the complete Canon unlock graph
- *   (including companion/red-herring planets Cinder Court and Blind Sun).
- * - Parallel Rule (窑/果园并列 / 其它并列):
- *   When multiple truths or companion planets can be advanced concurrently,
- *   returns multiple distinct hints side-by-side without forcing a choice.
- * - Reachable Idle / Empty State:
- *   Reachable when explicitly requested, when no candidate truths remain,
- *   or when idle fallback is triggered.
+ * - Parallel Rule: Multiple unblocked exploratory paths return side-by-side without forcing a choice.
  */
 export function deriveNextStepHints(
   collectedPropositions: readonly string[],
   believedTruths: readonly string[],
   options?: NextStepOptions
 ): NextStepHint[] {
-  // 0. Explicit idle request
+  // 0. Explicit idle request -> Natural empty array
   if (options?.forceIdle) {
-    return [buildIdleHint()];
+    return [];
   }
 
-  // 1. All anchor truths believed -> Full canon resolution ready
+  // 1. All anchor truths believed -> All truths decoded; no pending truth leads remain
   if (
     CANON.anchorTruths.length > 0 &&
     CANON.anchorTruths.every((t) => believedTruths.includes(t.id))
   ) {
-    const endCfg = NEXT_STEP_PROTOCOL_TABLE.ending.ready;
-    return [
-      {
-        id: "ending-ready",
-        planetLabel: endCfg.planetLabel,
-        siteLabel: endCfg.siteLabel,
-        text: endCfg.text,
-        priority: 4,
-        salienceWeight: 2.2,
-        status: "ending",
-        actionType: endCfg.actionType
-      }
-    ];
+    return [];
   }
 
   // 2. Compute truth states and salience map
@@ -666,6 +649,6 @@ export function deriveNextStepHints(
     return exploratoryHints;
   }
 
-  // 6. Reachable Empty State (空态)
-  return [buildIdleHint()];
+  // 6. Natural Empty State -> Return empty array
+  return [];
 }

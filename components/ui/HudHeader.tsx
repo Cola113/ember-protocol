@@ -1,12 +1,12 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Compass, BookOpen, Layers, Terminal, Sparkles, Radio, CheckCircle2 } from "lucide-react";
+import { Compass, BookOpen, Layers, GitBranch, Sparkles, Radio } from "lucide-react";
 import { deriveNextStepHints, buildIdleHint, type NextStepHint } from "@/lib/curator/next-step";
 
 export interface HudHeaderProps {
   currentView: string;
-  onNavigate: (view: any) => void;
+  onNavigate: (view: "galaxy" | "index" | "ship" | "ending") => void;
   emberCycleSecondsLeft: number;
   believedTruthsCount: number;
   totalTruthsCount: number;
@@ -23,6 +23,9 @@ export function HudHeader({
   emberCycleSecondsLeft,
   believedTruthsCount,
   totalTruthsCount,
+  showInferenceLines = true,
+  onToggleInference,
+  canResolveEnding = false,
   collectedPropositions = [],
   believedTruths = []
 }: HudHeaderProps) {
@@ -32,7 +35,7 @@ export function HudHeader({
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const isEndingReady = believedTruthsCount >= totalTruthsCount && totalTruthsCount > 0;
+  const isEndingReady = canResolveEnding || (believedTruthsCount >= totalTruthsCount && totalTruthsCount > 0);
 
   // Derive next-step hints deterministically from player's current evidence state
   const rawHints = useMemo(
@@ -40,7 +43,7 @@ export function HudHeader({
     [collectedPropositions, believedTruths]
   );
 
-  // Bounded display: at most 2 hints in the single-line tactical sub-bar
+  // When rawHints is empty (e.g. all truths decoded / cruising), fall back to canonical idle hint
   const nextStepHints = rawHints.length > 0 ? rawHints : [buildIdleHint()];
   const displayedHints = nextStepHints.slice(0, 2);
   const overflowCount = Math.max(0, nextStepHints.length - 2);
@@ -96,16 +99,32 @@ export function HudHeader({
             <span className="hidden sm:inline">INDEX</span>
           </button>
 
+          {/* Inference Lines Toggle Button (Restored) */}
+          {onToggleInference && (
+            <button
+              onClick={onToggleInference}
+              className={`px-2 sm:px-3 py-1.5 rounded-sm text-xs font-mono flex items-center gap-1.5 transition-all duration-150 ${
+                showInferenceLines
+                  ? "bg-holo-cyan/20 border border-holo-cyan text-holo-bright shadow-holo-cyan"
+                  : "bg-surface border border-holo-border text-holo-muted hover:text-holo-cyan hover:border-holo-cyan/50"
+              }`}
+              title={showInferenceLines ? "隐藏星图因果推理拓扑连线" : "显示星图因果推理拓扑连线"}
+            >
+              <GitBranch className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-holo-cyan" />
+              <span className="hidden sm:inline">INFERENCE</span>
+            </button>
+          )}
+
           <button
-            onClick={() => onNavigate("terminal")}
+            onClick={() => onNavigate("ship")}
             className={`px-2.5 sm:px-3.5 py-1.5 rounded-sm text-xs font-mono flex items-center gap-1.5 transition-all duration-150 ${
-              currentView === "terminal"
+              currentView === "ship"
                 ? "bg-holo-cyan/20 border border-holo-cyan text-holo-bright shadow-holo-cyan"
                 : "bg-surface border border-holo-border text-holo-muted hover:text-holo-cyan hover:border-holo-cyan/50"
             }`}
           >
-            <Terminal className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-holo-cyan" />
-            <span className="hidden sm:inline">LOGS</span>
+            <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-holo-cyan" />
+            <span className="hidden sm:inline">SHIP DECK</span>
           </button>
 
           {isEndingReady && (
@@ -121,18 +140,6 @@ export function HudHeader({
               <span>ENDING</span>
             </button>
           )}
-
-          <button
-            onClick={() => onNavigate("ship")}
-            className={`px-2.5 sm:px-3.5 py-1.5 rounded-sm text-xs font-mono flex items-center gap-1.5 transition-all duration-150 ${
-              currentView === "ship"
-                ? "bg-holo-cyan/20 border border-holo-cyan text-holo-bright shadow-holo-cyan"
-                : "bg-surface border border-holo-border text-holo-muted hover:text-holo-cyan hover:border-holo-cyan/50"
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-holo-cyan" />
-            <span className="hidden sm:inline">SHIP DECK</span>
-          </button>
 
           <div className="pl-2 sm:pl-3 border-l border-holo-cyan/20 text-right font-mono text-xs hidden sm:block">
             <div className="text-holo-muted text-[10px]">EMBER CYCLE</div>
@@ -184,7 +191,7 @@ export function HudHeader({
                 {/* Human Sentence */}
                 <span className="truncate text-[10px] sm:text-xs tracking-tight">{hint.text}</span>
 
-                {/* Action quick jump if suspected or ending */}
+                {/* Action quick jump if suspected */}
                 {isSuspected && (
                   <button
                     onClick={() => onNavigate("index")}
@@ -192,15 +199,6 @@ export function HudHeader({
                     title="前往公证索引台进行两槽因果综合"
                   >
                     综合 →
-                  </button>
-                )}
-                {isEnding && (
-                  <button
-                    onClick={() => onNavigate("ending")}
-                    className="ml-auto px-1.5 py-0.5 rounded text-[10px] bg-holo-amber/30 border border-holo-amber text-holo-amber font-bold hover:bg-holo-amber hover:text-void transition-colors shrink-0 animate-pulse whitespace-nowrap"
-                    title="执行全域终局决议协议"
-                  >
-                    终局决议 →
                   </button>
                 )}
               </div>
