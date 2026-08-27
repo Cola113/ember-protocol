@@ -10,7 +10,8 @@ import React, {
   useRef,
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Grid, OrbitControls } from "@react-three/drei";
+import { ContactShadows, Environment, Grid, OrbitControls } from "@react-three/drei";
+import { EffectComposer, Bloom, SMAA, Vignette } from "@react-three/postprocessing";
 import {
   CylinderCollider,
   Physics,
@@ -45,6 +46,9 @@ import {
   type SeamState,
 } from "@/lib/yard/fracture";
 import WeldFx, { seamWorldPoint, type SparkBurst } from "@/components/yard/WeldFx";
+import ThrusterFx from "@/components/yard/ThrusterFx";
+import { useYardTextures } from "@/components/yard/useYardTextures";
+import { yardSound } from "@/lib/yard/audio";
 
 const BODY_FIXED = 1;
 const BODY_DYNAMIC = 0;
@@ -78,6 +82,7 @@ export type YardActions = {
   weld: () => void;
   undo: () => void;
   release: () => void;
+  drop: () => void;
   resetHammer: (preset: HammerPresetId) => void;
   getBlueprint: () => YardBlueprint | null;
   loadBlueprint: (blueprint: YardBlueprint) => void;
@@ -170,19 +175,29 @@ export default function YardScene(props: YardSceneProps) {
     <Canvas
       shadows
       dpr={[1, 1.5]}
-      gl={{ antialias: true, powerPreference: "high-performance", alpha: false }}
-      camera={{ position: [11, 8.5, 21], fov: 50, near: 0.1, far: 220 }}
+      gl={{
+        antialias: false,
+        powerPreference: "high-performance",
+        alpha: false,
+        toneMapping: THREE.ACESFilmicToneMapping,
+        toneMappingExposure: 1.15,
+      }}
+      camera={{ position: [11, 8.5, 21], fov: 48, near: 0.1, far: 220 }}
       style={{ background: "#050811" }}
       onPointerMissed={() => dropRef.current()}
     >
       <color attach="background" args={["#050811"]} />
-      <hemisphereLight args={["#94a3b8", "#0b1220", 0.42]} />
-      <ambientLight intensity={0.22} />
+
+      {/* Cinematic IBL Environment */}
+      <Environment preset="warehouse" />
+
+      {/* Primary Sun Slit Light */}
       <directionalLight
         position={[14, 22, 12]}
-        intensity={1.35}
+        intensity={1.8}
         castShadow
         shadow-mapSize={[1024, 1024]}
+        shadow-bias={-0.0001}
         shadow-camera-left={-24}
         shadow-camera-right={24}
         shadow-camera-top={20}
@@ -190,7 +205,25 @@ export default function YardScene(props: YardSceneProps) {
         shadow-camera-near={1}
         shadow-camera-far={70}
       />
+
+      {/* Cool Industrial Fill & Rim Lights */}
+      <ambientLight intensity={0.25} color="#94a3b8" />
+      <directionalLight position={[-16, 12, -10]} intensity={0.6} color="#38bdf8" />
+      <pointLight position={[0, 14, 0]} intensity={0.5} distance={30} color="#f8fafc" />
+
+      {/* Soft Contact Shadows on Floor */}
+      <ContactShadows
+        position={[0, 0.01, 0]}
+        opacity={0.65}
+        scale={40}
+        blur={1.6}
+        far={4}
+        resolution={1024}
+        color="#020617"
+      />
+
       <ExteriorStars />
+
       <Suspense fallback={null}>
         <Physics gravity={[0, -9.81, 0]} timeStep={1 / 60} paused={paused} interpolate colliders="cuboid">
           <GrabController
@@ -207,11 +240,26 @@ export default function YardScene(props: YardSceneProps) {
           >
             <DockHull onBackgroundPointer={dropRef} />
             <DockAnchor />
-            {ALL_YARD_PARTS.map((part) => <YardPart key={part.id} def={part} />)}
+            {ALL_YARD_PARTS.map((part) => (
+              <YardPart key={part.id} def={part} simulating={!paused} />
+            ))}
           </GrabController>
           <ReadyBeacon onReady={onPhysicsReady} />
         </Physics>
       </Suspense>
+
+      {/* Restrained Cinematic Postprocessing */}
+      <EffectComposer multisampling={0} enableNormalPass={false}>
+        <SMAA />
+        <Bloom
+          luminanceThreshold={0.88}
+          luminanceSmoothing={0.25}
+          intensity={0.65}
+          mipmapBlur
+        />
+        <Vignette eskil={false} offset={0.22} darkness={0.82} />
+      </EffectComposer>
+
       <OrbitControls
         makeDefault
         enableDamping
@@ -318,6 +366,7 @@ function GrabController({
     gl.domElement.style.cursor = "auto";
     onHoldChangeRef.current(null);
     onSnapChangeRef.current(null);
+    yardSound.playGrab(false);
   }, [controls, gl, onHoldChangeRef, onSnapChangeRef, setDynamic]);
 
   const drop = useCallback(() => {
@@ -341,6 +390,7 @@ function GrabController({
     if (controls) controls.enabled = false;
     gl.domElement.style.cursor = "grabbing";
     onHoldChangeRef.current(next.def.label);
+    yardSound.playGrab(true);
   }, [controls, drop, gl, onHoldChangeRef]);
 
   const registerPart = useCallback((part: PartRecord) => partsRef.current.set(part.id, part), []);
@@ -360,15 +410,22 @@ function GrabController({
     const tagged = (payload.other.rigidBodyObject?.userData as { yardPartId?: string } | undefined)?.yardPartId;
     const otherId = tagged ?? Array.from(partsRef.current.values()).find((part) => part.body === otherBody)?.id;
     if (!otherId) return;
+
+    const rest = { x: 0, y: 0, z: 0 };
+    const va = prevVelRef.current.get(partId) ?? rest;
+    const vb = prevVelRef.current.get(otherId) ?? rest;
+    const speed = relativeSpeed(va, vb);
+
+    // Audio Impact ping
+    if (speed > 1.0) {
+      yardSound.playImpact(speed, partId === "drop-cube" || otherId === "drop-cube");
+    }
+
     if (!jointsRef.current.some((joint) => joint.aId === partId || joint.bId === partId)) return;
     const now = performance.now();
     const pairKey = `${partId}|${otherId}`;
     const last = lastHitRef.current.get(pairKey) ?? 0;
     if (now - last < IMPACT_CHATTER_MS) return;
-    const rest = { x: 0, y: 0, z: 0 };
-    const va = prevVelRef.current.get(partId) ?? rest;
-    const vb = prevVelRef.current.get(otherId) ?? rest;
-    const speed = relativeSpeed(va, vb);
     if (shouldIgnoreImpact(speed)) return;
     const self = partsRef.current.get(partId);
     const other = partsRef.current.get(otherId);
@@ -394,6 +451,7 @@ function GrabController({
       jointsRef.current = jointsRef.current.filter((joint) => !result.brokenIds.includes(seamId(joint)));
       onJointCountRef.current(jointsRef.current.length);
       onBlueprintDirtyRef.current();
+      yardSound.playFracture(impulse);
     }
     const live = jointsRef.current.find((joint) => seamId(joint) === hottest.seamId) ?? broken[0];
     onImpulseRef.current({
@@ -478,6 +536,7 @@ function GrabController({
     onSnapChangeRef.current(null);
     onJointCountRef.current(jointsRef.current.length);
     onBlueprintDirtyRef.current();
+    yardSound.playWeld();
   }, [attachJoint, controls, gl, onBlueprintDirtyRef, onHoldChangeRef, onJointCountRef, onSnapChangeRef, setDynamic]);
 
   const undo = useCallback(() => {
@@ -487,6 +546,7 @@ function GrabController({
     world.removeImpulseJoint(last.handle, true);
     onJointCountRef.current(jointsRef.current.length);
     onBlueprintDirtyRef.current();
+    yardSound.playGrab(false);
   }, [onBlueprintDirtyRef, onJointCountRef, world]);
 
   const release = useCallback(() => {
@@ -560,11 +620,12 @@ function GrabController({
     part.body.setAngvel(_zero, true);
     wakeLoose(part);
     onBlueprintDirtyRef.current();
+    yardSound.playImpact(preset.height, true);
   }, [clearHeld, onBlueprintDirtyRef, setPose, wakeLoose]);
 
   useEffect(() => {
     dropRef.current = drop;
-    actionsRef.current = { weld, undo, release, resetHammer, getBlueprint, loadBlueprint };
+    actionsRef.current = { weld, undo, release, drop, resetHammer, getBlueprint, loadBlueprint };
     return () => {
       dropRef.current = () => {};
       if (actionsRef.current?.getBlueprint === getBlueprint) actionsRef.current = null;
@@ -629,6 +690,7 @@ function GrabController({
       if (lastSnapKeyRef.current !== key) {
         lastSnapKeyRef.current = key;
         onSnapChangeRef.current(`${partsRef.current.get(candidate.bId)?.def.label ?? "插座"} · 可焊`);
+        yardSound.playSnap();
       }
     } else {
       ghostRef.current.visible = false;
@@ -729,15 +791,15 @@ function SnapGhost({ stateRef }: { stateRef: React.MutableRefObject<GhostState> 
     <group ref={groupRef} renderOrder={10}>
       <mesh ref={boxRef}>
         <boxGeometry args={[1, 1, 1]} />
-        <meshBasicMaterial color="#fef08a" transparent opacity={0.26} depthWrite={false} />
+        <meshBasicMaterial color="#38bdf8" transparent opacity={0.35} depthWrite={false} />
       </mesh>
       <mesh ref={cylinderRef}>
         <cylinderGeometry args={[0.5, 0.5, 1, 16]} />
-        <meshBasicMaterial color="#fef08a" transparent opacity={0.26} depthWrite={false} />
+        <meshBasicMaterial color="#38bdf8" transparent opacity={0.35} depthWrite={false} />
       </mesh>
       <mesh ref={markerRef}>
         <sphereGeometry args={[0.16, 12, 8]} />
-        <meshBasicMaterial color="#fde047" transparent opacity={0.8} depthWrite={false} />
+        <meshBasicMaterial color="#67e8f9" transparent opacity={0.9} depthWrite={false} />
       </mesh>
     </group>
   );
@@ -747,13 +809,17 @@ function DockAnchor() {
   const api = useContext(YardApiContext);
   const bodyRef = useRef<RapierRigidBody>(null);
   const meshRef = useRef<THREE.Mesh>(null);
+  const textures = useYardTextures();
+
   useEffect(() => {
     const object = meshRef.current?.parent;
     if (!api || !bodyRef.current || !object) return;
     api.registerPart({ id: GROUND_ANCHOR.id, def: GROUND_ANCHOR, body: bodyRef.current, object, fixed: true });
     return () => api.unregisterPart(GROUND_ANCHOR.id);
   }, [api]);
+
   const onCollisionEnter = (payload: CollisionEnterPayload) => api?.handleCollisionEnter(GROUND_ANCHOR.id, payload);
+
   return (
     <RigidBody
       ref={bodyRef}
@@ -763,9 +829,18 @@ function DockAnchor() {
       userData={{ yardPartId: GROUND_ANCHOR.id }}
       onCollisionEnter={onCollisionEnter}
     >
-      <mesh ref={meshRef} receiveShadow>
+      <mesh ref={meshRef} receiveShadow castShadow>
         <boxGeometry args={GROUND_ANCHOR.size} />
-        <meshStandardMaterial color={GROUND_ANCHOR.color} emissive={GROUND_ANCHOR.color} emissiveIntensity={0.15} metalness={0.4} roughness={0.5} />
+        <meshPhysicalMaterial
+          color="#0e7490"
+          metalness={0.8}
+          roughness={0.35}
+          clearcoat={0.3}
+          clearcoatRoughness={0.2}
+          emissive="#22d3ee"
+          emissiveIntensity={0.25}
+          {...textures.floor}
+        />
       </mesh>
       <SocketMarker socket={GROUND_ANCHOR.sockets[0]} />
     </RigidBody>
@@ -773,41 +848,116 @@ function DockAnchor() {
 }
 
 function DockHull({ onBackgroundPointer }: { onBackgroundPointer: React.MutableRefObject<() => void> }) {
+  const textures = useYardTextures();
   const onBg = (event: { stopPropagation: () => void }) => {
     event.stopPropagation();
     onBackgroundPointer.current();
   };
-  const wallMat = { metalness: 0.35, roughness: 0.72 };
   const halfW = YARD.width / 2;
   const halfD = YARD.depth / 2;
   const h = YARD.height;
+
   return (
     <group>
+      {/* Heavy Steel Tread Dock Floor (IBL Eating MeshPhysicalMaterial) */}
       <RigidBody type="fixed" colliders="cuboid" restitution={0.42} restitutionCombineRule={RESTITUTION_MAX} friction={0.88}>
-        <mesh position={[0, -0.25, 0]} receiveShadow onPointerDown={onBg}><boxGeometry args={[YARD.width, 0.5, YARD.depth]} /><meshStandardMaterial color="#1a2740" {...wallMat} /></mesh>
+        <mesh position={[0, -0.25, 0]} receiveShadow onPointerDown={onBg}>
+          <boxGeometry args={[YARD.width, 0.5, YARD.depth]} />
+          <meshPhysicalMaterial
+            color="#334155"
+            metalness={0.85}
+            roughness={0.42}
+            clearcoat={0.2}
+            clearcoatRoughness={0.35}
+            reflectivity={0.9}
+            {...textures.floor}
+          />
+        </mesh>
       </RigidBody>
-      <RigidBody type="fixed" colliders="cuboid" friction={0.7}><mesh position={[0, h / 2, -halfD - 0.25]} receiveShadow onPointerDown={onBg}><boxGeometry args={[YARD.width, h, 0.5]} /><meshStandardMaterial color="#152033" {...wallMat} /></mesh></RigidBody>
-      <RigidBody type="fixed" colliders="cuboid" friction={0.7}><mesh position={[-halfW - 0.25, h / 2, 0]} receiveShadow onPointerDown={onBg}><boxGeometry args={[0.5, h, YARD.depth]} /><meshStandardMaterial color="#121c30" {...wallMat} /></mesh></RigidBody>
-      <RigidBody type="fixed" colliders="cuboid" friction={0.7}><mesh position={[halfW + 0.25, h / 2, 0]} receiveShadow onPointerDown={onBg}><boxGeometry args={[0.5, h, YARD.depth]} /><meshStandardMaterial color="#121c30" {...wallMat} /></mesh></RigidBody>
-      <RigidBody type="fixed" colliders="cuboid" friction={0.6}><mesh position={[0, h + 0.2, 0]} receiveShadow onPointerDown={onBg}><boxGeometry args={[YARD.width, 0.4, YARD.depth]} /><meshStandardMaterial color="#0d1524" {...wallMat} /></mesh></RigidBody>
-      <RigidBody type="fixed" colliders="cuboid"><mesh position={[0, h - 0.4, halfD]} onPointerDown={onBg}><boxGeometry args={[YARD.width, 0.8, 0.35]} /><meshStandardMaterial color="#1e3a5f" emissive="#38bdf8" emissiveIntensity={0.12} {...wallMat} /></mesh></RigidBody>
-      <RigidBody type="fixed" colliders="cuboid"><mesh position={[-halfW + 0.3, h / 2, halfD]} onPointerDown={onBg}><boxGeometry args={[0.6, h, 0.35]} /><meshStandardMaterial color="#1e3a5f" {...wallMat} /></mesh></RigidBody>
-      <RigidBody type="fixed" colliders="cuboid"><mesh position={[halfW - 0.3, h / 2, halfD]} onPointerDown={onBg}><boxGeometry args={[0.6, h, 0.35]} /><meshStandardMaterial color="#1e3a5f" {...wallMat} /></mesh></RigidBody>
-      <RigidBody type="fixed" colliders="cuboid" friction={0.85}><mesh position={[-17.2, 1.12, 0]} receiveShadow onPointerDown={onBg}><boxGeometry args={[1.8, 0.14, 14]} /><meshStandardMaterial color="#24344f" {...wallMat} /></mesh></RigidBody>
-      <Grid position={[0, 0.02, 0]} args={[YARD.width, YARD.depth]} cellSize={1} cellThickness={0.55} cellColor="#1e3a5f" sectionSize={5} sectionThickness={1.05} sectionColor="#38bdf8" fadeDistance={52} fadeStrength={1.1} infiniteGrid={false} />
+
+      {/* Dock Walls & Ceiling with Dirty Concrete PBR */}
+      <RigidBody type="fixed" colliders="cuboid" friction={0.7}>
+        <mesh position={[0, h / 2, -halfD - 0.25]} receiveShadow onPointerDown={onBg}>
+          <boxGeometry args={[YARD.width, h, 0.5]} />
+          <meshStandardMaterial color="#1e293b" metalness={0.25} roughness={0.85} {...textures.wall} />
+        </mesh>
+      </RigidBody>
+      <RigidBody type="fixed" colliders="cuboid" friction={0.7}>
+        <mesh position={[-halfW - 0.25, h / 2, 0]} receiveShadow onPointerDown={onBg}>
+          <boxGeometry args={[0.5, h, YARD.depth]} />
+          <meshStandardMaterial color="#1e293b" metalness={0.25} roughness={0.85} {...textures.wall} />
+        </mesh>
+      </RigidBody>
+      <RigidBody type="fixed" colliders="cuboid" friction={0.7}>
+        <mesh position={[halfW + 0.25, h / 2, 0]} receiveShadow onPointerDown={onBg}>
+          <boxGeometry args={[0.5, h, YARD.depth]} />
+          <meshStandardMaterial color="#1e293b" metalness={0.25} roughness={0.85} {...textures.wall} />
+        </mesh>
+      </RigidBody>
+      <RigidBody type="fixed" colliders="cuboid" friction={0.6}>
+        <mesh position={[0, h + 0.2, 0]} receiveShadow onPointerDown={onBg}>
+          <boxGeometry args={[YARD.width, 0.4, YARD.depth]} />
+          <meshStandardMaterial color="#0f172a" metalness={0.3} roughness={0.9} {...textures.wall} />
+        </mesh>
+      </RigidBody>
+
+      {/* Viewport Frame Opening */}
+      <RigidBody type="fixed" colliders="cuboid">
+        <mesh position={[0, h - 0.4, halfD]} onPointerDown={onBg}>
+          <boxGeometry args={[YARD.width, 0.8, 0.35]} />
+          <meshPhysicalMaterial color="#0369a1" emissive="#0284c7" emissiveIntensity={0.2} metalness={0.65} roughness={0.3} />
+        </mesh>
+      </RigidBody>
+      <RigidBody type="fixed" colliders="cuboid">
+        <mesh position={[-halfW + 0.3, h / 2, halfD]} onPointerDown={onBg}>
+          <boxGeometry args={[0.6, h, 0.35]} />
+          <meshPhysicalMaterial color="#0369a1" emissive="#0284c7" emissiveIntensity={0.2} metalness={0.65} roughness={0.3} />
+        </mesh>
+      </RigidBody>
+      <RigidBody type="fixed" colliders="cuboid">
+        <mesh position={[halfW - 0.3, h / 2, halfD]} onPointerDown={onBg}>
+          <boxGeometry args={[0.6, h, 0.35]} />
+          <meshPhysicalMaterial color="#0369a1" emissive="#0284c7" emissiveIntensity={0.2} metalness={0.65} roughness={0.3} />
+        </mesh>
+      </RigidBody>
+
+      {/* Parts Rack Platform */}
+      <RigidBody type="fixed" colliders="cuboid" friction={0.85}>
+        <mesh position={[-17.2, 1.12, 0]} receiveShadow onPointerDown={onBg}>
+          <boxGeometry args={[1.8, 0.14, 14]} />
+          <meshPhysicalMaterial color="#1e293b" metalness={0.7} roughness={0.4} clearcoat={0.2} {...textures.floor} />
+        </mesh>
+      </RigidBody>
+
+      {/* Holographic Tactical Floor Grid */}
+      <Grid
+        position={[0, 0.02, 0]}
+        args={[YARD.width, YARD.depth]}
+        cellSize={1}
+        cellThickness={0.55}
+        cellColor="#0284c7"
+        sectionSize={5}
+        sectionThickness={1.05}
+        sectionColor="#38bdf8"
+        fadeDistance={52}
+        fadeStrength={1.1}
+        infiniteGrid={false}
+      />
     </group>
   );
 }
 
-function YardPart({ def }: { def: YardPartDef }) {
+function YardPart({ def, simulating }: { def: YardPartDef; simulating: boolean }) {
   const api = useContext(YardApiContext);
   const bodyRef = useRef<RapierRigidBody>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const { gl } = useThree();
+  const textures = useYardTextures();
   const isCylinder = def.shape === "cylinder";
   const radius = def.size[0];
   const height = def.size[1];
   const cylRotation: [number, number, number] = def.cylinderAlongX ? [0, 0, Math.PI / 2] : [0, 0, 0];
+
   useEffect(() => {
     const object = meshRef.current?.parent;
     if (!api || !bodyRef.current || !object) return;
@@ -815,12 +965,80 @@ function YardPart({ def }: { def: YardPartDef }) {
     api.registerPart(record);
     return () => api.unregisterPart(def.id);
   }, [api, def]);
+
   const onDown = (event: { stopPropagation: () => void; point: THREE.Vector3 }) => {
     event.stopPropagation();
     const object = meshRef.current?.parent;
     if (bodyRef.current && object && api) api.grab({ id: def.id, def, body: bodyRef.current, object }, event.point.y);
   };
+
   const onCollisionEnter = (payload: CollisionEnterPayload) => api?.handleCollisionEnter(def.id, payload);
+
+  const materialProps = useMemo(() => {
+    switch (def.material) {
+      case "light-alloy":
+        return {
+          color: "#93c5fd",
+          metalness: 0.9,
+          roughness: 0.35,
+          clearcoat: 0.25,
+          clearcoatRoughness: 0.2,
+          ...textures.scratchedSteel,
+        };
+      case "sheet-steel":
+        return {
+          color: "#f59e0b",
+          metalness: 0.35,
+          roughness: 0.45,
+          clearcoat: 0.4,
+          clearcoatRoughness: 0.3,
+          ...textures.paintedMetal,
+        };
+      case "structural-steel":
+        return {
+          color: "#14b8a6",
+          metalness: 0.65,
+          roughness: 0.4,
+          clearcoat: 0.2,
+          ...textures.paintedMetal,
+        };
+      case "cast-iron":
+        return {
+          color: def.id === "drop-cube" ? "#f1f5f9" : "#e11d48",
+          metalness: 0.92,
+          roughness: 0.72,
+          clearcoat: 0.1,
+          ...textures.castIron,
+        };
+      case "pin-alloy":
+        return {
+          color: "#c084fc",
+          metalness: 0.75,
+          roughness: 0.3,
+          clearcoat: 0.5,
+          ...textures.rubber,
+        };
+      case "ceramic":
+        return {
+          color: "#ea580c",
+          metalness: 0.45,
+          roughness: 0.35,
+          clearcoat: 0.6,
+          emissive: "#ea580c",
+          emissiveIntensity: 0.35,
+          ...textures.scratchedSteel,
+        };
+      default:
+        return {
+          color: def.color,
+          metalness: 0.5,
+          roughness: 0.5,
+        };
+    }
+  }, [def.color, def.id, def.material, textures]);
+
+  const isNozzle = def.id === "nozzle" || def.catalogId === "nozzle";
+
   return (
     <RigidBody
       ref={bodyRef}
@@ -837,18 +1055,51 @@ function YardPart({ def }: { def: YardPartDef }) {
       userData={{ yardPartId: def.id }}
       onCollisionEnter={onCollisionEnter}
     >
-      {isCylinder ? <CylinderCollider args={[height / 2, radius]} rotation={cylRotation} density={def.density} restitution={def.restitution} restitutionCombineRule={RESTITUTION_MAX} friction={0.62} /> : null}
-      <mesh ref={meshRef} castShadow receiveShadow onPointerDown={onDown} onPointerOver={() => { if (!api?.isHolding()) gl.domElement.style.cursor = "grab"; }} onPointerOut={() => { if (!api?.isHolding()) gl.domElement.style.cursor = "auto"; }} rotation={cylRotation}>
-        {isCylinder ? <cylinderGeometry args={[radius, radius, height, 16]} /> : <boxGeometry args={def.size} />}
-        <meshStandardMaterial color={def.color} metalness={0.38} roughness={0.46} emissive={def.color} emissiveIntensity={0.08} />
+      {isCylinder ? (
+        <CylinderCollider
+          args={[height / 2, radius]}
+          rotation={cylRotation}
+          density={def.density}
+          restitution={def.restitution}
+          restitutionCombineRule={RESTITUTION_MAX}
+          friction={0.62}
+        />
+      ) : null}
+
+      <mesh
+        ref={meshRef}
+        castShadow
+        receiveShadow
+        onPointerDown={onDown}
+        onPointerOver={() => {
+          if (!api?.isHolding()) gl.domElement.style.cursor = "grab";
+        }}
+        onPointerOut={() => {
+          if (!api?.isHolding()) gl.domElement.style.cursor = "auto";
+        }}
+        rotation={cylRotation}
+      >
+        {isCylinder ? <cylinderGeometry args={[radius, radius, height, 20]} /> : <boxGeometry args={def.size} />}
+        <meshPhysicalMaterial {...materialProps} />
       </mesh>
-      {def.sockets.map((socket) => <SocketMarker key={socket.id} socket={socket} />)}
+
+      {/* Thruster Jet Flame FX */}
+      {isNozzle && <ThrusterFx active={simulating} nozzleBodyRef={bodyRef} />}
+
+      {def.sockets.map((socket) => (
+        <SocketMarker key={socket.id} socket={socket} />
+      ))}
     </RigidBody>
   );
 }
 
 function SocketMarker({ socket }: { socket: YardSocket }) {
-  return <mesh position={socket.point}><sphereGeometry args={[0.045, 8, 6]} /><meshBasicMaterial color="#fde047" transparent opacity={0.5} /></mesh>;
+  return (
+    <mesh position={socket.point}>
+      <sphereGeometry args={[0.045, 8, 6]} />
+      <meshBasicMaterial color="#38bdf8" transparent opacity={0.6} />
+    </mesh>
+  );
 }
 
 function ExteriorStars({ count = 900 }: { count?: number }) {
@@ -864,5 +1115,13 @@ function ExteriorStars({ count = 900 }: { count?: number }) {
     }
     return coords;
   }, [count]);
-  return <points><bufferGeometry><bufferAttribute attach="attributes-position" count={positions.length / 3} array={positions} itemSize={3} /></bufferGeometry><pointsMaterial size={0.38} color="#e0f2fe" sizeAttenuation transparent opacity={0.82} depthWrite={false} /></points>;
+
+  return (
+    <points>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" count={positions.length / 3} array={positions} itemSize={3} />
+      </bufferGeometry>
+      <pointsMaterial size={0.38} color="#e0f2fe" sizeAttenuation transparent opacity={0.82} depthWrite={false} />
+    </points>
+  );
 }

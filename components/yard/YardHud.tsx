@@ -4,16 +4,16 @@ import React from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
-  FolderOpen,
   Hammer,
-  MousePointer2,
-  Pause,
+  Hand,
   Play,
-  Save,
-  Undo2,
+  RotateCcw,
+  Sparkles,
+  Volume2,
+  VolumeX,
+  Layers,
 } from "lucide-react";
 import type { YardImpulseEvent } from "@/components/yard/YardScene";
-import type { YardBlueprintSlot } from "@/lib/yard/blueprint";
 import type { HammerPresetId } from "@/lib/yard/fracture";
 import { HAMMER_PRESETS, WARN_RATIO } from "@/lib/yard/fracture";
 
@@ -29,15 +29,14 @@ type YardHudProps = {
   fpsRef: React.RefObject<HTMLSpanElement>;
   physicsReady: boolean;
   canUndo: boolean;
-  selectedSlot: YardBlueprintSlot;
-  blueprintStatus: string | null;
-  onSlotChange: (slot: YardBlueprintSlot) => void;
+  muted: boolean;
+  onToggleMute: () => void;
+  onOpenBlueprintModal: () => void;
   onWeld: () => void;
   onUndo: () => void;
   onRelease: () => void;
+  onDrop: () => void;
   onHammerPreset: (preset: HammerPresetId) => void;
-  onSave: () => void;
-  onLoad: () => void;
 };
 
 const stop = (event: React.MouseEvent) => event.stopPropagation();
@@ -52,69 +51,236 @@ export default function YardHud({
   fpsRef,
   physicsReady,
   canUndo,
-  selectedSlot,
-  blueprintStatus,
-  onSlotChange,
+  muted,
+  onToggleMute,
+  onOpenBlueprintModal,
   onWeld,
   onUndo,
   onRelease,
+  onDrop,
   onHammerPreset,
-  onSave,
-  onLoad,
 }: YardHudProps) {
   const simulating = mode === "simulate";
+
   return (
-    <div className="pointer-events-none absolute inset-0 z-20 font-mono text-holo-bright">
-      <header className="pointer-events-auto absolute left-4 top-4 right-4 flex items-start justify-between gap-4">
-        <div className="holo-panel px-4 py-3 max-w-md">
-          <p className="font-display text-sm tracking-[0.18em] text-holo-cyan">余烬坞 // EMBER YARD</p>
-          <p className="mt-1 text-[10px] uppercase tracking-widest text-holo-muted">D3 fracture · 累计冲量 · 40×30×16m · Rapier 1.5.0</p>
-          <p className="mt-2 text-[11px] text-holo-muted leading-relaxed">焊点受击会从青变黄再变红。红了加斜撑；断了会飞，残骸可抓回再焊。</p>
+    <div className="pointer-events-none absolute inset-0 z-20 font-mono text-holo-bright select-none">
+      {/* Top Bar */}
+      <header className="pointer-events-auto absolute left-4 top-4 right-4 flex items-center justify-between gap-4">
+        <div className="holo-panel flex items-center gap-3 px-3 py-2">
+          <Link
+            href="/"
+            onClick={stop}
+            className="inline-flex items-center gap-1.5 text-xs font-display tracking-widest text-holo-cyan hover:text-holo-bright transition-colors"
+          >
+            <ArrowLeft size={13} />
+            <span>余烬坞 // YARD</span>
+          </Link>
+          <span className="text-holo-border">|</span>
+          <span className="text-[11px] text-holo-muted uppercase tracking-wider">
+            D4 CINEMATIC
+          </span>
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <Link href="/" onClick={stop} className="holo-panel pointer-events-auto inline-flex items-center gap-2 px-3 py-2 text-[11px] text-holo-cyan hover:text-holo-bright"><ArrowLeft size={12} />星图 /</Link>
-          <div className="holo-panel px-3 py-2 text-[10px] uppercase tracking-widest text-holo-muted">fps <span ref={fpsRef} className="text-holo-cyan">--</span><span className="mx-2 text-holo-border">/</span>wasm <span className={physicsReady ? "text-holo-green" : "text-holo-amber"}>{physicsReady ? "online" : "loading"}</span></div>
+
+        {/* Right Info & Audio */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={(e) => {
+              stop(e);
+              onOpenBlueprintModal();
+            }}
+            className="holo-panel pointer-events-auto inline-flex items-center gap-1.5 px-3 py-2 text-xs text-holo-cyan hover:bg-holo-cyan/15 transition-all"
+            title="蓝图模板与分享"
+          >
+            <Layers size={13} />
+            <span>蓝图</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              stop(e);
+              onToggleMute();
+            }}
+            className="holo-panel pointer-events-auto p-2 text-holo-cyan hover:text-holo-bright"
+            title={muted ? "开启音效" : "静音"}
+            aria-label={muted ? "开启音效" : "静音"}
+          >
+            {muted ? <VolumeX size={14} className="text-holo-rose" /> : <Volume2 size={14} />}
+          </button>
+
+          <div className="holo-panel px-3 py-2 text-[10px] uppercase tracking-widest text-holo-muted">
+            FPS <span ref={fpsRef} className="text-holo-cyan">--</span>
+            <span className="mx-2 text-holo-border">/</span>
+            WASM <span className={physicsReady ? "text-holo-green" : "text-holo-amber"}>{physicsReady ? "OK" : "..."}</span>
+          </div>
         </div>
       </header>
 
+      {/* Bottom Main Action Bar */}
       <div className="pointer-events-auto absolute left-4 bottom-4 flex max-w-[calc(100vw-2rem)] flex-col gap-2">
-        <div className="holo-panel flex flex-wrap items-center gap-1 p-1">
-          <button type="button" onClick={(event) => { stop(event); onModeChange("build"); }} className={`inline-flex items-center gap-2 px-3 py-2 text-xs tracking-widest uppercase ${!simulating ? "bg-holo-amber/20 text-holo-amber" : "text-holo-muted hover:text-holo-bright"}`} aria-pressed={!simulating}><Pause size={13} />Build</button>
-          <button type="button" onClick={(event) => { stop(event); onModeChange("simulate"); }} className={`inline-flex items-center gap-2 px-3 py-2 text-xs tracking-widest uppercase ${simulating ? "bg-holo-green/20 text-holo-green" : "text-holo-muted hover:text-holo-bright"}`} aria-pressed={simulating}><Play size={13} />Simulate</button>
-          <button type="button" onClick={(event) => { stop(event); onWeld(); }} disabled={!snapLabel || simulating} title="焊上当前吸附件" className="inline-flex items-center gap-2 px-3 py-2 text-xs tracking-widest uppercase text-holo-cyan enabled:hover:bg-holo-cyan/15 disabled:cursor-not-allowed disabled:opacity-35"><Hammer size={13} />焊上</button>
-          <button type="button" onClick={(event) => { stop(event); onUndo(); }} disabled={!canUndo || simulating} title="撤销最后一焊" className="inline-flex items-center gap-2 px-3 py-2 text-xs tracking-widest uppercase text-holo-muted enabled:hover:text-holo-bright disabled:cursor-not-allowed disabled:opacity-35"><Undo2 size={13} />撤销</button>
-          <button type="button" onClick={(event) => { stop(event); onRelease(); }} disabled={simulating} title="释放整结构与落锤" className="inline-flex items-center gap-2 px-3 py-2 text-xs tracking-widest uppercase text-holo-amber enabled:hover:bg-holo-amber/15 disabled:cursor-not-allowed disabled:opacity-35"><Play size={13} />释放</button>
-          <span className="px-2 text-[10px] text-holo-muted">焊缝 {jointCount}</span>
-          {(Object.keys(HAMMER_PRESETS) as HammerPresetId[]).map((preset) => (
-            <button
-              key={preset}
-              type="button"
-              onClick={(event) => { stop(event); onHammerPreset(preset); }}
-              title={`${HAMMER_PRESETS[preset].label} · 高 ${HAMMER_PRESETS[preset].height}m · 密度 ${HAMMER_PRESETS[preset].density}`}
-              className="inline-flex items-center px-2 py-2 text-[10px] tracking-widest uppercase text-holo-amber hover:bg-holo-amber/15"
-            >{HAMMER_PRESETS[preset].label}</button>
-          ))}
+        {/* Core 4-Word Minimal Action Bar: 抓 / 焊 / 释放 / 放 */}
+        <div className="holo-panel flex flex-wrap items-center gap-1 p-1.5">
+          {/* 抓 (Status indicator / grab cue) */}
+          <div
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded text-xs tracking-wider uppercase font-bold transition-all ${
+              heldLabel
+                ? "bg-holo-cyan/25 text-holo-cyan border border-holo-cyan/60"
+                : "bg-void/40 text-holo-muted border border-transparent"
+            }`}
+          >
+            <Hand size={14} />
+            <span>抓 {heldLabel ? `· ${heldLabel}` : ""}</span>
+          </div>
+
+          {/* 焊 */}
+          <button
+            type="button"
+            onClick={(event) => {
+              stop(event);
+              onWeld();
+            }}
+            disabled={!snapLabel || simulating}
+            title="吸附就绪时焊合 (快捷键: 空格)"
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded text-xs tracking-wider uppercase font-bold transition-all ${
+              snapLabel && !simulating
+                ? "bg-holo-cyan text-void shadow-lg shadow-holo-cyan/30 animate-pulse hover:bg-white"
+                : "text-holo-cyan hover:bg-holo-cyan/15 disabled:cursor-not-allowed disabled:opacity-30"
+            }`}
+          >
+            <Hammer size={14} />
+            <span>焊</span>
+          </button>
+
+          {/* 释放 (Simulate) */}
+          <button
+            type="button"
+            onClick={(event) => {
+              stop(event);
+              if (simulating) onModeChange("build");
+              else onRelease();
+            }}
+            title={simulating ? "暂停模拟并固定 (快捷键: 空格)" : "开重力释放物理模拟 (快捷键: 空格)"}
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded text-xs tracking-wider uppercase font-bold transition-all ${
+              simulating
+                ? "bg-holo-green text-void shadow-lg shadow-holo-green/30 hover:bg-white"
+                : "bg-holo-amber/20 text-holo-amber border border-holo-amber/40 hover:bg-holo-amber/30"
+            }`}
+          >
+            <Play size={14} />
+            <span>{simulating ? "暂停" : "释放"}</span>
+          </button>
+
+          {/* 放 (Drop held part) */}
+          <button
+            type="button"
+            onClick={(event) => {
+              stop(event);
+              onDrop();
+            }}
+            disabled={!heldLabel}
+            title="放下当前抓取的零件"
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded text-xs tracking-wider uppercase text-holo-muted hover:text-holo-bright disabled:cursor-not-allowed disabled:opacity-30 transition-all"
+          >
+            <RotateCcw size={13} />
+            <span>放</span>
+          </button>
+
+          <span className="mx-1 h-4 w-px bg-holo-border/50" />
+
+          {/* Undo */}
+          <button
+            type="button"
+            onClick={(event) => {
+              stop(event);
+              onUndo();
+            }}
+            disabled={!canUndo || simulating}
+            title="撤销最后一焊 (快捷键: Z)"
+            className="inline-flex items-center gap-1 px-2.5 py-2 rounded text-xs tracking-wider text-holo-muted enabled:hover:text-holo-bright disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            <span>撤销 ({jointCount})</span>
+          </button>
+
+          <span className="mx-1 h-4 w-px bg-holo-border/50" />
+
+          {/* Hammer Presets: 1/2/3 */}
+          <div className="flex items-center gap-1">
+            {(Object.keys(HAMMER_PRESETS) as HammerPresetId[]).map((preset, idx) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={(event) => {
+                  stop(event);
+                  onHammerPreset(preset);
+                }}
+                title={`${HAMMER_PRESETS[preset].label} · 快捷键 ${idx + 1}`}
+                className="inline-flex items-center px-2 py-1.5 rounded text-[11px] tracking-wider text-holo-amber hover:bg-holo-amber/15 border border-holo-amber/30"
+              >
+                [{idx + 1}] {HAMMER_PRESETS[preset].label}
+              </button>
+            ))}
+          </div>
         </div>
 
-        <div className="holo-panel flex flex-wrap items-center gap-2 px-3 py-2 text-[11px] text-holo-muted">
-          <MousePointer2 size={12} className="text-holo-cyan" />
-          <span>{snapLabel ? <><span className="text-holo-amber">{snapLabel}</span></> : heldLabel ? <>抓取中 <span className="text-holo-cyan">{heldLabel}</span></> : simulating ? "重力开 · 焊缝热区监听中" : "物理暂停 · 拖近黄色插座"}</span>
-          {impulse ? (
-            <span className={impulse.broken ? "text-holo-rose" : impulse.damage >= WARN_RATIO ? "text-holo-amber" : "text-holo-cyan"}>
-              {impulse.broken ? "断裂" : impulse.damage >= WARN_RATIO ? "濒危" : "受击"}
-              {" "}{impulse.impulse.toFixed(1)}/{impulse.breakImpulse.toFixed(1)}
-              {" · "}{(impulse.damage * 100).toFixed(0)}%
-              {impulse.sharedAcross > 1 ? ` · ${impulse.sharedAcross}焊缝分摊` : ""}
+        {/* Single-line Status Bar & Thermal Legend (< 1 line rule) */}
+        <div className="holo-panel flex flex-wrap items-center justify-between gap-3 px-3 py-1.5 text-[11px]">
+          {/* Left Context Cues */}
+          <div className="flex items-center gap-2">
+            <Sparkles size={12} className="text-holo-cyan" />
+            <span>
+              {snapLabel ? (
+                <span className="text-holo-cyan font-bold animate-pulse">
+                  {snapLabel} · 按空格或点击[焊]
+                </span>
+              ) : heldLabel ? (
+                <span className="text-holo-cyan">
+                  抓取中 · 拖近黄色插座 / 滚轮升降
+                </span>
+              ) : simulating ? (
+                <span className="text-holo-green">物理运行中 · 焊点受击热区监听</span>
+              ) : (
+                <span className="text-holo-muted">物理暂停 · 点击零件抓取拼装</span>
+              )}
             </span>
-          ) : null}
-        </div>
 
-        <div className="holo-panel flex flex-wrap items-center gap-2 px-3 py-2 text-[10px] uppercase tracking-widest text-holo-muted">
-          <span>蓝图</span>
-          <select value={selectedSlot} onChange={(event) => onSlotChange(event.target.value as YardBlueprintSlot)} onClick={stop} className="bg-transparent text-holo-cyan outline-none"><option value="slot1">槽 1</option><option value="slot2">槽 2</option><option value="slot3">槽 3</option></select>
-          <button type="button" onClick={(event) => { stop(event); onSave(); }} title="保存蓝图" className="inline-flex items-center gap-1 text-holo-cyan hover:text-holo-bright"><Save size={13} />存</button>
-          <button type="button" onClick={(event) => { stop(event); onLoad(); }} disabled={!physicsReady || Boolean(heldLabel)} title="读回蓝图" className="inline-flex items-center gap-1 text-holo-cyan hover:text-holo-bright disabled:cursor-not-allowed disabled:opacity-35"><FolderOpen size={13} />读</button>
-          {blueprintStatus ? <span className="text-holo-green">{blueprintStatus}</span> : null}
+            {/* Impact feedback */}
+            {impulse && (
+              <span
+                className={`ml-2 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ${
+                  impulse.broken
+                    ? "bg-holo-rose/20 text-holo-rose border border-holo-rose/40"
+                    : impulse.damage >= WARN_RATIO
+                    ? "bg-holo-amber/20 text-holo-amber border border-holo-amber/40"
+                    : "bg-holo-cyan/20 text-holo-cyan"
+                }`}
+              >
+                {impulse.broken ? "断裂!" : "受击"}{" "}
+                {impulse.impulse.toFixed(1)} N·s ({(impulse.damage * 100).toFixed(0)}%)
+              </span>
+            )}
+          </div>
+
+          {/* Right: Thermal Legend */}
+          <div className="flex items-center gap-3 text-[10px] text-holo-muted uppercase tracking-wider">
+            <span>热区:</span>
+            <span className="flex items-center gap-1 text-holo-cyan">
+              <span className="w-1.5 h-1.5 rounded-full bg-holo-cyan" />
+              稳
+            </span>
+            <span className="flex items-center gap-1 text-holo-amber">
+              <span className="w-1.5 h-1.5 rounded-full bg-holo-amber" />
+              压
+            </span>
+            <span className="flex items-center gap-1 text-orange-500">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500" />
+              险
+            </span>
+            <span className="flex items-center gap-1 text-holo-rose">
+              <span className="w-1.5 h-1.5 rounded-full bg-holo-rose" />
+              断
+            </span>
+          </div>
         </div>
       </div>
     </div>
