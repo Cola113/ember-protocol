@@ -12,6 +12,7 @@ import {
 import { YARD_PRESETS } from "@/lib/yard/presets";
 import { yardSound } from "@/lib/yard/audio";
 import type { YardActions, YardImpulseEvent } from "@/components/yard/YardScene";
+import type { QualityTier } from "@/lib/yard/quality";
 
 const YardScene = dynamic(() => import("@/components/yard/YardScene"), {
   ssr: false,
@@ -33,9 +34,12 @@ export default function YardPage() {
   const [blueprintModalOpen, setBlueprintModalOpen] = useState(false);
   const [currentBlueprint, setCurrentBlueprint] = useState<YardBlueprint | null>(null);
   const [muted, setMuted] = useState(false);
+  const [qualityTier, setQualityTier] = useState<QualityTier>("high");
+  const [stressCount, setStressCount] = useState(0);
   const fpsRef = useRef<HTMLSpanElement>(null);
   const actionsRef = useRef<YardActions | null>(null);
   const initialLoadedRef = useRef(false);
+  const autoStressRef = useRef(false);
 
   const onBlueprintDirty = useCallback(() => {
     if (actionsRef.current) {
@@ -71,6 +75,14 @@ export default function YardPage() {
       actionsRef.current.loadBlueprint(YARD_PRESETS.cantilever.blueprint);
       setCurrentBlueprint(YARD_PRESETS.cantilever.blueprint);
     }
+  }, [physicsReady]);
+
+  useEffect(() => {
+    if (!physicsReady || autoStressRef.current || !actionsRef.current) return;
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("stress") !== "1") return;
+    autoStressRef.current = true;
+    actionsRef.current.runStress();
   }, [physicsReady]);
 
   // Unlock AudioContext on first user interaction
@@ -114,6 +126,12 @@ export default function YardPage() {
         actionsRef.current?.undo();
         return;
       }
+      if (event.code === "KeyT") {
+        event.preventDefault();
+        if (stressCount > 0) actionsRef.current?.clearStress();
+        else actionsRef.current?.runStress();
+        return;
+      }
       if (event.code === "KeyE") {
         event.preventDefault();
         if (actionsRef.current) {
@@ -134,7 +152,7 @@ export default function YardPage() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [mode, snapLabel]);
+  }, [mode, snapLabel, stressCount]);
 
   return (
     <main role="main" aria-label="余烬坞物理沙盒" className="relative w-screen h-screen overflow-hidden bg-void">
@@ -149,6 +167,8 @@ export default function YardPage() {
         onImpulse={onImpulse}
         onReleaseRequest={() => setMode("simulate")}
         onPhysicsReady={() => setPhysicsReady(true)}
+        onQualityChange={setQualityTier}
+        onStressChange={setStressCount}
       />
 
       <YardHud
@@ -177,6 +197,12 @@ export default function YardPage() {
         }}
         onDrop={() => actionsRef.current?.drop()}
         onHammerPreset={(preset) => actionsRef.current?.resetHammer(preset)}
+        qualityTier={qualityTier}
+        stressCount={stressCount}
+        onToggleStress={() => {
+          if (stressCount > 0) actionsRef.current?.clearStress();
+          else actionsRef.current?.runStress();
+        }}
       />
 
       <BlueprintModal

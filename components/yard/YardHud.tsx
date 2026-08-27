@@ -16,6 +16,7 @@ import {
 import type { YardImpulseEvent } from "@/components/yard/YardScene";
 import type { HammerPresetId } from "@/lib/yard/fracture";
 import { HAMMER_PRESETS, WARN_RATIO } from "@/lib/yard/fracture";
+import { QUALITY, type QualityTier } from "@/lib/yard/quality";
 
 export type YardMode = "build" | "simulate";
 
@@ -37,6 +38,9 @@ type YardHudProps = {
   onRelease: () => void;
   onDrop: () => void;
   onHammerPreset: (preset: HammerPresetId) => void;
+  qualityTier: QualityTier;
+  stressCount: number;
+  onToggleStress: () => void;
 };
 
 const stop = (event: React.MouseEvent) => event.stopPropagation();
@@ -59,6 +63,9 @@ export default function YardHud({
   onRelease,
   onDrop,
   onHammerPreset,
+  qualityTier,
+  stressCount,
+  onToggleStress,
 }: YardHudProps) {
   const simulating = mode === "simulate";
 
@@ -77,12 +84,28 @@ export default function YardHud({
           </Link>
           <span className="text-holo-border">|</span>
           <span className="text-[11px] text-holo-muted uppercase tracking-wider">
-            D4 CINEMATIC
+            D5 DELIVER
           </span>
         </div>
 
         {/* Right Info & Audio */}
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={(e) => {
+              stop(e);
+              onToggleStress();
+            }}
+            className={`holo-panel pointer-events-auto inline-flex items-center gap-1.5 px-3 py-2 text-xs transition-all ${
+              stressCount > 0
+                ? "text-holo-rose hover:bg-holo-rose/15"
+                : "text-holo-amber hover:bg-holo-amber/15"
+            }`}
+            title={stressCount > 0 ? "清除 150 零件压测场" : "铺 150 零件连环炸（T）"}
+          >
+            <span>{stressCount > 0 ? `清场 ${stressCount}` : "压测 150"}</span>
+          </button>
+
           <button
             type="button"
             onClick={(e) => {
@@ -111,6 +134,8 @@ export default function YardHud({
 
           <div className="holo-panel px-3 py-2 text-[10px] uppercase tracking-widest text-holo-muted">
             FPS <span ref={fpsRef} className="text-holo-cyan">--</span>
+            <span className="mx-2 text-holo-border">/</span>
+            档 <span className="text-holo-cyan">{QUALITY[qualityTier].label}</span>
             <span className="mx-2 text-holo-border">/</span>
             WASM <span className={physicsReady ? "text-holo-green" : "text-holo-amber"}>{physicsReady ? "OK" : "..."}</span>
           </div>
@@ -240,7 +265,7 @@ export default function YardHud({
               ) : simulating ? (
                 <span className="text-holo-green">物理运行中 · 焊点受击热区监听</span>
               ) : (
-                <span className="text-holo-muted">物理暂停 · 点击零件抓取拼装</span>
+                <span className="text-holo-muted">物理暂停 · 点击零件抓取 · 坞门已开，门外坡/岩/坠船</span>
               )}
             </span>
 

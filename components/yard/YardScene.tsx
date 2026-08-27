@@ -8,6 +8,7 @@ import React, {
   useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, Environment, Grid, OrbitControls } from "@react-three/drei";
@@ -26,11 +27,15 @@ import * as THREE from "three";
 import {
   ALL_YARD_PARTS,
   GROUND_ANCHOR,
+  SALVAGE_THRUSTER,
   YARD,
   type YardPartDef,
   type YardSocket,
 } from "@/lib/yard/catalog";
 import type { YardBlueprint, YardBlueprintJoint } from "@/lib/yard/blueprint";
+import DockTrial from "@/components/yard/DockTrial";
+import { QUALITY, QUALITY_PROBE_SECONDS, suggestTierFromFps, type QualitySettings, type QualityTier } from "@/lib/yard/quality";
+import { buildStressLayout, isStressPartId, type StressLayout } from "@/lib/yard/stress";
 import {
   HAMMER_PRESETS,
   IMPACT_CHATTER_MS,
@@ -60,7 +65,13 @@ const SNAP_ALIGNMENT = -0.86;
 const HOLD_MIN_Y = 0.2;
 const HOLD_MAX_Y = YARD.height - 0.8;
 const HOLD_LIMIT_X = YARD.width / 2 - 0.8;
-const HOLD_LIMIT_Z = YARD.depth / 2 - 0.8;
+const HOLD_LIMIT_Z_NEG = YARD.depth / 2 - 0.8;
+const HOLD_LIMIT_Z_POS = 82;
+const NOZZLE_FORCE = 9;
+const SALVAGE_FORCE = 26;
+const THRUST_LOCAL = new THREE.Vector3(0, 1, 0);
+const _thrust = new THREE.Vector3();
+const _thrustQ = new THREE.Quaternion();
 const _up = new THREE.Vector3(0, 1, 0);
 const _hit = new THREE.Vector3();
 const _plane = new THREE.Plane();
@@ -86,6 +97,8 @@ export type YardActions = {
   resetHammer: (preset: HammerPresetId) => void;
   getBlueprint: () => YardBlueprint | null;
   loadBlueprint: (blueprint: YardBlueprint) => void;
+  runStress: () => void;
+  clearStress: () => void;
 };
 
 type RuntimeJoint = YardBlueprintJoint & SeamState & { handle: ImpulseJoint };
@@ -101,7 +114,17 @@ type YardSceneProps = {
   onImpulse: (event: YardImpulseEvent) => void;
   onReleaseRequest: () => void;
   onPhysicsReady: () => void;
+  onQualityChange: (tier: QualityTier) => void;
+  onStressChange: (count: number) => void;
 };
+
+type PendingStress = {
+  ids: string[];
+  joints: YardBlueprintJoint[];
+  autoRelease: boolean;
+};
+
+const QualityContext = createContext<QualitySettings>(QUALITY.high);
 
 type PartRecord = {
   id: string;
@@ -154,6 +177,8 @@ export default function YardScene(props: YardSceneProps) {
     onImpulse,
     onReleaseRequest,
     onPhysicsReady,
+    onQualityChange,
+    onStressChange,
   } = props;
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
@@ -170,6 +195,42 @@ export default function YardScene(props: YardSceneProps) {
   onImpulseRef.current = onImpulse;
   onReleaseRequestRef.current = onReleaseRequest;
   const dropRef = useRef<() => void>(() => {});
+  const pendingStressRef = useRef<PendingStress | null>(null);
+  const stripStressRef = useRef<() => void>(() => {});
+  const [qualityTier, setQualityTier] = useState<QualityTier>("high");
+  const [stressParts, setStressParts] = useState<YardPartDef[]>([]);
+  const quality = QUALITY[qualityTier];
+  const qualityRef = useRef(quality);
+  qualityRef.current = quality;
+  const onQualityChangeRef = useRef(onQualityChange);
+  onQualityChangeRef.current = onQualityChange;
+  const onStressChangeRef = useRef(onStressChange);
+  onStressChangeRef.current = onStressChange;
+
+  const applyStressLayout = useCallback((layout: StressLayout) => {
+    stripStressRef.current();
+    pendingStressRef.current = {
+      ids: layout.parts.map((part) => part.id),
+      joints: layout.joints,
+      autoRelease: true,
+    };
+    setStressParts(layout.parts);
+    onStressChangeRef.current(layout.parts.length);
+    setQualityTier((prev) => (prev === "high" ? "medium" : prev));
+  }, []);
+
+  const runStress = useCallback(() => applyStressLayout(buildStressLayout()), [applyStressLayout]);
+
+  const clearStress = useCallback(() => {
+    stripStressRef.current();
+    pendingStressRef.current = null;
+    setStressParts([]);
+    onStressChangeRef.current(0);
+  }, []);
+
+  useEffect(() => {
+    onQualityChangeRef.current(qualityTier);
+  }, [qualityTier]);
 
   return (
     <Canvas
@@ -182,95 +243,110 @@ export default function YardScene(props: YardSceneProps) {
         toneMapping: THREE.ACESFilmicToneMapping,
         toneMappingExposure: 1.15,
       }}
-      camera={{ position: [11, 8.5, 21], fov: 48, near: 0.1, far: 220 }}
+      camera={{ position: [11, 8.5, 21], fov: 48, near: 0.1, far: 320 }}
       style={{ background: "#050811" }}
       onPointerMissed={() => dropRef.current()}
     >
-      <color attach="background" args={["#050811"]} />
+      <QualityContext.Provider value={quality}>
+        <color attach="background" args={["#050811"]} />
+        <QualityApplier cap={quality.dprCap} />
 
-      {/* Cinematic IBL Environment */}
-      <Environment preset="warehouse" />
+        {quality.environment ? (
+          <Environment preset="warehouse" />
+        ) : (
+          <hemisphereLight args={["#94a3b8", "#020617", 0.7]} />
+        )}
 
-      {/* Primary Sun Slit Light */}
-      <directionalLight
-        position={[14, 22, 12]}
-        intensity={1.8}
-        castShadow
-        shadow-mapSize={[1024, 1024]}
-        shadow-bias={-0.0001}
-        shadow-camera-left={-24}
-        shadow-camera-right={24}
-        shadow-camera-top={20}
-        shadow-camera-bottom={-20}
-        shadow-camera-near={1}
-        shadow-camera-far={70}
-      />
-
-      {/* Cool Industrial Fill & Rim Lights */}
-      <ambientLight intensity={0.25} color="#94a3b8" />
-      <directionalLight position={[-16, 12, -10]} intensity={0.6} color="#38bdf8" />
-      <pointLight position={[0, 14, 0]} intensity={0.5} distance={30} color="#f8fafc" />
-
-      {/* Soft Contact Shadows on Floor */}
-      <ContactShadows
-        position={[0, 0.01, 0]}
-        opacity={0.65}
-        scale={40}
-        blur={1.6}
-        far={4}
-        resolution={1024}
-        color="#020617"
-      />
-
-      <ExteriorStars />
-
-      <Suspense fallback={null}>
-        <Physics gravity={[0, -9.81, 0]} timeStep={1 / 60} paused={paused} interpolate colliders="cuboid">
-          <GrabController
-            paused={paused}
-            pausedRef={pausedRef}
-            actionsRef={actionsRef}
-            onHoldChangeRef={onHoldChangeRef}
-            onSnapChangeRef={onSnapChangeRef}
-            onJointCountRef={onJointCountRef}
-            onBlueprintDirtyRef={onBlueprintDirtyRef}
-            onImpulseRef={onImpulseRef}
-            onReleaseRequestRef={onReleaseRequestRef}
-            dropRef={dropRef}
-          >
-            <DockHull onBackgroundPointer={dropRef} />
-            <DockAnchor />
-            {ALL_YARD_PARTS.map((part) => (
-              <YardPart key={part.id} def={part} simulating={!paused} />
-            ))}
-          </GrabController>
-          <ReadyBeacon onReady={onPhysicsReady} />
-        </Physics>
-      </Suspense>
-
-      {/* Restrained Cinematic Postprocessing */}
-      <EffectComposer multisampling={0} enableNormalPass={false}>
-        <SMAA />
-        <Bloom
-          luminanceThreshold={0.88}
-          luminanceSmoothing={0.25}
-          intensity={0.65}
-          mipmapBlur
+        <directionalLight
+          position={[14, 22, 12]}
+          intensity={quality.environment ? 1.8 : 1.15}
+          castShadow={quality.shadows}
+          shadow-mapSize={quality.shadows ? [1024, 1024] : [256, 256]}
+          shadow-bias={-0.0001}
+          shadow-camera-left={-24}
+          shadow-camera-right={24}
+          shadow-camera-top={20}
+          shadow-camera-bottom={-20}
+          shadow-camera-near={1}
+          shadow-camera-far={90}
         />
-        <Vignette eskil={false} offset={0.22} darkness={0.82} />
-      </EffectComposer>
 
-      <OrbitControls
-        makeDefault
-        enableDamping
-        dampingFactor={0.08}
-        minDistance={6}
-        maxDistance={48}
-        minPolarAngle={0.12}
-        maxPolarAngle={Math.PI / 2 - 0.06}
-        target={[0, 4.2, 0]}
-      />
-      <FpsSampler nodeRef={fpsNodeRef} />
+        <ambientLight intensity={0.25} color="#94a3b8" />
+        <directionalLight position={[-16, 12, -10]} intensity={0.6} color="#38bdf8" />
+        <pointLight position={[0, 14, 0]} intensity={0.5} distance={30} color="#f8fafc" />
+
+        {quality.contactShadows ? (
+          <ContactShadows
+            position={[0, 0.01, 0]}
+            opacity={0.65}
+            scale={40}
+            blur={1.6}
+            far={4}
+            resolution={1024}
+            color="#020617"
+          />
+        ) : null}
+
+        <ExteriorStars />
+
+        <Suspense fallback={null}>
+          <Physics gravity={[0, -9.81, 0]} timeStep={1 / 60} paused={paused} interpolate colliders="cuboid">
+            <GrabController
+              paused={paused}
+              pausedRef={pausedRef}
+              actionsRef={actionsRef}
+              onHoldChangeRef={onHoldChangeRef}
+              onSnapChangeRef={onSnapChangeRef}
+              onJointCountRef={onJointCountRef}
+              onBlueprintDirtyRef={onBlueprintDirtyRef}
+              onImpulseRef={onImpulseRef}
+              onReleaseRequestRef={onReleaseRequestRef}
+              dropRef={dropRef}
+              pendingStressRef={pendingStressRef}
+              stripStressRef={stripStressRef}
+              runStress={runStress}
+              clearStress={clearStress}
+            >
+              <DockHull onBackgroundPointer={dropRef} />
+              <DockTrial pbr={quality.pbr} />
+              <DockAnchor />
+              {ALL_YARD_PARTS.map((part) => (
+                <YardPart key={part.id} def={part} simulating={!paused} />
+              ))}
+              <YardPart def={SALVAGE_THRUSTER} simulating={!paused} />
+              {stressParts.map((part) => (
+                <LitePart key={part.id} def={part} />
+              ))}
+            </GrabController>
+            <ReadyBeacon onReady={onPhysicsReady} />
+          </Physics>
+        </Suspense>
+
+        {quality.post ? (
+          <EffectComposer multisampling={0} enableNormalPass={false}>
+            <SMAA />
+            <Bloom
+              luminanceThreshold={0.88}
+              luminanceSmoothing={0.25}
+              intensity={0.65}
+              mipmapBlur
+            />
+            <Vignette eskil={false} offset={0.22} darkness={0.82} />
+          </EffectComposer>
+        ) : null}
+
+        <OrbitControls
+          makeDefault
+          enableDamping
+          dampingFactor={0.08}
+          minDistance={6}
+          maxDistance={110}
+          minPolarAngle={0.12}
+          maxPolarAngle={Math.PI / 2 - 0.06}
+          target={[0, 4.2, 0]}
+        />
+        <FpsSampler nodeRef={fpsNodeRef} onFps={(fps) => setQualityTier((prev) => suggestTierFromFps(fps, prev))} />
+      </QualityContext.Provider>
     </Canvas>
   );
 }
@@ -280,16 +356,49 @@ function ReadyBeacon({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-function FpsSampler({ nodeRef }: { nodeRef: React.RefObject<HTMLSpanElement> }) {
+function QualityApplier({ cap }: { cap: number }) {
+  const { gl } = useThree();
+  useEffect(() => {
+    const next = Math.min(window.devicePixelRatio || 1, cap);
+    gl.setPixelRatio(next);
+  }, [cap, gl]);
+  return null;
+}
+
+function FpsSampler({
+  nodeRef,
+  onFps,
+}: {
+  nodeRef: React.RefObject<HTMLSpanElement>;
+  onFps: (fps: number) => void;
+}) {
   const acc = useRef(0);
   const frames = useRef(0);
+  const windowAcc = useRef(0);
+  const windowFrames = useRef(0);
+  const onFpsRef = useRef(onFps);
+  const warmupDone = useRef(false);
+  onFpsRef.current = onFps;
   useFrame((_, dt) => {
     acc.current += dt;
     frames.current += 1;
-    if (acc.current < 1) return;
-    if (nodeRef.current) nodeRef.current.textContent = String(Math.round(frames.current / acc.current));
-    acc.current = 0;
-    frames.current = 0;
+    windowAcc.current += dt;
+    windowFrames.current += 1;
+    if (acc.current >= 1) {
+      if (nodeRef.current) nodeRef.current.textContent = String(Math.round(frames.current / acc.current));
+      acc.current = 0;
+      frames.current = 0;
+    }
+    if (windowAcc.current >= QUALITY_PROBE_SECONDS) {
+      const fps = windowFrames.current / windowAcc.current;
+      windowAcc.current = 0;
+      windowFrames.current = 0;
+      if (!warmupDone.current) {
+        warmupDone.current = true;
+        return;
+      }
+      onFpsRef.current(fps);
+    }
   });
   return null;
 }
@@ -305,6 +414,10 @@ function GrabController({
   onImpulseRef,
   onReleaseRequestRef,
   dropRef,
+  pendingStressRef,
+  stripStressRef,
+  runStress,
+  clearStress,
   children,
 }: {
   paused: boolean;
@@ -317,6 +430,10 @@ function GrabController({
   onImpulseRef: React.MutableRefObject<(event: YardImpulseEvent) => void>;
   onReleaseRequestRef: React.MutableRefObject<() => void>;
   dropRef: React.MutableRefObject<() => void>;
+  pendingStressRef: React.MutableRefObject<PendingStress | null>;
+  stripStressRef: React.MutableRefObject<() => void>;
+  runStress: () => void;
+  clearStress: () => void;
   children: React.ReactNode;
 }) {
   const heldRef = useRef<Held | null>(null);
@@ -559,31 +676,46 @@ function GrabController({
   const getBlueprint = useCallback((): YardBlueprint | null => ({
     version: 1,
     savedAt: Date.now(),
-    parts: Array.from(partsRef.current.values()).map((part) => {
-      const p = part.body.translation();
-      const q = part.body.rotation();
-      return {
-        instanceId: part.id,
-        catalogId: part.def.catalogId ?? part.def.id,
-        position: [p.x, p.y, p.z],
-        rotation: [q.x, q.y, q.z, q.w],
-      };
-    }),
-    joints: jointsRef.current.map((joint) => ({
-      aId: joint.aId,
-      aSocketId: joint.aSocketId,
-      bId: joint.bId,
-      bSocketId: joint.bSocketId,
-      anchor: joint.anchor,
-      ...(joint.damage > 0 ? { damage: joint.damage } : {}),
-    })),
+    parts: Array.from(partsRef.current.values())
+      .filter((part) => !isStressPartId(part.id))
+      .map((part) => {
+        const p = part.body.translation();
+        const q = part.body.rotation();
+        return {
+          instanceId: part.id,
+          catalogId: part.def.catalogId ?? part.def.id,
+          position: [p.x, p.y, p.z],
+          rotation: [q.x, q.y, q.z, q.w],
+        };
+      }),
+    joints: jointsRef.current
+      .filter((joint) => !isStressPartId(joint.aId) && !isStressPartId(joint.bId))
+      .map((joint) => ({
+        aId: joint.aId,
+        aSocketId: joint.aSocketId,
+        bId: joint.bId,
+        bSocketId: joint.bSocketId,
+        anchor: joint.anchor,
+        ...(joint.damage > 0 ? { damage: joint.damage } : {}),
+      })),
   }), []);
+
+  const stripStressJoints = useCallback(() => {
+    jointsRef.current = jointsRef.current.filter((joint) => {
+      if (!isStressPartId(joint.aId) && !isStressPartId(joint.bId)) return true;
+      world.removeImpulseJoint(joint.handle, true);
+      return false;
+    });
+    onJointCountRef.current(jointsRef.current.length);
+  }, [onJointCountRef, world]);
 
   const loadBlueprint = useCallback((blueprint: YardBlueprint) => {
     clearHeld();
     candidateRef.current = null;
     ghostRef.current.visible = false;
     lastSnapKeyRef.current = null;
+    pendingStressRef.current = null;
+    clearStress();
     jointsRef.current.forEach((joint) => world.removeImpulseJoint(joint.handle, true));
     jointsRef.current = [];
     const savedById = new Map(blueprint.parts.map((part) => [part.instanceId, part]));
@@ -606,7 +738,7 @@ function GrabController({
     });
     onJointCountRef.current(jointsRef.current.length);
     onBlueprintDirtyRef.current();
-  }, [attachJoint, clearHeld, onBlueprintDirtyRef, onJointCountRef, setDynamic, setPose, world]);
+  }, [attachJoint, clearHeld, clearStress, onBlueprintDirtyRef, onJointCountRef, pendingStressRef, setDynamic, setPose, world]);
 
   const resetHammer = useCallback((presetId: HammerPresetId) => {
     const part = partsRef.current.get("drop-cube");
@@ -625,18 +757,40 @@ function GrabController({
 
   useEffect(() => {
     dropRef.current = drop;
-    actionsRef.current = { weld, undo, release, drop, resetHammer, getBlueprint, loadBlueprint };
+    stripStressRef.current = stripStressJoints;
+    actionsRef.current = { weld, undo, release, drop, resetHammer, getBlueprint, loadBlueprint, runStress, clearStress };
     return () => {
       dropRef.current = () => {};
+      stripStressRef.current = () => {};
       if (actionsRef.current?.getBlueprint === getBlueprint) actionsRef.current = null;
     };
-  }, [actionsRef, drop, dropRef, getBlueprint, loadBlueprint, release, resetHammer, undo, weld]);
+  }, [actionsRef, clearStress, drop, dropRef, getBlueprint, loadBlueprint, release, resetHammer, runStress, stripStressJoints, stripStressRef, undo, weld]);
 
   useBeforePhysicsStep(() => {
     if (pausedRef.current) return;
     partsRef.current.forEach((part, id) => {
+      const translation = part.body.translation();
       const velocity = part.body.linvel();
+      if (!Number.isFinite(translation.x) || !Number.isFinite(velocity.x) || !Number.isFinite(velocity.y)) {
+        part.body.setLinvel(_zero, true);
+        part.body.setAngvel(_zero, true);
+        part.body.setTranslation(
+          { x: part.def.spawn[0], y: Math.max(0.35, part.def.spawn[1]), z: part.def.spawn[2] },
+          true
+        );
+        return;
+      }
       prevVelRef.current.set(id, { x: velocity.x, y: velocity.y, z: velocity.z });
+      const catalogId = part.def.catalogId ?? part.def.id;
+      if (catalogId !== "nozzle" && catalogId !== "salvage-thruster") return;
+      if (heldRef.current?.id === part.id) return;
+      const rotation = part.body.rotation();
+      _thrustQ.set(rotation.x, rotation.y, rotation.z, rotation.w);
+      _thrust.copy(THRUST_LOCAL).applyQuaternion(_thrustQ);
+      const accel = catalogId === "salvage-thruster" ? SALVAGE_FORCE : NOZZLE_FORCE;
+      const force = part.body.mass() * accel;
+      part.body.resetForces(true);
+      part.body.addForce({ x: _thrust.x * force, y: _thrust.y * force, z: _thrust.z * force }, true);
     });
   });
 
@@ -657,6 +811,14 @@ function GrabController({
   }, [gl]);
 
   useFrame(() => {
+    const pending = pendingStressRef.current;
+    if (pending && pending.ids.every((id) => partsRef.current.has(id))) {
+      for (const joint of pending.joints) attachJoint(joint);
+      onJointCountRef.current(jointsRef.current.length);
+      pendingStressRef.current = null;
+      if (pending.autoRelease) release();
+    }
+
     const held = heldRef.current;
     if (!held) return;
     _plane.setFromNormalAndCoplanarPoint(_up, _hit.set(0, held.holdY, 0));
@@ -665,7 +827,7 @@ function GrabController({
     const freePosition = new THREE.Vector3(
       THREE.MathUtils.clamp(_hit.x, -HOLD_LIMIT_X, HOLD_LIMIT_X),
       held.holdY,
-      THREE.MathUtils.clamp(_hit.z, -HOLD_LIMIT_Z, HOLD_LIMIT_Z)
+      THREE.MathUtils.clamp(_hit.z, -HOLD_LIMIT_Z_NEG, HOLD_LIMIT_Z_POS)
     );
     setPose(held, freePosition, new THREE.Quaternion().copy(held.object.quaternion));
     if (!pausedRef.current) {
@@ -949,6 +1111,7 @@ function DockHull({ onBackgroundPointer }: { onBackgroundPointer: React.MutableR
 
 function YardPart({ def, simulating }: { def: YardPartDef; simulating: boolean }) {
   const api = useContext(YardApiContext);
+  const quality = useContext(QualityContext);
   const bodyRef = useRef<RapierRigidBody>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const { gl } = useThree();
@@ -975,6 +1138,7 @@ function YardPart({ def, simulating }: { def: YardPartDef; simulating: boolean }
   const onCollisionEnter = (payload: CollisionEnterPayload) => api?.handleCollisionEnter(def.id, payload);
 
   const materialProps = useMemo(() => {
+    const maps = quality.pbr;
     switch (def.material) {
       case "light-alloy":
         return {
@@ -983,7 +1147,7 @@ function YardPart({ def, simulating }: { def: YardPartDef; simulating: boolean }
           roughness: 0.35,
           clearcoat: 0.25,
           clearcoatRoughness: 0.2,
-          ...textures.scratchedSteel,
+          ...(maps ? textures.scratchedSteel : {}),
         };
       case "sheet-steel":
         return {
@@ -992,7 +1156,7 @@ function YardPart({ def, simulating }: { def: YardPartDef; simulating: boolean }
           roughness: 0.45,
           clearcoat: 0.4,
           clearcoatRoughness: 0.3,
-          ...textures.paintedMetal,
+          ...(maps ? textures.paintedMetal : {}),
         };
       case "structural-steel":
         return {
@@ -1000,7 +1164,7 @@ function YardPart({ def, simulating }: { def: YardPartDef; simulating: boolean }
           metalness: 0.65,
           roughness: 0.4,
           clearcoat: 0.2,
-          ...textures.paintedMetal,
+          ...(maps ? textures.paintedMetal : {}),
         };
       case "cast-iron":
         return {
@@ -1008,7 +1172,7 @@ function YardPart({ def, simulating }: { def: YardPartDef; simulating: boolean }
           metalness: 0.92,
           roughness: 0.72,
           clearcoat: 0.1,
-          ...textures.castIron,
+          ...(maps ? textures.castIron : {}),
         };
       case "pin-alloy":
         return {
@@ -1016,7 +1180,7 @@ function YardPart({ def, simulating }: { def: YardPartDef; simulating: boolean }
           metalness: 0.75,
           roughness: 0.3,
           clearcoat: 0.5,
-          ...textures.rubber,
+          ...(maps ? textures.rubber : {}),
         };
       case "ceramic":
         return {
@@ -1026,7 +1190,7 @@ function YardPart({ def, simulating }: { def: YardPartDef; simulating: boolean }
           clearcoat: 0.6,
           emissive: "#ea580c",
           emissiveIntensity: 0.35,
-          ...textures.scratchedSteel,
+          ...(maps ? textures.scratchedSteel : {}),
         };
       default:
         return {
@@ -1035,9 +1199,9 @@ function YardPart({ def, simulating }: { def: YardPartDef; simulating: boolean }
           roughness: 0.5,
         };
     }
-  }, [def.color, def.id, def.material, textures]);
+  }, [def.color, def.id, def.material, quality.pbr, textures]);
 
-  const isNozzle = def.id === "nozzle" || def.catalogId === "nozzle";
+  const isNozzle = def.id === "nozzle" || def.catalogId === "nozzle" || def.catalogId === "salvage-thruster";
 
   return (
     <RigidBody
@@ -1068,8 +1232,8 @@ function YardPart({ def, simulating }: { def: YardPartDef; simulating: boolean }
 
       <mesh
         ref={meshRef}
-        castShadow
-        receiveShadow
+        castShadow={quality.shadows}
+        receiveShadow={quality.shadows}
         onPointerDown={onDown}
         onPointerOver={() => {
           if (!api?.isHolding()) gl.domElement.style.cursor = "grab";
@@ -1084,11 +1248,48 @@ function YardPart({ def, simulating }: { def: YardPartDef; simulating: boolean }
       </mesh>
 
       {/* Thruster Jet Flame FX */}
-      {isNozzle && <ThrusterFx active={simulating} nozzleBodyRef={bodyRef} />}
+      {isNozzle && <ThrusterFx active={simulating && quality.thrusterFx} nozzleBodyRef={bodyRef} />}
 
       {def.sockets.map((socket) => (
         <SocketMarker key={socket.id} socket={socket} />
       ))}
+    </RigidBody>
+  );
+}
+
+function LitePart({ def }: { def: YardPartDef }) {
+  const api = useContext(YardApiContext);
+  const bodyRef = useRef<RapierRigidBody>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  useEffect(() => {
+    const object = meshRef.current?.parent;
+    if (!api || !bodyRef.current || !object) return;
+    api.registerPart({ id: def.id, def, body: bodyRef.current, object });
+    return () => api.unregisterPart(def.id);
+  }, [api, def]);
+
+  const onCollisionEnter = (payload: CollisionEnterPayload) => api?.handleCollisionEnter(def.id, payload);
+
+  return (
+    <RigidBody
+      ref={bodyRef}
+      type="dynamic"
+      position={def.spawn}
+      colliders="cuboid"
+      density={def.density}
+      restitution={def.restitution}
+      restitutionCombineRule={RESTITUTION_MAX}
+      friction={0.7}
+      linearDamping={0.08}
+      angularDamping={0.12}
+      userData={{ yardPartId: def.id }}
+      onCollisionEnter={onCollisionEnter}
+    >
+      <mesh ref={meshRef} castShadow={false} receiveShadow={false}>
+        <boxGeometry args={def.size} />
+        <meshStandardMaterial color={def.color} metalness={0.35} roughness={0.72} />
+      </mesh>
     </RigidBody>
   );
 }

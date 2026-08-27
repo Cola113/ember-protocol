@@ -180,3 +180,45 @@ export const DROP_CUBE: YardPartDef = {
 };
 
 export const ALL_YARD_PARTS: YardPartDef[] = [...RACK_PARTS, ...CONSTRUCTION_PLATES, DROP_CUBE];
+
+/** Repeating crate used by the D5 150-body chain-bomb layout. Not on the rack. */
+export const STRESS_CRATE_TEMPLATE: Omit<YardPartDef, "id" | "spawn"> = {
+  catalogId: "stress-crate",
+  label: "压测块",
+  shape: "cuboid",
+  size: [0.48, 0.48, 0.48],
+  color: "#94a3b8",
+  density: 2.4,
+  restitution: 0.08,
+  material: "cast-iron",
+  breakImpulse: 8,
+  sockets: [
+    { id: "top", point: [0, 0.24, 0], normal: [0, 1, 0] },
+    { id: "base", point: [0, -0.24, 0], normal: [0, -1, 0] },
+  ],
+};
+
+/**
+ * Salvage nozzle sitting on the crashed ship outside the dock door.
+ * Grabable special part — weld it onto a player construct.
+ */
+export const SALVAGE_THRUSTER: YardPartDef = {
+  id: "salvage-thruster",
+  catalogId: "salvage-thruster",
+  label: "坠船主推",
+  shape: "cylinder",
+  size: [0.42, 1.6, 0],
+  color: "#fb923c",
+  spawn: [-3.4, 1.48, 68],
+  density: 1.8,
+  restitution: 0.16,
+  material: "ceramic",
+  sockets: [
+    { id: "top", point: [0, 0.8, 0], normal: [0, 1, 0] },
+    { id: "base", point: [0, -0.8, 0], normal: [0, -1, 0] },
+  ],
+};
+
+export const YARD_CATALOG_BY_ID: Record<string, YardPartDef> = Object.fromEntries(
+  [...RACK_PARTS, GROUND_ANCHOR, DROP_CUBE, SALVAGE_THRUSTER].map((part) => [part.catalogId ?? part.id, part])
+);
