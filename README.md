@@ -1,6 +1,6 @@
 # The Ember Protocol / 余烬协议
 
-> **📌 项目状态（2026-08-27）**：剧情玩法已停止迭代，本仓库转型物理创造沙盒（`/yard` 余烬坞，开发中）。剧情版本保留在 `v0.7-archived` 标签，生产环境仍可访问（AI 功能已降级）。
+> **📌 项目状态（2026-08-28）**：剧情玩法已停止迭代，本仓库转型物理创造沙盒。灰盒地基在 [`/yard`](https://ember-protocol-zeta.vercel.app/yard)（Rapier 1.5.0，Build / Simulate）。剧情版本保留在 `v0.7-archived` 标签，[`/`](https://ember-protocol-zeta.vercel.app/) 仍可进入。
 
 ![The Ember Protocol](./public/og-image.png)
 
@@ -10,7 +10,7 @@ An **Astral Noir** 3D galaxy mystery. You are **Recorder-9** (codename **Vesper*
 
 The game advances when you understand — not when you click an option.
 
-Play locally at [`/`](http://localhost:3000) after `npm run dev`. Marketing / onboarding copy lives at [`/landing`](http://localhost:3000/landing).
+Play locally at [`/`](http://localhost:3000) after `npm run dev`. Ember Yard graybox: [`/yard`](http://localhost:3000/yard). Marketing copy lives at [`/landing`](http://localhost:3000/landing).
 
 ## Visuals & Screenshots
 
@@ -40,7 +40,7 @@ P2 live AI (Voices / Scribe / Curator) is **stubbed**: `/api/voices/chat`, `/api
 |-------|--------|
 | App | Next.js 14 App Router (`next@^14.2`) |
 | UI | React 18, Tailwind CSS, Framer Motion, Lucide |
-| 3D | React Three Fiber, Drei, Three.js (dynamically imported, SSR off) |
+| 3D | React Three Fiber, Drei, Three.js (dynamically imported, SSR off). `/yard` locks `@react-three/rapier@1.5.0` (built-in `rapier3d-compat`) |
 | AI | Vercel AI SDK (`ai`, `@ai-sdk/react`) — T2 `lib/ai/provider.ts` + `GET /api/ai/ping`; Voices/Scribe/Curator routes still Canon stubs |
 | Data | Local-first `lib/datastore.ts` (memory on the server, localStorage in the browser). Postgres/NextAuth not required. |
 | Language | TypeScript (`strict: true`) |
