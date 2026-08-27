@@ -5,6 +5,16 @@ export const YARD = {
 } as const;
 
 export type PartShape = "cuboid" | "cylinder";
+export type YardPartShape = PartShape;
+
+export type YardMaterialId =
+  | "pin-alloy"
+  | "light-alloy"
+  | "sheet-steel"
+  | "structural-steel"
+  | "cast-iron"
+  | "ceramic"
+  | "bedrock";
 
 export type YardSocket = {
   id: string;
@@ -24,6 +34,9 @@ export type YardPartDef = {
   spawn: [number, number, number];
   density: number;
   restitution: number;
+  material: YardMaterialId;
+  /** Optional authored override; otherwise material × sizeFactor. */
+  breakImpulse?: number;
   /** Rotate cylinder collider/mesh so a hinge pin lies on X. */
   cylinderAlongX?: boolean;
   sockets: YardSocket[];
@@ -43,6 +56,7 @@ export const RACK_PARTS: YardPartDef[] = [
     spawn: [-17.2, 1.4, -6],
     density: 1.2,
     restitution: 0.22,
+    material: "light-alloy",
     sockets: [
       { id: "port", point: [0, 0, -1], normal: [0, 0, -1] },
       { id: "starboard", point: [0, 0, 1], normal: [0, 0, 1] },
@@ -57,6 +71,7 @@ export const RACK_PARTS: YardPartDef[] = [
     spawn: [-17.2, 1.34, -3.4],
     density: 1,
     restitution: 0.18,
+    material: "sheet-steel",
     sockets: [
       { id: "left", point: [-0.5, 0, 0], normal: [-1, 0, 0] },
       { id: "right", point: [0.5, 0, 0], normal: [1, 0, 0] },
@@ -73,6 +88,7 @@ export const RACK_PARTS: YardPartDef[] = [
     spawn: [-17.2, 1.48, -0.8],
     density: 1.4,
     restitution: 0.16,
+    material: "structural-steel",
     sockets: [
       { id: "front", point: [0, 0, 0.4], normal: [0, 0, 1] },
       { id: "top", point: [0, 0.35, 0], normal: [0, 1, 0] },
@@ -88,6 +104,7 @@ export const RACK_PARTS: YardPartDef[] = [
     spawn: [-17.2, 1.58, 1.6],
     density: 8,
     restitution: 0.12,
+    material: "cast-iron",
     sockets: [
       { id: "top", point: [0, 0.275, 0], normal: [0, 1, 0] },
       { id: "base", point: [0, -0.275, 0], normal: [0, -1, 0] },
@@ -102,6 +119,7 @@ export const RACK_PARTS: YardPartDef[] = [
     spawn: [-17.2, 1.5, 3.6],
     density: 2.2,
     restitution: 0.2,
+    material: "pin-alloy",
     cylinderAlongX: true,
     sockets: [
       { id: "port", point: [-0.21, 0, 0], normal: [-1, 0, 0] },
@@ -117,6 +135,7 @@ export const RACK_PARTS: YardPartDef[] = [
     spawn: [-17.2, 1.54, 5.4],
     density: 1.6,
     restitution: 0.2,
+    material: "ceramic",
     sockets: [
       { id: "top", point: [0, 0.25, 0], normal: [0, 1, 0] },
       { id: "base", point: [0, -0.25, 0], normal: [0, -1, 0] },
@@ -130,6 +149,20 @@ const CONSTRUCTION_PLATES: YardPartDef[] = [
   { ...PLATE, id: "plate-3", catalogId: "plate", spawn: [-17.2, 1.34, -12.4] },
 ];
 
+export const GROUND_ANCHOR: YardPartDef = {
+  id: "ground-anchor",
+  catalogId: "ground-anchor",
+  label: "地锚",
+  shape: "cuboid",
+  size: [1.8, 0.2, 1.8],
+  color: "#22d3ee",
+  spawn: [0, 0.1, 0],
+  density: 1,
+  restitution: 0.1,
+  material: "bedrock",
+  sockets: [{ id: "top", point: [0, 0.1, 0], normal: [0, 1, 0] }],
+};
+
 export const DROP_CUBE: YardPartDef = {
   id: "drop-cube",
   label: "落锤试块",
@@ -137,8 +170,9 @@ export const DROP_CUBE: YardPartDef = {
   size: [0.7, 0.7, 0.7],
   color: "#e0f2fe",
   spawn: [0, 7.2, 0],
-  density: 3,
+  density: 5,
   restitution: 0.62,
+  material: "cast-iron",
   sockets: [
     { id: "top", point: [0, 0.35, 0], normal: [0, 1, 0] },
     { id: "base", point: [0, -0.35, 0], normal: [0, -1, 0] },

@@ -16,6 +16,8 @@ export const YardBlueprintJointSchema = z.object({
   bId: z.string().min(1),
   bSocketId: z.string().min(1),
   anchor: Vec3,
+  /** Cumulative damage in [0, 1). Broken joints are omitted, not stored at 1. */
+  damage: z.number().min(0).lt(1).optional(),
 });
 
 export const YardBlueprintSchema = z

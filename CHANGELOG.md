@@ -10,6 +10,7 @@ Version numbers below are **product milestones** (design → playable P0–P5). 
 
 ### feat
 
+- Ember Yard D3 fracture: cumulative impulse welds, heat orbs, spark bursts, hammer presets, blueprint damage persistence
 - T2 local-first datastore (`lib/datastore.ts`): `dossier_cache` / `npc_cache` / `player_state` / `synthesis_attempts`
 - AI SDK minimal wiring (`lib/ai/provider.ts`) with `GET /api/ai/ping`; missing key maps to `model_unavailable`
 

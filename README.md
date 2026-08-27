@@ -1,6 +1,6 @@
 # The Ember Protocol / 余烬协议
 
-> **📌 项目状态（2026-08-28）**：剧情玩法已停止迭代，本仓库转型物理创造沙盒。灰盒地基在 [`/yard`](https://ember-protocol-zeta.vercel.app/yard)（Rapier 1.5.0，Build / Simulate）。剧情版本保留在 `v0.7-archived` 标签，[`/`](https://ember-protocol-zeta.vercel.app/) 仍可进入。
+> **📌 项目状态（2026-08-28）**：剧情玩法已停止迭代，本仓库转型物理创造沙盒。余烬坞在 [`/yard`](https://ember-protocol-zeta.vercel.app/yard)（Rapier 1.5.0，D3 累计冲量断裂 + 焊点热区）。剧情版本保留在 `v0.7-archived` 标签，[`/`](https://ember-protocol-zeta.vercel.app/) 仍可进入。
 
 ![The Ember Protocol](./public/og-image.png)
 
@@ -31,6 +31,7 @@ Play locally at [`/`](http://localhost:3000) after `npm run dev`. Ember Yard gra
 - **Saves** — three named `localStorage` slots plus an auto slot (`lib/save-system.ts`). T2 `player_state` is a facade over those slots, not a second progress file.
 - **Cinematics** — opening log, atmospheric landing, holographic truth-unlock burst
 - **Landing page, first-run hints, accessibility** — skippable onboarding, labelled landmarks, modal `aria` / focus handling
+- **Ember Yard `/yard`** — graybox dock with snap-weld joints, cumulative impulse fracture (`damage += m|v| / breakImpulse`), weld heat (cyan→red), spark on break, hammer presets `[1]`/`[2]`/`[3]`
 
 P2 live AI (Voices / Scribe / Curator) is **stubbed**: `/api/voices/chat`, `/api/scribe/generate`, and `/api/curator/synthesize` return Canon-constrained placeholders. Synthesis currently scores required propositions + keyword coverage against `docs/canon-ledger.json`.
 

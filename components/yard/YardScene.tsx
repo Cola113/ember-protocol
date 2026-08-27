@@ -15,6 +15,8 @@ import {
   CylinderCollider,
   Physics,
   RigidBody,
+  useBeforePhysicsStep,
+  type CollisionEnterPayload,
   type RapierRigidBody,
   useRapier,
 } from "@react-three/rapier";
@@ -22,11 +24,27 @@ import type { ImpulseJoint } from "@dimforge/rapier3d-compat";
 import * as THREE from "three";
 import {
   ALL_YARD_PARTS,
+  GROUND_ANCHOR,
   YARD,
   type YardPartDef,
   type YardSocket,
 } from "@/lib/yard/catalog";
 import type { YardBlueprint, YardBlueprintJoint } from "@/lib/yard/blueprint";
+import {
+  HAMMER_PRESETS,
+  IMPACT_CHATTER_MS,
+  applyImpact,
+  impactImpulse,
+  pickStriker,
+  relativeSpeed,
+  resolveBreakImpulse,
+  resolveJointKind,
+  seamId,
+  shouldIgnoreImpact,
+  type HammerPresetId,
+  type SeamState,
+} from "@/lib/yard/fracture";
+import WeldFx, { seamWorldPoint, type SparkBurst } from "@/components/yard/WeldFx";
 
 const BODY_FIXED = 1;
 const BODY_DYNAMIC = 0;
@@ -45,28 +63,27 @@ const _plane = new THREE.Plane();
 const _raycaster = new THREE.Raycaster();
 const _zero = { x: 0, y: 0, z: 0 };
 
-const GROUND_ANCHOR_DEF: YardPartDef = {
-  id: "ground-anchor",
-  catalogId: "ground-anchor",
-  label: "地锚",
-  shape: "cuboid",
-  size: [1.8, 0.2, 1.8],
-  color: "#22d3ee",
-  spawn: [0, 0.1, 0],
-  density: 1,
-  restitution: 0.1,
-  sockets: [{ id: "top", point: [0, 0.1, 0], normal: [0, 1, 0] }],
+export type YardImpulseEvent = {
+  impulse: number;
+  partId: string;
+  otherId: string;
+  jointId: string;
+  damage: number;
+  breakImpulse: number;
+  broken: boolean;
+  sharedAcross: number;
 };
-
-export type YardImpulseEvent = { impulse: number; partId: string; otherId: string; jointId: string };
 
 export type YardActions = {
   weld: () => void;
   undo: () => void;
   release: () => void;
+  resetHammer: (preset: HammerPresetId) => void;
   getBlueprint: () => YardBlueprint | null;
   loadBlueprint: (blueprint: YardBlueprint) => void;
 };
+
+type RuntimeJoint = YardBlueprintJoint & SeamState & { handle: ImpulseJoint };
 
 type YardSceneProps = {
   paused: boolean;
@@ -109,18 +126,13 @@ type GhostState = {
   anchor: THREE.Vector3;
 };
 
-type ContactForceData = {
-  other: { rigidBody?: RapierRigidBody };
-  totalForceMagnitude: number;
-};
-
 type YardApi = {
   grab: (part: PartRecord, hitY: number) => void;
   drop: () => void;
   isHolding: () => boolean;
   registerPart: (part: PartRecord) => void;
   unregisterPart: (id: string) => void;
-  handleContactForce: (partId: string, payload: ContactForceData) => void;
+  handleCollisionEnter: (partId: string, payload: CollisionEnterPayload) => void;
 };
 
 const YardApiContext = createContext<YardApi | null>(null);
@@ -261,7 +273,7 @@ function GrabController({
 }) {
   const heldRef = useRef<Held | null>(null);
   const partsRef = useRef(new Map<string, PartRecord>());
-  const jointsRef = useRef<Array<YardBlueprintJoint & { handle: ImpulseJoint }>>([]);
+  const jointsRef = useRef<RuntimeJoint[]>([]);
   const candidateRef = useRef<SnapCandidate | null>(null);
   const ghostRef = useRef<GhostState>({
     visible: false,
@@ -271,7 +283,9 @@ function GrabController({
     anchor: new THREE.Vector3(),
   });
   const lastSnapKeyRef = useRef<string | null>(null);
-  const lastImpactAtRef = useRef(0);
+  const prevVelRef = useRef(new Map<string, { x: number; y: number; z: number }>());
+  const lastHitRef = useRef(new Map<string, number>());
+  const sparksRef = useRef<SparkBurst[]>([]);
   const { camera, pointer, gl } = useThree();
   const controls = useThree((s) => s.controls) as { enabled?: boolean } | null;
   const { rapier, world } = useRapier();
@@ -332,23 +346,67 @@ function GrabController({
   const registerPart = useCallback((part: PartRecord) => partsRef.current.set(part.id, part), []);
   const unregisterPart = useCallback((id: string) => partsRef.current.delete(id), []);
 
-  const handleContactForce = useCallback((partId: string, payload: ContactForceData) => {
-    if (pausedRef.current || partId !== "drop-cube" || payload.totalForceMagnitude < 20 || !payload.other.rigidBody) return;
-    const other = payload.other.rigidBody;
-    const otherId = Array.from(partsRef.current.values()).find((part) => part.body === other)?.id;
+  const wakeLoose = useCallback((part: PartRecord | undefined) => {
+    if (!part || part.fixed) return;
+    part.body.setBodyType(BODY_DYNAMIC, true);
+    part.body.lockRotations(false, true);
+    part.body.wakeUp();
+  }, []);
+
+  const handleCollisionEnter = useCallback((partId: string, payload: CollisionEnterPayload) => {
+    if (pausedRef.current) return;
+    const otherBody = payload.other.rigidBody;
+    if (!otherBody) return;
+    const tagged = (payload.other.rigidBodyObject?.userData as { yardPartId?: string } | undefined)?.yardPartId;
+    const otherId = tagged ?? Array.from(partsRef.current.values()).find((part) => part.body === otherBody)?.id;
     if (!otherId) return;
-    const seam = jointsRef.current.find((joint) => joint.aId === otherId || joint.bId === otherId);
-    if (!seam) return;
+    if (!jointsRef.current.some((joint) => joint.aId === partId || joint.bId === partId)) return;
     const now = performance.now();
-    if (now - lastImpactAtRef.current < 180) return;
-    lastImpactAtRef.current = now;
+    const pairKey = `${partId}|${otherId}`;
+    const last = lastHitRef.current.get(pairKey) ?? 0;
+    if (now - last < IMPACT_CHATTER_MS) return;
+    const rest = { x: 0, y: 0, z: 0 };
+    const va = prevVelRef.current.get(partId) ?? rest;
+    const vb = prevVelRef.current.get(otherId) ?? rest;
+    const speed = relativeSpeed(va, vb);
+    if (shouldIgnoreImpact(speed)) return;
+    const self = partsRef.current.get(partId);
+    const other = partsRef.current.get(otherId);
+    if (!self || !other) return;
+    lastHitRef.current.set(pairKey, now);
+    const striker = pickStriker(self, other, Math.hypot(va.x, va.y, va.z), Math.hypot(vb.x, vb.y, vb.z));
+    const impulse = impactImpulse(striker.body.mass(), speed);
+    if (impulse <= 0) return;
+    const result = applyImpact(jointsRef.current, partId, impulse);
+    if (result.shares.length === 0) return;
+    const hottest = result.shares.reduce((best, share) => (share.damage >= best.damage ? share : best));
+    const broken = result.brokenIds.length
+      ? jointsRef.current.filter((joint) => result.brokenIds.includes(seamId(joint)))
+      : [];
+    for (const seam of broken) {
+      const point = seamWorldPoint(seam, partsRef.current);
+      if (point) sparksRef.current.push({ origin: point.clone(), born: now / 1000, seed: now + seam.breakImpulse });
+      world.removeImpulseJoint(seam.handle, true);
+      wakeLoose(partsRef.current.get(seam.aId));
+      wakeLoose(partsRef.current.get(seam.bId));
+    }
+    if (broken.length) {
+      jointsRef.current = jointsRef.current.filter((joint) => !result.brokenIds.includes(seamId(joint)));
+      onJointCountRef.current(jointsRef.current.length);
+      onBlueprintDirtyRef.current();
+    }
+    const live = jointsRef.current.find((joint) => seamId(joint) === hottest.seamId) ?? broken[0];
     onImpulseRef.current({
-      impulse: payload.totalForceMagnitude / 60,
+      impulse,
       partId,
       otherId,
-      jointId: `${seam.aId}:${seam.aSocketId}--${seam.bId}:${seam.bSocketId}`,
+      jointId: hottest.seamId,
+      damage: hottest.damage,
+      breakImpulse: live?.breakImpulse ?? 0,
+      broken: result.brokenIds.length > 0,
+      sharedAcross: result.sharedAcross,
     });
-  }, [onImpulseRef, pausedRef]);
+  }, [onBlueprintDirtyRef, onImpulseRef, onJointCountRef, pausedRef, wakeLoose, world]);
 
   const createJoint = useCallback((joint: YardBlueprintJoint): ImpulseJoint | null => {
     const a = partsRef.current.get(joint.aId);
@@ -372,8 +430,29 @@ function GrabController({
       { x: bLocal.x, y: bLocal.y, z: bLocal.z },
       { x: bFrame.x, y: bFrame.y, z: bFrame.z, w: bFrame.w }
     );
-    return world.createImpulseJoint(data, a.body, b.body, true);
+    const created = world.createImpulseJoint(data, a.body, b.body, true);
+    created.setContactsEnabled(false);
+    return created;
   }, [rapier, world]);
+
+  const attachJoint = useCallback((joint: YardBlueprintJoint, damage = 0): boolean => {
+    const a = partsRef.current.get(joint.aId);
+    const b = partsRef.current.get(joint.bId);
+    if (!a || !b) return false;
+    const handle = createJoint(joint);
+    if (!handle) return false;
+    const kind = resolveJointKind(a.def, b.def);
+    const seeded = Math.min(0.999, Math.max(0, damage));
+    jointsRef.current.push({
+      ...joint,
+      handle,
+      kind,
+      breakImpulse: resolveBreakImpulse(a.def, b.def, kind),
+      damage: seeded,
+      heat: seeded,
+    });
+    return true;
+  }, [createJoint]);
 
   const weld = useCallback(() => {
     if (!pausedRef.current) return;
@@ -387,8 +466,7 @@ function GrabController({
       bSocketId: candidate.bSocketId,
       anchor: [candidate.anchor.x, candidate.anchor.y, candidate.anchor.z],
     };
-    const handle = createJoint(joint);
-    if (!handle) return;
+    if (!attachJoint(joint)) return;
     setDynamic(held);
     heldRef.current = null;
     candidateRef.current = null;
@@ -398,10 +476,9 @@ function GrabController({
     gl.domElement.style.cursor = "auto";
     onHoldChangeRef.current(null);
     onSnapChangeRef.current(null);
-    jointsRef.current.push({ ...joint, handle });
     onJointCountRef.current(jointsRef.current.length);
     onBlueprintDirtyRef.current();
-  }, [controls, createJoint, gl, onBlueprintDirtyRef, onHoldChangeRef, onJointCountRef, onSnapChangeRef, setDynamic]);
+  }, [attachJoint, controls, gl, onBlueprintDirtyRef, onHoldChangeRef, onJointCountRef, onSnapChangeRef, setDynamic]);
 
   const undo = useCallback(() => {
     if (!pausedRef.current) return;
@@ -432,7 +509,14 @@ function GrabController({
         rotation: [q.x, q.y, q.z, q.w],
       };
     }),
-    joints: jointsRef.current.map(({ handle: _handle, ...joint }) => joint),
+    joints: jointsRef.current.map((joint) => ({
+      aId: joint.aId,
+      aSocketId: joint.aSocketId,
+      bId: joint.bId,
+      bSocketId: joint.bSocketId,
+      anchor: joint.anchor,
+      ...(joint.damage > 0 ? { damage: joint.damage } : {}),
+    })),
   }), []);
 
   const loadBlueprint = useCallback((blueprint: YardBlueprint) => {
@@ -458,21 +542,42 @@ function GrabController({
       else setDynamic(part);
     });
     blueprint.joints.forEach((joint) => {
-      const handle = createJoint(joint);
-      if (handle) jointsRef.current.push({ ...joint, handle });
+      attachJoint(joint, joint.damage ?? 0);
     });
     onJointCountRef.current(jointsRef.current.length);
     onBlueprintDirtyRef.current();
-  }, [clearHeld, createJoint, onBlueprintDirtyRef, onJointCountRef, setDynamic, setPose, world]);
+  }, [attachJoint, clearHeld, onBlueprintDirtyRef, onJointCountRef, setDynamic, setPose, world]);
+
+  const resetHammer = useCallback((presetId: HammerPresetId) => {
+    const part = partsRef.current.get("drop-cube");
+    if (!part) return;
+    if (heldRef.current?.id === "drop-cube") clearHeld();
+    const preset = HAMMER_PRESETS[presetId];
+    const collider = part.body.collider(0);
+    if (collider) collider.setDensity(preset.density);
+    setPose(part, new THREE.Vector3(0, preset.height, 0), new THREE.Quaternion());
+    part.body.setLinvel(_zero, true);
+    part.body.setAngvel(_zero, true);
+    wakeLoose(part);
+    onBlueprintDirtyRef.current();
+  }, [clearHeld, onBlueprintDirtyRef, setPose, wakeLoose]);
 
   useEffect(() => {
     dropRef.current = drop;
-    actionsRef.current = { weld, undo, release, getBlueprint, loadBlueprint };
+    actionsRef.current = { weld, undo, release, resetHammer, getBlueprint, loadBlueprint };
     return () => {
       dropRef.current = () => {};
       if (actionsRef.current?.getBlueprint === getBlueprint) actionsRef.current = null;
     };
-  }, [actionsRef, drop, dropRef, getBlueprint, loadBlueprint, release, undo, weld]);
+  }, [actionsRef, drop, dropRef, getBlueprint, loadBlueprint, release, resetHammer, undo, weld]);
+
+  useBeforePhysicsStep(() => {
+    if (pausedRef.current) return;
+    partsRef.current.forEach((part, id) => {
+      const velocity = part.body.linvel();
+      prevVelRef.current.set(id, { x: velocity.x, y: velocity.y, z: velocity.z });
+    });
+  });
 
   useEffect(() => {
     if (!paused) drop();
@@ -540,13 +645,14 @@ function GrabController({
     isHolding: () => heldRef.current !== null,
     registerPart,
     unregisterPart,
-    handleContactForce,
-  }), [drop, grab, handleContactForce, registerPart, unregisterPart]);
+    handleCollisionEnter,
+  }), [drop, grab, handleCollisionEnter, registerPart, unregisterPart]);
 
   return (
     <YardApiContext.Provider value={api}>
       {children}
       <SnapGhost stateRef={ghostRef} />
+      <WeldFx partsRef={partsRef} seamsRef={jointsRef} sparksRef={sparksRef} />
     </YardApiContext.Provider>
   );
 }
@@ -554,7 +660,7 @@ function GrabController({
 function findSnapCandidate(
   held: Held,
   parts: Map<string, PartRecord>,
-  joints: Array<YardBlueprintJoint & { handle: ImpulseJoint }>
+  joints: RuntimeJoint[]
 ): SnapCandidate | null {
   let best: SnapCandidate | null = null;
   let bestDistance = SNAP_DISTANCE;
@@ -644,16 +750,24 @@ function DockAnchor() {
   useEffect(() => {
     const object = meshRef.current?.parent;
     if (!api || !bodyRef.current || !object) return;
-    api.registerPart({ id: GROUND_ANCHOR_DEF.id, def: GROUND_ANCHOR_DEF, body: bodyRef.current, object, fixed: true });
-    return () => api.unregisterPart(GROUND_ANCHOR_DEF.id);
+    api.registerPart({ id: GROUND_ANCHOR.id, def: GROUND_ANCHOR, body: bodyRef.current, object, fixed: true });
+    return () => api.unregisterPart(GROUND_ANCHOR.id);
   }, [api]);
+  const onCollisionEnter = (payload: CollisionEnterPayload) => api?.handleCollisionEnter(GROUND_ANCHOR.id, payload);
   return (
-    <RigidBody ref={bodyRef} type="fixed" position={GROUND_ANCHOR_DEF.spawn} colliders="cuboid">
+    <RigidBody
+      ref={bodyRef}
+      type="fixed"
+      position={GROUND_ANCHOR.spawn}
+      colliders="cuboid"
+      userData={{ yardPartId: GROUND_ANCHOR.id }}
+      onCollisionEnter={onCollisionEnter}
+    >
       <mesh ref={meshRef} receiveShadow>
-        <boxGeometry args={GROUND_ANCHOR_DEF.size} />
-        <meshStandardMaterial color={GROUND_ANCHOR_DEF.color} emissive={GROUND_ANCHOR_DEF.color} emissiveIntensity={0.15} metalness={0.4} roughness={0.5} />
+        <boxGeometry args={GROUND_ANCHOR.size} />
+        <meshStandardMaterial color={GROUND_ANCHOR.color} emissive={GROUND_ANCHOR.color} emissiveIntensity={0.15} metalness={0.4} roughness={0.5} />
       </mesh>
-      <SocketMarker socket={GROUND_ANCHOR_DEF.sockets[0]} />
+      <SocketMarker socket={GROUND_ANCHOR.sockets[0]} />
     </RigidBody>
   );
 }
@@ -706,7 +820,7 @@ function YardPart({ def }: { def: YardPartDef }) {
     const object = meshRef.current?.parent;
     if (bodyRef.current && object && api) api.grab({ id: def.id, def, body: bodyRef.current, object }, event.point.y);
   };
-  const onContactForce = (payload: ContactForceData) => api?.handleContactForce(def.id, payload);
+  const onCollisionEnter = (payload: CollisionEnterPayload) => api?.handleCollisionEnter(def.id, payload);
   return (
     <RigidBody
       ref={bodyRef}
@@ -721,7 +835,7 @@ function YardPart({ def }: { def: YardPartDef }) {
       angularDamping={0.18}
       ccd={def.id === "drop-cube"}
       userData={{ yardPartId: def.id }}
-      onContactForce={onContactForce}
+      onCollisionEnter={onCollisionEnter}
     >
       {isCylinder ? <CylinderCollider args={[height / 2, radius]} rotation={cylRotation} density={def.density} restitution={def.restitution} restitutionCombineRule={RESTITUTION_MAX} friction={0.62} /> : null}
       <mesh ref={meshRef} castShadow receiveShadow onPointerDown={onDown} onPointerOver={() => { if (!api?.isHolding()) gl.domElement.style.cursor = "grab"; }} onPointerOut={() => { if (!api?.isHolding()) gl.domElement.style.cursor = "auto"; }} rotation={cylRotation}>

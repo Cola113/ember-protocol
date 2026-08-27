@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import type { YardImpulseEvent } from "@/components/yard/YardScene";
 import type { YardBlueprintSlot } from "@/lib/yard/blueprint";
+import type { HammerPresetId } from "@/lib/yard/fracture";
+import { HAMMER_PRESETS, WARN_RATIO } from "@/lib/yard/fracture";
 
 export type YardMode = "build" | "simulate";
 
@@ -33,6 +35,7 @@ type YardHudProps = {
   onWeld: () => void;
   onUndo: () => void;
   onRelease: () => void;
+  onHammerPreset: (preset: HammerPresetId) => void;
   onSave: () => void;
   onLoad: () => void;
 };
@@ -55,6 +58,7 @@ export default function YardHud({
   onWeld,
   onUndo,
   onRelease,
+  onHammerPreset,
   onSave,
   onLoad,
 }: YardHudProps) {
@@ -64,8 +68,8 @@ export default function YardHud({
       <header className="pointer-events-auto absolute left-4 top-4 right-4 flex items-start justify-between gap-4">
         <div className="holo-panel px-4 py-3 max-w-md">
           <p className="font-display text-sm tracking-[0.18em] text-holo-cyan">余烬坞 // EMBER YARD</p>
-          <p className="mt-1 text-[10px] uppercase tracking-widest text-holo-muted">D2 assembly · 40×30×16m · Rapier 1.5.0</p>
-          <p className="mt-2 text-[11px] text-holo-muted leading-relaxed">拖近插座看幽灵预览，点焊上固定；释放落锤，观察结构受力。</p>
+          <p className="mt-1 text-[10px] uppercase tracking-widest text-holo-muted">D3 fracture · 累计冲量 · 40×30×16m · Rapier 1.5.0</p>
+          <p className="mt-2 text-[11px] text-holo-muted leading-relaxed">焊点受击会从青变黄再变红。红了加斜撑；断了会飞，残骸可抓回再焊。</p>
         </div>
         <div className="flex flex-col items-end gap-2">
           <Link href="/" onClick={stop} className="holo-panel pointer-events-auto inline-flex items-center gap-2 px-3 py-2 text-[11px] text-holo-cyan hover:text-holo-bright"><ArrowLeft size={12} />星图 /</Link>
@@ -81,12 +85,28 @@ export default function YardHud({
           <button type="button" onClick={(event) => { stop(event); onUndo(); }} disabled={!canUndo || simulating} title="撤销最后一焊" className="inline-flex items-center gap-2 px-3 py-2 text-xs tracking-widest uppercase text-holo-muted enabled:hover:text-holo-bright disabled:cursor-not-allowed disabled:opacity-35"><Undo2 size={13} />撤销</button>
           <button type="button" onClick={(event) => { stop(event); onRelease(); }} disabled={simulating} title="释放整结构与落锤" className="inline-flex items-center gap-2 px-3 py-2 text-xs tracking-widest uppercase text-holo-amber enabled:hover:bg-holo-amber/15 disabled:cursor-not-allowed disabled:opacity-35"><Play size={13} />释放</button>
           <span className="px-2 text-[10px] text-holo-muted">焊缝 {jointCount}</span>
+          {(Object.keys(HAMMER_PRESETS) as HammerPresetId[]).map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={(event) => { stop(event); onHammerPreset(preset); }}
+              title={`${HAMMER_PRESETS[preset].label} · 高 ${HAMMER_PRESETS[preset].height}m · 密度 ${HAMMER_PRESETS[preset].density}`}
+              className="inline-flex items-center px-2 py-2 text-[10px] tracking-widest uppercase text-holo-amber hover:bg-holo-amber/15"
+            >{HAMMER_PRESETS[preset].label}</button>
+          ))}
         </div>
 
         <div className="holo-panel flex flex-wrap items-center gap-2 px-3 py-2 text-[11px] text-holo-muted">
           <MousePointer2 size={12} className="text-holo-cyan" />
-          <span>{snapLabel ? <><span className="text-holo-amber">{snapLabel}</span></> : heldLabel ? <>抓取中 <span className="text-holo-cyan">{heldLabel}</span></> : simulating ? "重力开 · 落锤冲量监听中" : "物理暂停 · 拖近黄色插座"}</span>
-          {impulse ? <span className="text-holo-rose">冲量 {impulse.impulse.toFixed(1)} · {impulse.otherId}</span> : null}
+          <span>{snapLabel ? <><span className="text-holo-amber">{snapLabel}</span></> : heldLabel ? <>抓取中 <span className="text-holo-cyan">{heldLabel}</span></> : simulating ? "重力开 · 焊缝热区监听中" : "物理暂停 · 拖近黄色插座"}</span>
+          {impulse ? (
+            <span className={impulse.broken ? "text-holo-rose" : impulse.damage >= WARN_RATIO ? "text-holo-amber" : "text-holo-cyan"}>
+              {impulse.broken ? "断裂" : impulse.damage >= WARN_RATIO ? "濒危" : "受击"}
+              {" "}{impulse.impulse.toFixed(1)}/{impulse.breakImpulse.toFixed(1)}
+              {" · "}{(impulse.damage * 100).toFixed(0)}%
+              {impulse.sharedAcross > 1 ? ` · ${impulse.sharedAcross}焊缝分摊` : ""}
+            </span>
+          ) : null}
         </div>
 
         <div className="holo-panel flex flex-wrap items-center gap-2 px-3 py-2 text-[10px] uppercase tracking-widest text-holo-muted">

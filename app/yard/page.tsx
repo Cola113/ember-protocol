@@ -62,10 +62,29 @@ export default function YardPage() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.code !== "Space" && event.code !== "KeyB" && event.code !== "KeyV") return;
+      if (
+        event.code !== "Space" &&
+        event.code !== "KeyB" &&
+        event.code !== "KeyV" &&
+        event.code !== "Digit1" &&
+        event.code !== "Digit2" &&
+        event.code !== "Digit3"
+      ) return;
       const target = event.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT")) return;
       event.preventDefault();
+      if (event.code === "Digit1") {
+        actionsRef.current?.resetHammer("light");
+        return;
+      }
+      if (event.code === "Digit2") {
+        actionsRef.current?.resetHammer("medium");
+        return;
+      }
+      if (event.code === "Digit3") {
+        actionsRef.current?.resetHammer("heavy");
+        return;
+      }
       if (event.code === "Space" || event.code === "KeyV") {
         setMode((prev) => (prev === "build" ? "simulate" : "build"));
       } else {
@@ -106,6 +125,7 @@ export default function YardPage() {
         onWeld={() => actionsRef.current?.weld()}
         onUndo={() => actionsRef.current?.undo()}
         onRelease={() => actionsRef.current?.release()}
+        onHammerPreset={(preset) => actionsRef.current?.resetHammer(preset)}
         onSave={() => saveSlot(slot)}
         onLoad={() => loadSlot(slot)}
       />
