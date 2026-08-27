@@ -1,5 +1,7 @@
 # The Ember Protocol / 余烬协议
 
+> **📌 项目状态（2026-08-27）**：剧情玩法已停止迭代，本仓库转型物理创造沙盒（`/yard` 余烬坞，开发中）。剧情版本保留在 `v0.7-archived` 标签，生产环境仍可访问（AI 功能已降级）。
+
 ![The Ember Protocol](./public/og-image.png)
 
 > A galaxy that computed itself into silence.
